@@ -1,372 +1,218 @@
 import React, { useEffect, useRef, useState } from "react";
 
-// ---- Config ----
 const API_BASE = "http://localhost:3001";
 
-// Small helper to make a new session id
-function newSessionId() {
-  return `web-${Math.random().toString(36).slice(2, 8)}${Math.random()
-    .toString(36)
-    .slice(2, 8)}`;
-}
-
-// ---- Health check state + function ----
-async function checkHealth(base, sid) {
-  try {
-    const [hRes, mRes] = await Promise.all([
-      fetch(`${base}/health`),
-      fetch(`${base}/memory/status`, { headers: { "X-Session-ID": sid } }),
-    ]);
-
-    const h = await hRes.json().catch(() => ({}));
-    const m = await mRes.json().catch(() => ({}));
-
-    const apiok = (h && (h.ok === true || h.body === "ok")) ? true : false;
-    const memCount = (typeof m?.count === "number") ? m.count : null;
-
-    return { api: apiok, memory: memCount, error: null };
-  } catch (e) {
-    return { api: false, memory: null, error: String(e) };
-  }
-}
-
-// ---- Typewriter helper (returns a cancel function) ----
+// --- tiny typewriter helper (returns a cancel function) ---
 function typeInto(fullText, { chunkSize = 3, intervalMs = 18, onChunk, onDone }) {
   let i = 0;
-  let prevText = "";
-
   const id = setInterval(() => {
-    const next = fullText.slice(0, i + chunkSize);
+    const next = fullText.slice(i, i + chunkSize);
     if (next.length === 0) {
       clearInterval(id);
       onDone?.();
       return;
     }
-
-    // Replace or append safely to avoid gibberish if we get out of sync
-    const chunk = next.startsWith(prevText) ? next : prevText + next;
-    prevText = chunk;
-    onChunk?.(chunk);
-
+    onChunk(next);
     i += chunkSize;
-    if (i >= fullText.length) {
-      clearInterval(id);
-      onDone?.();
-    }
   }, intervalMs);
-
   return () => clearInterval(id);
 }
 
 export default function App() {
-  // ---- Top-level state ----
+  // UI state
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
-  const [status, setStatus] = useState("connecting...");
-  const [sessionId, setSessionId] = useState("");
-  const [count, setCount] = useState(0);
+  const [apiOK, setApiOK] = useState(false);
+  const [memCount, setMemCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
 
-  // session tracking (ref used for headers)
-  const sessionIdRef = useRef(null);
-
-  // scrolling + cancel current typewriter
-  const endRef = useRef(null);
-  const cancelTypeRef = useRef(null);
-
-  // ---- Session name (nicknames saved in browser) ----
+  // session + refs
   const [currentName, setCurrentName] = useState("");
-  const sessionNamesKey = "ggpt_session_names";
-  const lastSessionKey = "ggpt_last_session";
+  const sessionIdRef = useRef("");
+  const cancelTypeRef = useRef(null);
+  const endRef = useRef(null);
 
-  function loadName() {
-    try {
-      const map = JSON.parse(localStorage.getItem(sessionNamesKey) || "{}");
-      setCurrentName(map[sessionIdRef.current] || "");
-    } catch (_) {}
-  }
-
-  function saveName() {
-    try {
-      const map = JSON.parse(localStorage.getItem(sessionNamesKey) || "{}");
-      map[sessionIdRef.current] = currentName.trim();
-      localStorage.setItem(sessionNamesKey, JSON.stringify(map));
-    } catch (_) {}
-  }
-
-  function persistLastSession() {
-    try { localStorage.setItem(lastSessionKey, sessionIdRef.current); } catch (_) {}
-  }
-
-  // ---- Load last session (or create new) + initial health ----
+  // on first load: create a session id & do a health check
   useEffect(() => {
-    const last = localStorage.getItem(lastSessionKey);
-    const sid = last || newSessionId();
-    sessionIdRef.current = sid;
-    setSessionId(sid);
-    persistLastSession();
-    loadName();
-
-    (async () => {
-      const h = await checkHealth(API_BASE, sid);
-      const okTxt = h.api ? "OK" : "DOWN";
-      const memTxt = (typeof h.memory === "number") ? h.memory : 0;
-      setStatus(`backend ${okTxt}`);
-      setCount(memTxt);
-    })();
+    const saved = localStorage.getItem("sessionId");
+    sessionIdRef.current = saved || `web-${Math.random().toString(36).slice(2, 9)}`;
+    if (!saved) localStorage.setItem("sessionId", sessionIdRef.current);
+    checkHealth();
   }, []);
 
-  // ---- Auto-scroll when messages change ----
+  // scroll to bottom on new messages
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages]);
+  }, [messages, isTyping]);
 
-  // ---- Memory helpers ----
-  async function refreshCount() {
-    const res = await fetch(`${API_BASE}/memory/status`, {
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    const m = await res.json().catch(() => ({}));
-    setCount(typeof m?.count === "number" ? m.count : 0);
+  async function checkHealth() {
+    try {
+      const sid = sessionIdRef.current || "default";
+      const [hRes, mRes] = await Promise.allSettled([
+        fetch(`${API_BASE}/health`),
+        fetch(`${API_BASE}/memory/status`, { headers: { "X-Session-ID": sid } }),
+      ]);
+
+      const apiOk = hRes.status === "fulfilled" && (await hRes.value.json()).body === "ok";
+      setApiOK(apiOk);
+
+      if (mRes.status === "fulfilled") {
+        const m = await mRes.value.json().catch(() => ({}));
+        setMemCount(typeof m.count === "number" ? m.count : 0);
+      }
+    } catch {
+      setApiOK(false);
+    }
   }
 
-  async function loadMemory() {
-    const res = await fetch(`${API_BASE}/memory/list`, {
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await res.json().catch(() => ({ items: [] }));
-    const msgs = (data.items || []).map((it) => ({
-      role: it.type === "assistant" ? "assistant" : "user",
-      content: String(it.text || ""),
-    }));
-    setMessages(msgs);
-    setCount(msgs.length);
-  }
-
-  async function clearMemory() {
-    await fetch(`${API_BASE}/memory/clear`, {
-      method: "POST",
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    setMessages([]);
-    setCount(0);
-  }
-
-  async function exportJSON() {
-    const res = await fetch(`${API_BASE}/memory/list`, {
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await res.json().catch(() => ({ items: [] }));
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${sessionIdRef.current}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ---- Reset session (new chat) ----
-  function resetSession() {
-    // cancel any typewriter
-    cancelTypeRef.current?.();
-    cancelTypeRef.current = null;
-    setIsTyping(false);
-
-    const sid = newSessionId();
-    sessionIdRef.current = sid;
-    setSessionId(sid);
-    setMessages([]);
-    setCount(0);
-    persistLastSession();
-    loadName();
-  }
-
-  // ---- Ask flow ----
   async function handleAsk() {
     const q = input.trim();
     if (!q) return;
-
-    // Cancel any current typing animation
-    cancelTypeRef.current?.();
-    cancelTypeRef.current = null;
-
-    // optimistic UI
-    setMessages((prev) => [...prev, { role: "user", content: q }]);
-    const assistantIndexRef = { i: null };
-    setMessages((prev) => {
-      const copy = [...prev, { role: "assistant", content: "" }];
-      assistantIndexRef.i = copy.length - 1;
-      return copy;
-    });
-    setIsTyping(true);
     setInput("");
 
+    const userMsg = { role: "user", content: q };
+    const assistantMsg = { role: "assistant", content: "" };
+    setMessages((prev) => [...prev, userMsg, assistantMsg]);
+
+    setIsTyping(true);
+
     try {
-      // Save question
-      await fetch(`${API_BASE}/memory/save`, {
-        method: "POST",
-        headers: {
-          Origin: window.location.origin,
-          "Content-Type": "application/json",
-          "X-Session-ID": sessionIdRef.current,
-        },
-        body: JSON.stringify({ type: "question", text: q }),
-      });
-
       // Ask backend
-      const r = await fetch(`${API_BASE}/respond`, {
+      const r = await fetch(`${API_BASE}/ask`, {
         method: "POST",
         headers: {
-          Origin: window.location.origin,
           "Content-Type": "application/json",
-          "X-Session-ID": sessionIdRef.current,
+          "X-Session-ID": sessionIdRef.current || "default",
         },
-        body: JSON.stringify({ prompt: q }),
+        body: JSON.stringify({ question: q }),
       });
 
+      if (!r.ok) throw new Error(`HTTP ${r.status}`);
       const data = await r.json();
-      const fullAnswer = data.reply ?? data.answer ?? String(data.body ?? "");
+      const fullAnswer = data.answer ?? String(data.body ?? "");
 
-      // Stream into UI using a safe typewriter
+      // stream into the UI (typewriter)
+      cancelTypeRef.current?.();
       cancelTypeRef.current = typeInto(fullAnswer, {
         chunkSize: 3,
         intervalMs: 18,
         onChunk: (chunk) => {
           setMessages((prev) => {
             const copy = [...prev];
-            const i = assistantIndexRef.i ?? copy.length - 1;
-            const prevText = copy[i].content || "";
-            copy[i].content = chunk.startsWith(prevText) ? chunk : prevText + chunk;
+            copy[copy.length - 1] = { ...copy[copy.length - 1], content: copy[copy.length - 1].content + chunk };
             return copy;
           });
         },
         onDone: async () => {
           setIsTyping(false);
           cancelTypeRef.current = null;
-          // Save full answer
+          // save to memory
           await fetch(`${API_BASE}/memory/save`, {
             method: "POST",
             headers: {
-              Origin: window.location.origin,
               "Content-Type": "application/json",
-              "X-Session-ID": sessionIdRef.current,
+              "X-Session-ID": sessionIdRef.current || "default",
             },
             body: JSON.stringify({ type: "answer", text: fullAnswer }),
-          });
-          await refreshCount();
+          }).catch(() => {});
+          // refresh the count
+          refreshCount();
         },
       });
-    } catch (err) {
+    } catch (e) {
       setIsTyping(false);
-      cancelTypeRef.current = null;
-      setMessages((prev) => {
-        const copy = [...prev];
-        const i = (copy.length - 1);
-        copy[i] = { role: "assistant", content: "⚠️ Error fetching response." };
-        return copy;
-      });
+      setMessages((prev) => [...prev, { role: "assistant", content: "⚠️ Error fetching response." }]);
+      console.error(e);
     }
   }
 
-  // ---- UI ----
-  const backendOk = status.includes("OK");
+  async function refreshCount() {
+    try {
+      const r = await fetch(`${API_BASE}/memory/status`, {
+        headers: { "X-Session-ID": sessionIdRef.current || "default" },
+      });
+      const data = await r.json().catch(() => ({}));
+      setMemCount(typeof data.count === "number" ? data.count : 0);
+    } catch {
+      // keep current count
+    }
+  }
+
+  function resetSession() {
+    // new session id (simple client-side reset)
+    sessionIdRef.current = `web-${Math.random().toString(36).slice(2, 9)}`;
+    localStorage.setItem("sessionId", sessionIdRef.current);
+    setMessages([]);
+    setMemCount(0);
+  }
 
   return (
-    <div style={{ maxWidth: 940, margin: "40px auto", padding: "0 16px" }}>
-      <h1 style={{ fontSize: 44, marginBottom: 8 }}>
-        GarvanGPT — Pharmacist
-      </h1>
+    <div style={{ maxWidth: 860, margin: "0 auto", padding: 20, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif" }}>
+      <h1 style={{ fontSize: 38, marginBottom: 10 }}>GarvanGPT — Pharmacist</h1>
 
-      <div style={{ color: "#222", marginBottom: 12 }}>
-        <strong>Status:</strong>{" "}
-        <span style={{ color: backendOk ? "green" : "crimson" }}>
-          backend {backendOk ? "OK" : "DOWN"}
-        </span>{" "}
-        • <strong>Session:</strong> {sessionId} • <strong>API</strong> at{" "}
-        {API_BASE}
-      </div>
+      <p style={{ color: "#555", marginTop: 0 }}>
+        Status: <strong style={{ color: apiOK ? "green" : "crimson" }}>{apiOK ? "backend OK" : "backend DOWN"}</strong> • Session:{" "}
+        <code>{sessionIdRef.current}</code> • API at <code>{API_BASE}</code>
+      </p>
 
-      {/* Prompt row */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+      {/* Ask bar */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 14 }}>
         <input
+          style={{ flex: 1, padding: "10px 12px", border: "1px solid #ddd", borderRadius: 8 }}
+          placeholder="e.g., What are the main side effects of Efexor XL?"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          placeholder="e.g., What are the main side effects of Efexor XL?"
-          style={{ flex: 1, padding: "10px 12px", border: "1px solid #ccc", borderRadius: 8 }}
+          onKeyDown={(e) => e.key === "Enter" && handleAsk()}
         />
-        <button onClick={handleAsk} disabled={isTyping} style={{ padding: "10px 14px" }}>
-          Ask
-        </button>
+        <button onClick={handleAsk} style={{ padding: "10px 16px", borderRadius: 8 }}>Ask</button>
       </div>
 
-      {/* Session nickname controls */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 12px" }}>
-        <strong>Session name:</strong>
-        <input
-          value={currentName}
-          onChange={(e) => setCurrentName(e.target.value)}
-          placeholder="e.g., Postman Pat"
-          style={{ padding: "6px 8px", border: "1px solid #ccc", borderRadius: 6, width: 220 }}
-        />
-        <button onClick={saveName}>Save name</button>
-      </div>
+      {/* Session & health row */}
+      <div style={{ display: "flex", gap: 12, marginBottom: 14, alignItems: "center" }}>
+        <div style={{ display: "flex", gap: 8, alignItems: "center" }}>
+          <span style={{ width: 92 }}>Session name:</span>
+          <input
+            style={{ width: 220, padding: "8px 10px", border: "1px solid #ddd", borderRadius: 8 }}
+            placeholder="e.g., Postman Pat"
+            value={currentName}
+            onChange={(e) => setCurrentName(e.target.value)}
+          />
+          <button
+            onClick={() => {
+              if (currentName.trim()) {
+                localStorage.setItem("sessionName", currentName.trim());
+              }
+            }}
+            style={{ padding: "8px 12px", borderRadius: 8 }}
+          >
+            Save name
+          </button>
+        </div>
 
-      {/* Health + controls row */}
-      <div style={{ display: "flex", gap: 12, alignItems: "center", margin: "6px 0 16px" }}>
-        <button
-          onClick={async () => {
-            const h = await checkHealth(API_BASE, sessionIdRef.current);
-            const okTxt = h.api ? "OK" : "DOWN";
-            const memTxt = (typeof h.memory === "number") ? h.memory : 0;
-            setStatus(`backend ${okTxt}`);
-            setCount(memTxt);
-          }}
-        >
-          Health check
-        </button>
-        <span>API: <strong style={{ color: backendOk ? "green" : "crimson" }}>{backendOk ? "OK" : "DOWN"}</strong></span>
-        <span>•</span>
-        <span>Memory items: <strong>{count}</strong></span>
-        <button onClick={resetSession} style={{ marginLeft: 12 }}>
+        <button onClick={checkHealth} style={{ padding: "8px 12px", borderRadius: 8 }}>Health check</button>
+
+        <div style={{ marginLeft: 10 }}>
+          API: <strong style={{ color: apiOK ? "green" : "crimson" }}>{apiOK ? "OK" : "DOWN"}</strong>
+        </div>
+
+        <button onClick={resetSession} style={{ marginLeft: "auto", padding: "8px 12px", borderRadius: 8 }}>
           Reset session
         </button>
       </div>
 
-      {/* Memory toolbar */}
-      <div style={{ marginBottom: 10 }}>
-        <strong>Memory:</strong>{" "}
-        <button onClick={loadMemory} style={{ marginRight: 8 }}>Load memory</button>
-        <button onClick={refreshCount} style={{ marginRight: 8 }}>Refresh count</button>
-        <span style={{ marginRight: 8 }}>(items: {count})</span>
-        <button onClick={clearMemory} style={{ background: "#fee4e2", marginRight: 8 }}>Clear memory</button>
-        <button onClick={exportJSON}>Export JSON</button>
+      {/* Memory toolbar (Refresh count is back) */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center", marginBottom: 16 }}>
+        <strong>Memory:</strong>
+        <button onClick={refreshCount} style={{ padding: "6px 10px", borderRadius: 8 }}>Refresh count</button>
+        <span>(items: {memCount})</span>
       </div>
 
-      {/* Messages */}
-      <div
-        style={{
-          background: "#f8fafb",
-          padding: 20,
-          borderRadius: 10,
-          minHeight: 300,
-          maxHeight: 540,
-          overflow: "auto",
-          border: "1px solid #eee",
-        }}
-      >
+      {/* Chat */}
+      <div style={{ background: "#f8fafc", padding: 16, borderRadius: 12, minHeight: 280 }}>
         {messages.map((m, i) => (
-          <div
-            key={i}
-            style={{
-              marginBottom: 12,
-              padding: 10,
-              borderRadius: 8,
-              background: m.role === "user" ? "rgba(0,128,255,0.08)" : "rgba(0,255,128,0.08)",
-            }}
-          >
-            <strong style={{ display: "block", marginBottom: 4 }}>{m.role}</strong>
-            <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{m.content}</p>
+          <div key={i} style={{ marginBottom: 12, padding: 12, borderRadius: 10, background: m.role === "user" ? "rgba(0,128,255,.08)" : "rgba(0,255,128,.08)" }}>
+            <strong>{m.role}</strong>
+            <p style={{ whiteSpace: "pre-wrap", margin: "6px 0 0" }}>{m.content}</p>
           </div>
         ))}
         {isTyping && (
@@ -376,12 +222,6 @@ export default function App() {
         )}
         <div ref={endRef} />
       </div>
-
-      {/* tiny inline animation for the typing dots */}
-      <style>{`
-        @keyframes blink { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
-        .dots::after { content: '…'; animation: blink 1.05s infinite; }
-      `}</style>
     </div>
   );
 }

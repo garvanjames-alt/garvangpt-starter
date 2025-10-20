@@ -1,13 +1,40 @@
 import React, { useEffect, useRef, useState } from "react";
 
-// Where the backend lives (Vite can override with VITE_API_URL)
-const API_BASE = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:3001";
+// ---- Config ----
+const API_BASE = "http://localhost:3001";
 
-/* --- Typewriter helper ---
-   Emits the full text-so-far every tick.
-   Returns a cancel() function. */
+// Small helper to make a new session id
+function newSessionId() {
+  return `web-${Math.random().toString(36).slice(2, 8)}${Math.random()
+    .toString(36)
+    .slice(2, 8)}`;
+}
+
+// ---- Health check state + function ----
+async function checkHealth(base, sid) {
+  try {
+    const [hRes, mRes] = await Promise.all([
+      fetch(`${base}/health`),
+      fetch(`${base}/memory/status`, { headers: { "X-Session-ID": sid } }),
+    ]);
+
+    const h = await hRes.json().catch(() => ({}));
+    const m = await mRes.json().catch(() => ({}));
+
+    const apiok = (h && (h.ok === true || h.body === "ok")) ? true : false;
+    const memCount = (typeof m?.count === "number") ? m.count : null;
+
+    return { api: apiok, memory: memCount, error: null };
+  } catch (e) {
+    return { api: false, memory: null, error: String(e) };
+  }
+}
+
+// ---- Typewriter helper (returns a cancel function) ----
 function typeInto(fullText, { chunkSize = 3, intervalMs = 18, onChunk, onDone }) {
   let i = 0;
+  let prevText = "";
+
   const id = setInterval(() => {
     const next = fullText.slice(0, i + chunkSize);
     if (next.length === 0) {
@@ -15,37 +42,24 @@ function typeInto(fullText, { chunkSize = 3, intervalMs = 18, onChunk, onDone })
       onDone?.();
       return;
     }
-    onChunk(next);
+
+    // Replace or append safely to avoid gibberish if we get out of sync
+    const chunk = next.startsWith(prevText) ? next : prevText + next;
+    prevText = chunk;
+    onChunk?.(chunk);
+
     i += chunkSize;
     if (i >= fullText.length) {
       clearInterval(id);
       onDone?.();
     }
   }, intervalMs);
+
   return () => clearInterval(id);
 }
 
 export default function App() {
-  // ---- Health check state + function (kept INSIDE the component; hooks must be here) ----
-  const [health, setHealth] = useState({ api: null, memory: null, error: null });
-  async function checkHealth() {
-    try {
-      const sid = sessionIdRef.current || "default";
-      const [hRes, mRes] = await Promise.all([
-        fetch(`${API_BASE}/health`),
-        fetch(`${API_BASE}/memory/status`, { headers: { "X-Session-ID": sid } }),
-      ]);
-      const h = await hRes.json().catch(() => ({}));
-      const m = await mRes.json().catch(() => ({}));
-      const apiOk = h && (h.ok === true || h.body === "ok");
-      const memCount = typeof m?.count === "number" ? m.count : null;
-      setHealth({ api: apiOk, memory: memCount, error: null });
-    } catch (e) {
-      setHealth({ api: false, memory: null, error: String(e) });
-    }
-  }
-
-  // ---- Core UI state ----
+  // ---- Top-level state ----
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("connecting...");
@@ -53,49 +67,80 @@ export default function App() {
   const [count, setCount] = useState(0);
   const [isTyping, setIsTyping] = useState(false);
 
+  // session tracking (ref used for headers)
   const sessionIdRef = useRef(null);
-  const endRef = useRef(null);
-  const cancelTypeRef = useRef(null); // cancel any running typewriter
 
-  // ---- Session boot ----
+  // scrolling + cancel current typewriter
+  const endRef = useRef(null);
+  const cancelTypeRef = useRef(null);
+
+  // ---- Session name (nicknames saved in browser) ----
+  const [currentName, setCurrentName] = useState("");
+  const sessionNamesKey = "ggpt_session_names";
+  const lastSessionKey = "ggpt_last_session";
+
+  function loadName() {
+    try {
+      const map = JSON.parse(localStorage.getItem(sessionNamesKey) || "{}");
+      setCurrentName(map[sessionIdRef.current] || "");
+    } catch (_) {}
+  }
+
+  function saveName() {
+    try {
+      const map = JSON.parse(localStorage.getItem(sessionNamesKey) || "{}");
+      map[sessionIdRef.current] = currentName.trim();
+      localStorage.setItem(sessionNamesKey, JSON.stringify(map));
+    } catch (_) {}
+  }
+
+  function persistLastSession() {
+    try { localStorage.setItem(lastSessionKey, sessionIdRef.current); } catch (_) {}
+  }
+
+  // ---- Load last session (or create new) + initial health ----
   useEffect(() => {
-    const sid =
-      "web-" +
-      Math.random().toString(36).slice(2, 8) +
-      Math.random().toString(36).slice(2, 5);
-    setSessionId(sid);
+    const last = localStorage.getItem(lastSessionKey);
+    const sid = last || newSessionId();
     sessionIdRef.current = sid;
-    setStatus("backend ?");
-    // Auto health check on load
-    checkHealth().then(() => setStatus("backend OK")).catch(() => setStatus("backend ?"));
+    setSessionId(sid);
+    persistLastSession();
+    loadName();
+
+    (async () => {
+      const h = await checkHealth(API_BASE, sid);
+      const okTxt = h.api ? "OK" : "DOWN";
+      const memTxt = (typeof h.memory === "number") ? h.memory : 0;
+      setStatus(`backend ${okTxt}`);
+      setCount(memTxt);
+    })();
   }, []);
 
-  // ---- Scroll to bottom when messages change ----
+  // ---- Auto-scroll when messages change ----
   useEffect(() => {
     endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
+  }, [messages]);
 
   // ---- Memory helpers ----
   async function refreshCount() {
-    const r = await fetch(`${API_BASE}/memory/status`, {
+    const res = await fetch(`${API_BASE}/memory/status`, {
       headers: { "X-Session-ID": sessionIdRef.current },
     });
-    const data = await r.json();
-    setCount(Number(data.count || 0));
+    const m = await res.json().catch(() => ({}));
+    setCount(typeof m?.count === "number" ? m.count : 0);
   }
 
   async function loadMemory() {
-    const r = await fetch(`${API_BASE}/memory/list`, {
+    const res = await fetch(`${API_BASE}/memory/list`, {
       headers: { "X-Session-ID": sessionIdRef.current },
     });
-    const data = await r.json();
-    const items = Array.isArray(data.items) ? data.items : [];
-    // Show as messages
-    const restored = items.map((it) => ({
-      role: it.type === "answer" ? "assistant" : "user",
+    const data = await res.json().catch(() => ({ items: [] }));
+    const msgs = (data.items || []).map((it) => ({
+      role: it.type === "assistant" ? "assistant" : "user",
       content: String(it.text || ""),
     }));
-    setMessages(restored);
+    setMessages(msgs);
+    setCount(msgs.length);
   }
 
   async function clearMemory() {
@@ -108,17 +153,33 @@ export default function App() {
   }
 
   async function exportJSON() {
-    const r = await fetch(`${API_BASE}/memory/list`, {
+    const res = await fetch(`${API_BASE}/memory/list`, {
       headers: { "X-Session-ID": sessionIdRef.current },
     });
-    const data = await r.json();
+    const data = await res.json().catch(() => ({ items: [] }));
     const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
     const url = URL.createObjectURL(blob);
     const a = document.createElement("a");
     a.href = url;
-    a.download = `memory-${sessionIdRef.current}.json`;
+    a.download = `${sessionIdRef.current}.json`;
     a.click();
     URL.revokeObjectURL(url);
+  }
+
+  // ---- Reset session (new chat) ----
+  function resetSession() {
+    // cancel any typewriter
+    cancelTypeRef.current?.();
+    cancelTypeRef.current = null;
+    setIsTyping(false);
+
+    const sid = newSessionId();
+    sessionIdRef.current = sid;
+    setSessionId(sid);
+    setMessages([]);
+    setCount(0);
+    persistLastSession();
+    loadName();
   }
 
   // ---- Ask flow ----
@@ -126,12 +187,20 @@ export default function App() {
     const q = input.trim();
     if (!q) return;
 
-    // stop any previous typer
-    if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} finally { cancelTypeRef.current = null; } }
+    // Cancel any current typing animation
+    cancelTypeRef.current?.();
+    cancelTypeRef.current = null;
 
-    setMessages((prev) => [...prev, { role: "user", content: q }, { role: "assistant", content: "" }]);
-    setInput("");
+    // optimistic UI
+    setMessages((prev) => [...prev, { role: "user", content: q }]);
+    const assistantIndexRef = { i: null };
+    setMessages((prev) => {
+      const copy = [...prev, { role: "assistant", content: "" }];
+      assistantIndexRef.i = copy.length - 1;
+      return copy;
+    });
     setIsTyping(true);
+    setInput("");
 
     try {
       // Save question
@@ -159,33 +228,23 @@ export default function App() {
       const data = await r.json();
       const fullAnswer = data.reply ?? data.answer ?? String(data.body ?? "");
 
-      // Stream into UI with overlap-safe writer
+      // Stream into UI using a safe typewriter
       cancelTypeRef.current = typeInto(fullAnswer, {
         chunkSize: 3,
         intervalMs: 18,
         onChunk: (chunk) => {
           setMessages((prev) => {
             const copy = [...prev];
-            const i = copy.length - 1; // assistant bubble
+            const i = assistantIndexRef.i ?? copy.length - 1;
             const prevText = copy[i].content || "";
-
-            // If 'chunk' is full text so far, just set it. If it's delta, append only the non-overlapping tail.
-            if (chunk.startsWith(prevText)) {
-              copy[i].content = chunk;
-            } else {
-              let overlap = 0;
-              const maxK = Math.min(prevText.length, chunk.length);
-              for (let k = maxK; k > 0; k--) {
-                if (prevText.endsWith(chunk.slice(0, k))) { overlap = k; break; }
-              }
-              copy[i].content = prevText + chunk.slice(overlap);
-            }
+            copy[i].content = chunk.startsWith(prevText) ? chunk : prevText + chunk;
             return copy;
           });
         },
         onDone: async () => {
           setIsTyping(false);
           cancelTypeRef.current = null;
+          // Save full answer
           await fetch(`${API_BASE}/memory/save`, {
             method: "POST",
             headers: {
@@ -203,83 +262,115 @@ export default function App() {
       cancelTypeRef.current = null;
       setMessages((prev) => {
         const copy = [...prev];
-        const i = copy.length - 1;
+        const i = (copy.length - 1);
         copy[i] = { role: "assistant", content: "⚠️ Error fetching response." };
         return copy;
       });
     }
   }
 
-  // ---- Render ----
-  return (
-    <div style={{ padding: 24, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
-      <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>GarvanGPT — Pharmacist</h1>
+  // ---- UI ----
+  const backendOk = status.includes("OK");
 
-      <div style={{ marginBottom: 16, color: "#334" }}>
-        Status: <span style={{ color: health.api ? "green" : "#999" }}>{status}</span> •{" "}
-        Session: <code>{sessionId}</code> • API at <code>{API_BASE}</code>
+  return (
+    <div style={{ maxWidth: 940, margin: "40px auto", padding: "0 16px" }}>
+      <h1 style={{ fontSize: 44, marginBottom: 8 }}>
+        GarvanGPT — Pharmacist
+      </h1>
+
+      <div style={{ color: "#222", marginBottom: 12 }}>
+        <strong>Status:</strong>{" "}
+        <span style={{ color: backendOk ? "green" : "crimson" }}>
+          backend {backendOk ? "OK" : "DOWN"}
+        </span>{" "}
+        • <strong>Session:</strong> {sessionId} • <strong>API</strong> at{" "}
+        {API_BASE}
       </div>
 
-      {/* ---- Ask box ---- */}
+      {/* Prompt row */}
       <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
-          style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid #ccc" }}
-          placeholder="e.g., What are the main side effects of Efexor XL?"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAsk(); }
-          }}
+          placeholder="e.g., What are the main side effects of Efexor XL?"
+          style={{ flex: 1, padding: "10px 12px", border: "1px solid #ccc", borderRadius: 8 }}
         />
-        <button onClick={handleAsk} disabled={isTyping}>Ask</button>
-        {isTyping && <button onClick={() => { if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} } setIsTyping(false); }}>Stop</button>}
+        <button onClick={handleAsk} disabled={isTyping} style={{ padding: "10px 14px" }}>
+          Ask
+        </button>
       </div>
 
-      {/* ---- Health Check UI ---- */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0" }}>
-        <button onClick={checkHealth}>Health check</button>
-        {health.api !== null && (
-          <span>
-            API: <strong style={{ color: health.api ? "green" : "red" }}>{health.api ? "OK" : "DOWN"}</strong>
-            {"  "}• Memory items: <strong>{health.memory ?? "—"}</strong>
-            {health.error && <span style={{ color: "crimson" }}> • {health.error}</span>}
-          </span>
-        )}
+      {/* Session nickname controls */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0 12px" }}>
+        <strong>Session name:</strong>
+        <input
+          value={currentName}
+          onChange={(e) => setCurrentName(e.target.value)}
+          placeholder="e.g., Postman Pat"
+          style={{ padding: "6px 8px", border: "1px solid #ccc", borderRadius: 6, width: 220 }}
+        />
+        <button onClick={saveName}>Save name</button>
       </div>
 
-      {/* ---- Memory controls ---- */}
-      <div style={{ marginBottom: 20 }}>
+      {/* Health + controls row */}
+      <div style={{ display: "flex", gap: 12, alignItems: "center", margin: "6px 0 16px" }}>
+        <button
+          onClick={async () => {
+            const h = await checkHealth(API_BASE, sessionIdRef.current);
+            const okTxt = h.api ? "OK" : "DOWN";
+            const memTxt = (typeof h.memory === "number") ? h.memory : 0;
+            setStatus(`backend ${okTxt}`);
+            setCount(memTxt);
+          }}
+        >
+          Health check
+        </button>
+        <span>API: <strong style={{ color: backendOk ? "green" : "crimson" }}>{backendOk ? "OK" : "DOWN"}</strong></span>
+        <span>•</span>
+        <span>Memory items: <strong>{count}</strong></span>
+        <button onClick={resetSession} style={{ marginLeft: 12 }}>
+          Reset session
+        </button>
+      </div>
+
+      {/* Memory toolbar */}
+      <div style={{ marginBottom: 10 }}>
         <strong>Memory:</strong>{" "}
-        <button onClick={loadMemory}>Load memory</button>
-        <button onClick={refreshCount} style={{ marginLeft: 8 }}>Refresh count</button>
-        <span style={{ marginLeft: 8 }}>(items: {count})</span>
-        <button onClick={clearMemory} style={{ background: "#fce4ec", marginLeft: 8 }}>Clear memory</button>
-        <button onClick={exportJSON} style={{ marginLeft: 8 }}>Export JSON</button>
+        <button onClick={loadMemory} style={{ marginRight: 8 }}>Load memory</button>
+        <button onClick={refreshCount} style={{ marginRight: 8 }}>Refresh count</button>
+        <span style={{ marginRight: 8 }}>(items: {count})</span>
+        <button onClick={clearMemory} style={{ background: "#fee4e2", marginRight: 8 }}>Clear memory</button>
+        <button onClick={exportJSON}>Export JSON</button>
       </div>
 
-      {/* ---- Transcript ---- */}
-      <div style={{
-        background: "#f8f9fa",
-        padding: 20,
-        borderRadius: 10,
-        minHeight: 300,
-        maxHeight: 460,
-        overflow: "auto",
-        border: "1px solid #e2e5e7"
-      }}>
+      {/* Messages */}
+      <div
+        style={{
+          background: "#f8fafb",
+          padding: 20,
+          borderRadius: 10,
+          minHeight: 300,
+          maxHeight: 540,
+          overflow: "auto",
+          border: "1px solid #eee",
+        }}
+      >
         {messages.map((m, i) => (
-          <div key={i} style={{
-            marginBottom: 10, padding: 10, borderRadius: 8,
-            background: m.role === "user" ? "rgba(0,128,255,.08)" : "rgba(0,255,128,.08)"
-          }}>
-            <strong>{m.role}</strong>
+          <div
+            key={i}
+            style={{
+              marginBottom: 12,
+              padding: 10,
+              borderRadius: 8,
+              background: m.role === "user" ? "rgba(0,128,255,0.08)" : "rgba(0,255,128,0.08)",
+            }}
+          >
+            <strong style={{ display: "block", marginBottom: 4 }}>{m.role}</strong>
             <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{m.content}</p>
           </div>
         ))}
-
-        {/* typing indicator */}
         {isTyping && (
-          <div style={{ opacity: .8, fontStyle: "italic", padding: "4px 8px" }}>
+          <div style={{ opacity: 0.8, fontStyle: "italic", padding: "4px 8px" }}>
             assistant is typing<span className="dots">…</span>
           </div>
         )}
@@ -289,10 +380,7 @@ export default function App() {
       {/* tiny inline animation for the typing dots */}
       <style>{`
         @keyframes blink { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
-        .dots::after { content: '…'; animation: blink 1.2s infinite; }
-        button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccd; background:#fff; }
-        button:disabled { opacity: .6; }
-        input, button { font-size: 14px; }
+        .dots::after { content: '…'; animation: blink 1.05s infinite; }
       `}</style>
     </div>
   );

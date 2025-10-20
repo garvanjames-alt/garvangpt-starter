@@ -1,12 +1,15 @@
-import React, { useState, useEffect, useRef } from "react";
+import React, { useEffect, useRef, useState } from "react";
 
-const API_BASE = "http://localhost:3001";
+// Where the backend lives (Vite can override with VITE_API_URL)
+const API_BASE = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:3001";
 
-// --- Typewriter helper (returns a cancel function) ---
+/* --- Typewriter helper ---
+   Emits the full text-so-far every tick.
+   Returns a cancel() function. */
 function typeInto(fullText, { chunkSize = 3, intervalMs = 18, onChunk, onDone }) {
   let i = 0;
   const id = setInterval(() => {
-    const next = fullText.slice(i, i + chunkSize);
+    const next = fullText.slice(0, i + chunkSize);
     if (next.length === 0) {
       clearInterval(id);
       onDone?.();
@@ -14,70 +17,120 @@ function typeInto(fullText, { chunkSize = 3, intervalMs = 18, onChunk, onDone })
     }
     onChunk(next);
     i += chunkSize;
+    if (i >= fullText.length) {
+      clearInterval(id);
+      onDone?.();
+    }
   }, intervalMs);
   return () => clearInterval(id);
 }
 
 export default function App() {
+  // ---- Health check state + function (kept INSIDE the component; hooks must be here) ----
+  const [health, setHealth] = useState({ api: null, memory: null, error: null });
+  async function checkHealth() {
+    try {
+      const sid = sessionIdRef.current || "default";
+      const [hRes, mRes] = await Promise.all([
+        fetch(`${API_BASE}/health`),
+        fetch(`${API_BASE}/memory/status`, { headers: { "X-Session-ID": sid } }),
+      ]);
+      const h = await hRes.json().catch(() => ({}));
+      const m = await mRes.json().catch(() => ({}));
+      const apiOk = h && (h.ok === true || h.body === "ok");
+      const memCount = typeof m?.count === "number" ? m.count : null;
+      setHealth({ api: apiOk, memory: memCount, error: null });
+    } catch (e) {
+      setHealth({ api: false, memory: null, error: String(e) });
+    }
+  }
+
+  // ---- Core UI state ----
   const [input, setInput] = useState("");
   const [messages, setMessages] = useState([]);
   const [status, setStatus] = useState("connecting...");
   const [sessionId, setSessionId] = useState("");
   const [count, setCount] = useState(0);
-  const [sessions, setSessions] = useState([]);
-  const [currentName, setCurrentName] = useState("");
   const [isTyping, setIsTyping] = useState(false);
 
   const sessionIdRef = useRef(null);
-  const endRef = useRef(null);       // <- for auto-scroll
-  const cancelTypeRef = useRef(null); // <- to cancel typewriter if needed
+  const endRef = useRef(null);
+  const cancelTypeRef = useRef(null); // cancel any running typewriter
 
-  // --- Load stored sessions from browser ---
+  // ---- Session boot ----
   useEffect(() => {
-    const stored = JSON.parse(localStorage.getItem("sessions") || "[]");
-    setSessions(stored);
+    const sid =
+      "web-" +
+      Math.random().toString(36).slice(2, 8) +
+      Math.random().toString(36).slice(2, 5);
+    setSessionId(sid);
+    sessionIdRef.current = sid;
+    setStatus("backend ?");
+    // Auto health check on load
+    checkHealth().then(() => setStatus("backend OK")).catch(() => setStatus("backend ?"));
   }, []);
 
-  // --- Startup: connect to backend ---
+  // ---- Scroll to bottom when messages change ----
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await fetch(`${API_BASE}/health`);
-        const data = await res.json();
-        setStatus(data.ok ? "backend OK" : "backend error");
-      } catch {
-        setStatus("backend unreachable");
-      }
-    })();
-  }, []);
-
-  // --- Auto-scroll whenever messages change ---
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth", block: "end" });
+    endRef.current?.scrollIntoView({ behavior: "smooth" });
   }, [messages, isTyping]);
 
-  // --- Helper: refresh memory count ---
+  // ---- Memory helpers ----
   async function refreshCount() {
-    if (!sessionIdRef.current) return;
     const r = await fetch(`${API_BASE}/memory/status`, {
-      headers: {
-        Origin: window.location.origin,
-        "X-Session-ID": sessionIdRef.current,
-      },
+      headers: { "X-Session-ID": sessionIdRef.current },
     });
     const data = await r.json();
-    setCount(data.count || 0);
+    setCount(Number(data.count || 0));
   }
 
-  // --- Handle "Ask" (with typewriter effect) ---
+  async function loadMemory() {
+    const r = await fetch(`${API_BASE}/memory/list`, {
+      headers: { "X-Session-ID": sessionIdRef.current },
+    });
+    const data = await r.json();
+    const items = Array.isArray(data.items) ? data.items : [];
+    // Show as messages
+    const restored = items.map((it) => ({
+      role: it.type === "answer" ? "assistant" : "user",
+      content: String(it.text || ""),
+    }));
+    setMessages(restored);
+  }
+
+  async function clearMemory() {
+    await fetch(`${API_BASE}/memory/clear`, {
+      method: "POST",
+      headers: { "X-Session-ID": sessionIdRef.current },
+    });
+    setMessages([]);
+    setCount(0);
+  }
+
+  async function exportJSON() {
+    const r = await fetch(`${API_BASE}/memory/list`, {
+      headers: { "X-Session-ID": sessionIdRef.current },
+    });
+    const data = await r.json();
+    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement("a");
+    a.href = url;
+    a.download = `memory-${sessionIdRef.current}.json`;
+    a.click();
+    URL.revokeObjectURL(url);
+  }
+
+  // ---- Ask flow ----
   async function handleAsk() {
     const q = input.trim();
     if (!q) return;
 
-    setMessages((prev) => [...prev, { role: "user", content: q }]);
-    setInput("");
+    // stop any previous typer
+    if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} finally { cancelTypeRef.current = null; } }
 
-    setMessages((prev) => [...prev, { role: "assistant", content: "" }]);
+    setMessages((prev) => [...prev, { role: "user", content: q }, { role: "assistant", content: "" }]);
+    setInput("");
     setIsTyping(true);
 
     try {
@@ -104,40 +157,32 @@ export default function App() {
       });
 
       const data = await r.json();
-const fullAnswer = data.reply ?? data.answer ?? String(data.body ?? "");
+      const fullAnswer = data.reply ?? data.answer ?? String(data.body ?? "");
 
-
-      // Stream into UI
-if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} finally { cancelTypeRef.current = null; } }
+      // Stream into UI with overlap-safe writer
       cancelTypeRef.current = typeInto(fullAnswer, {
         chunkSize: 3,
         intervalMs: 18,
-  onChunk: (chunk) => {
-  setMessages((prev) => {
-    const copy = [...prev];
-    const i = copy.length - 1;                 // assistant bubble
-    const prevText = copy[i].content || "";
+        onChunk: (chunk) => {
+          setMessages((prev) => {
+            const copy = [...prev];
+            const i = copy.length - 1; // assistant bubble
+            const prevText = copy[i].content || "";
 
-    // If chunk already contains the full text, just use it.
-    if (chunk.startsWith(prevText)) {
-      copy[i].content = chunk;
-      return copy;
-    }
-
-    // Otherwise, chunk overlaps: append only the non-overlapping tail.
-    let overlap = 0;
-    const maxK = Math.min(prevText.length, chunk.length);
-    for (let k = maxK; k > 0; k--) {
-      if (prevText.endsWith(chunk.slice(0, k))) {
-        overlap = k;
-        break;
-      }
-    }
-    copy[i].content = prevText + chunk.slice(overlap);
-    return copy;
-  });
-},
-
+            // If 'chunk' is full text so far, just set it. If it's delta, append only the non-overlapping tail.
+            if (chunk.startsWith(prevText)) {
+              copy[i].content = chunk;
+            } else {
+              let overlap = 0;
+              const maxK = Math.min(prevText.length, chunk.length);
+              for (let k = maxK; k > 0; k--) {
+                if (prevText.endsWith(chunk.slice(0, k))) { overlap = k; break; }
+              }
+              copy[i].content = prevText + chunk.slice(overlap);
+            }
+            return copy;
+          });
+        },
         onDone: async () => {
           setIsTyping(false);
           cancelTypeRef.current = null;
@@ -156,208 +201,77 @@ if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} finally {
     } catch (err) {
       setIsTyping(false);
       cancelTypeRef.current = null;
-      setMessages((prev) => [
-        ...prev,
-        { role: "assistant", content: "⚠️ Error fetching response." },
-      ]);
-      console.error(err);
+      setMessages((prev) => {
+        const copy = [...prev];
+        const i = copy.length - 1;
+        copy[i] = { role: "assistant", content: "⚠️ Error fetching response." };
+        return copy;
+      });
     }
   }
 
-  // Optional: cancel typing if user clicks again while streaming
-  function stopTyping() {
-    if (cancelTypeRef.current) {
-      cancelTypeRef.current();
-      cancelTypeRef.current = null;
-      setIsTyping(false);
-    }
-  }
-
-  // --- Load memory into chat ---
-  async function loadMemory() {
-    if (!sessionIdRef.current) return;
-    const r = await fetch(`${API_BASE}/memory/list`, {
-      headers: { Origin: window.location.origin, "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await r.json();
-    if (Array.isArray(data.items)) {
-      const msgs = [];
-      for (const it of data.items) {
-        if (it.type === "question") msgs.push({ role: "user", content: it.text });
-        if (it.type === "answer") msgs.push({ role: "assistant", content: it.text });
-      }
-      setMessages(msgs);
-    }
-  }
-
-  // --- Clear memory ---
-  async function clearMemory() {
-    if (!sessionIdRef.current) return;
-    const ok = window.confirm(`Clear all memory for session ${sessionIdRef.current}?`);
-    if (!ok) return;
-    await fetch(`${API_BASE}/memory/clear`, {
-      method: "POST",
-      headers: { Origin: window.location.origin, "X-Session-ID": sessionIdRef.current },
-    });
-    setMessages([]);
-    setCount(0);
-  }
-
-  // --- Export JSON ---
-  async function exportJSON() {
-    if (!sessionIdRef.current) return;
-    const r = await fetch(`${API_BASE}/memory/list`, {
-      headers: { Origin: window.location.origin, "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await r.json();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `${sessionIdRef.current}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // --- Duplicate session ---
-  async function duplicateSession() {
-    if (!sessionIdRef.current) return;
-    const r = await fetch(`${API_BASE}/session/clone`, {
-      method: "POST",
-      headers: { Origin: window.location.origin, "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await r.json();
-    if (data.ok && data.to) {
-      alert(`Session cloned:\n${data.from} → ${data.to}\nReloading...`);
-      window.location.reload();
-    }
-  }
-
-  // --- Save current session name ---
-  function saveSessionName() {
-    if (!sessionIdRef.current) return;
-    const newName = currentName.trim();
-    if (!newName) return;
-    const updated = [...sessions.filter(s => s.id !== sessionIdRef.current), { id: sessionIdRef.current, name: newName }];
-    setSessions(updated);
-    localStorage.setItem("sessions", JSON.stringify(updated));
-    alert(`Saved session as: ${newName}`);
-  }
-
-  // --- Remove from session list ---
-  function removeSession() {
-    const filtered = sessions.filter((s) => s.id !== sessionIdRef.current);
-    setSessions(filtered);
-    localStorage.setItem("sessions", JSON.stringify(filtered));
-  }
-
-  // --- Switch between saved sessions ---
-  function switchSession(e) {
-    const val = e.target.value;
-    if (!val) return;
-    setSessionId(val);
-    sessionIdRef.current = val;
-    setMessages([]);
-    refreshCount();
-  }
-
-  // --- Boot a session on first load ---
-  useEffect(() => {
-    (async () => {
-      if (sessions.length > 0) {
-        const last = sessions[sessions.length - 1];
-        setSessionId(last.id);
-        sessionIdRef.current = last.id;
-        await refreshCount();
-        return;
-      }
-      const id = "web-" + Math.floor(Math.random() * 1000000);
-      setSessionId(id);
-      sessionIdRef.current = id;
-      await refreshCount();
-    })();
-  }, [sessions]);
-
+  // ---- Render ----
   return (
-    <div style={{ padding: 30, fontFamily: "system-ui" }}>
-      <h1>GarvanGPT — Pharmacist</h1>
-      <p>
-        Status:{" "}
-        <span style={{ color: status.includes("OK") ? "green" : "red" }}>{status}</span> •
+    <div style={{ padding: 24, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
+      <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>GarvanGPT — Pharmacist</h1>
+
+      <div style={{ marginBottom: 16, color: "#334" }}>
+        Status: <span style={{ color: health.api ? "green" : "#999" }}>{status}</span> •{" "}
         Session: <code>{sessionId}</code> • API at <code>{API_BASE}</code>
-      </p>
-
-      <div style={{ marginBottom: 10 }}>
-        <label>Current session name </label>
-        <input
-          value={currentName}
-          onChange={(e) => setCurrentName(e.target.value)}
-          placeholder="e.g., Postman Pat"
-          style={{ marginRight: 8 }}
-        />
-        <button onClick={saveSessionName}>Save name</button>
-        <button onClick={duplicateSession} style={{ marginLeft: 8 }}>Duplicate session</button>
-        <button onClick={removeSession} style={{ marginLeft: 8 }}>Remove from list</button>
       </div>
 
-      <div style={{ marginBottom: 10 }}>
-        <label>Switch session </label>
-        <select onChange={switchSession} value={sessionId}>
-          {sessions.map((s) => (
-            <option key={s.id} value={s.id}>
-              {s.name || s.id}
-            </option>
-          ))}
-        </select>
-      </div>
-
-      <div style={{ marginBottom: 10, display: "flex", gap: 8 }}>
+      {/* ---- Ask box ---- */}
+      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
         <input
+          style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid #ccc" }}
           placeholder="e.g., What are the main side effects of Efexor XL?"
           value={input}
           onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => { if (e.key === "Enter") handleAsk(); }}
-          style={{ flex: 1, padding: 6, fontSize: 14 }}
+          onKeyDown={(e) => {
+            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAsk(); }
+          }}
         />
         <button onClick={handleAsk} disabled={isTyping}>Ask</button>
-        {isTyping && (
-          <button onClick={stopTyping} title="Stop typing">Stop</button>
+        {isTyping && <button onClick={() => { if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} } setIsTyping(false); }}>Stop</button>}
+      </div>
+
+      {/* ---- Health Check UI ---- */}
+      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0" }}>
+        <button onClick={checkHealth}>Health check</button>
+        {health.api !== null && (
+          <span>
+            API: <strong style={{ color: health.api ? "green" : "red" }}>{health.api ? "OK" : "DOWN"}</strong>
+            {"  "}• Memory items: <strong>{health.memory ?? "—"}</strong>
+            {health.error && <span style={{ color: "crimson" }}> • {health.error}</span>}
+          </span>
         )}
       </div>
 
+      {/* ---- Memory controls ---- */}
       <div style={{ marginBottom: 20 }}>
         <strong>Memory:</strong>{" "}
         <button onClick={loadMemory}>Load memory</button>
-        <button onClick={refreshCount} style={{ marginLeft: 8 }}>
-          Refresh count
-        </button>
+        <button onClick={refreshCount} style={{ marginLeft: 8 }}>Refresh count</button>
         <span style={{ marginLeft: 8 }}>(items: {count})</span>
-        <button onClick={clearMemory} style={{ background: "#fce4ec", marginLeft: 8 }}>
-          Clear memory
-        </button>
+        <button onClick={clearMemory} style={{ background: "#fce4ec", marginLeft: 8 }}>Clear memory</button>
         <button onClick={exportJSON} style={{ marginLeft: 8 }}>Export JSON</button>
       </div>
 
-      <div
-        style={{
-          background: "#f8f9fa",
-          padding: 20,
-          borderRadius: 10,
-          minHeight: 300,
-          maxHeight: 420,
-          overflowY: "auto",
-        }}
-      >
+      {/* ---- Transcript ---- */}
+      <div style={{
+        background: "#f8f9fa",
+        padding: 20,
+        borderRadius: 10,
+        minHeight: 300,
+        maxHeight: 460,
+        overflow: "auto",
+        border: "1px solid #e2e5e7"
+      }}>
         {messages.map((m, i) => (
-          <div
-            key={i}
-            style={{
-              marginBottom: 10,
-              padding: 10,
-              background: m.role === "user" ? "rgba(0,128,255,0.1)" : "rgba(0,255,128,0.1)",
-              borderRadius: 8,
-            }}
-          >
+          <div key={i} style={{
+            marginBottom: 10, padding: 10, borderRadius: 8,
+            background: m.role === "user" ? "rgba(0,128,255,.08)" : "rgba(0,255,128,.08)"
+          }}>
             <strong>{m.role}</strong>
             <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{m.content}</p>
           </div>
@@ -365,21 +279,20 @@ if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} finally {
 
         {/* typing indicator */}
         {isTyping && (
-          <div style={{ opacity: 0.8, fontStyle: "italic", padding: "4px 8px" }}>
+          <div style={{ opacity: .8, fontStyle: "italic", padding: "4px 8px" }}>
             assistant is typing<span className="dots">…</span>
           </div>
         )}
-
         <div ref={endRef} />
       </div>
 
       {/* tiny inline animation for the typing dots */}
       <style>{`
         @keyframes blink { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
-        .dots::after {
-          content: ' ...';
-          animation: blink 1.2s infinite;
-        }
+        .dots::after { content: '…'; animation: blink 1.2s infinite; }
+        button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccd; background:#fff; }
+        button:disabled { opacity: .6; }
+        input, button { font-size: 14px; }
       `}</style>
     </div>
   );

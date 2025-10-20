@@ -1,87 +1,128 @@
 // backend/ingest.cjs
-// Minimal API for GarvanGPT — health, ask, and stub "memory" routes.
+// Minimal API for GarvanGPT — Pharmacist
+// Adds session-scoped memory and injects it into the prompt for /ask
 
-require('dotenv').config();
+require("dotenv").config();
+const express = require("express");
+const cors = require("cors");
 
-const express = require('express');
-const cors = require('cors');
-const bodyParser = require('body-parser');
+// --- OpenAI (Node SDK) ---
+const OpenAI = require("openai");
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-// OpenAI (v4) — CommonJS
-const OpenAI = require('openai');
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-// Pick a small, fast model by default. Override with OPENAI_MODEL in .env
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
+// --- App setup ---
 const app = express();
 app.use(cors());
-app.use(bodyParser.json());
+app.use(express.json());
 
-// --- health ---
-app.get('/health', (_req, res) => {
-  res.json({ ok: true, body: 'ok' });
-});
+// --- In-memory store: sessionId -> [{ type, text, ts }]
+// Note: process memory only (good for dev). We'll swap later for a DB.
+const MEM = new Map();
+const now = () => Date.now();
 
-// --- ultra-simple in-memory "memory" per session ---
-const mem = new Map();
-function sidFrom(req) {
-  return req.get('X-Session-ID') || 'default';
+function getSessionId(req) {
+  // UI sends nothing; curl examples pass X-Session-ID
+  // We also allow ?session=... for quick tests.
+  return (
+    (req.headers["x-session-id"] || "").toString().trim() ||
+    (req.query.session || "").toString().trim() ||
+    "default"
+  );
 }
 
-app.get('/memory/status', (req, res) => {
-  const sid = sidFrom(req);
-  const items = mem.get(sid) || [];
-  res.json({ ok: true, count: items.length });
+function listMemory(sessionId) {
+  return MEM.get(sessionId) || [];
+}
+function saveMemory(sessionId, items) {
+  const arr = MEM.get(sessionId) || [];
+  for (const it of items) {
+    if (!it || !it.text) continue;
+    arr.push({
+      type: (it.type || "note").toString(),
+      text: it.text.toString(),
+      ts: it.ts || now(),
+    });
+  }
+  MEM.set(sessionId, arr);
+  return arr.length;
+}
+
+// --- Health ---
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, body: "ok" });
 });
 
-app.post('/memory/save', (req, res) => {
-  const sid = sidFrom(req);
-  const { type = 'answer', text = '' } = req.body || {};
-  const items = mem.get(sid) || [];
-  items.push({ type, text, ts: Date.now() });
-  mem.set(sid, items);
-  res.json({ ok: true, saved: 1 });
+// --- Memory: save ---
+app.post("/memory/save", (req, res) => {
+  const sessionId = getSessionId(req);
+  const body = req.body || {};
+  const items = Array.isArray(body) ? body : [body];
+  const count = saveMemory(sessionId, items);
+  res.json({ ok: true, saved: items.filter(i => i && i.text).length, session: sessionId, count });
 });
 
-// --- main ask endpoint ---
-// expects JSON: { "question": "<string>" }
-app.post('/ask', async (req, res) => {
+// --- Memory: status (count only) ---
+app.get("/memory/status", (req, res) => {
+  const sessionId = getSessionId(req);
+  res.json({ ok: true, session: sessionId, count: listMemory(sessionId).length });
+});
+
+// --- Memory: list (all items) ---
+app.get("/memory/list", (req, res) => {
+  const sessionId = getSessionId(req);
+  res.json({ ok: true, session: sessionId, items: listMemory(sessionId) });
+});
+
+// --- Ask: include session memory in the prompt ---
+app.post("/ask", async (req, res) => {
   try {
-    const { question } = req.body || {};
-    if (typeof question !== 'string' || !question.trim()) {
-      return res.status(400).json({ error: "Missing 'question' (string)." });
+    const sessionId = getSessionId(req);
+    // Frontend sends { question }
+    const question = (req.body && req.body.question ? String(req.body.question) : "").trim();
+    if (!question) {
+      return res.status(400).json({ error: "Missing 'question' in JSON body." });
     }
 
-    const sid = sidFrom(req);
+    const memoryItems = listMemory(sessionId);
+    const memoryBlock =
+      memoryItems.length === 0
+        ? "No saved notes for this session."
+        : `Saved session notes (treat as user-provided facts; prefer them when relevant):\n` +
+          memoryItems.map((m, i) => `- (${i + 1}) [${m.type}] ${m.text}`).join("\n");
 
-    const chat = await openai.chat.completions.create({
-      model: MODEL,
-      temperature: 0.3,
-      max_tokens: 220,
+    const systemPrompt = `
+You are GarvanGPT — a cautious, concise pharmacist assistant.
+Only give general information, not personal medical advice.
+Always include safety cautions when appropriate.
+Use the session notes below if relevant; they are trusted, user-provided facts.
+
+${memoryBlock}
+`.trim();
+
+    // Call the model
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
       messages: [
-        {
-          role: 'system',
-          content:
-            'You are a cautious, concise pharmacist assistant. Provide brief, clear answers with sensible cautions.',
-        },
-        { role: 'user', content: question.trim() },
+        { role: "system", content: systemPrompt },
+        { role: "user", content: question },
       ],
+      temperature: 0.2,
     });
 
     const answer =
-      chat?.choices?.[0]?.message?.content?.trim() ||
-      "Sorry — I couldn't draft a response.";
+      completion?.choices?.[0]?.message?.content?.trim() ||
+      "Sorry, I couldn’t generate a response.";
 
-    // include the session id we used so you can see it in DevTools if needed
-    res.json({ answer, usedSessionId: sid });
+    res.json({ answer, usedSessionId: sessionId });
   } catch (err) {
-    console.error('ASK error:', err);
-    res.status(500).json({ error: 'Server error.' });
+    console.error("ASK_ERROR:", err?.response?.data || err);
+    res.status(500).json({ error: "Failed to generate answer." });
   }
 });
 
-// --- start server ---
+// --- Start server ---
 const PORT = process.env.PORT || 3001;
 app.listen(PORT, () => {
   console.log(`✅ API running at http://localhost:${PORT}`);

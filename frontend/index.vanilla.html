@@ -1,0 +1,85 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <title>GarvanGPT — Pharmacist Avatar</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <style>
+    :root { font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji","Segoe UI Emoji"; }
+    body { margin: 0; background: #0b1020; color: #eef2ff; }
+    .wrap { max-width: 860px; margin: 32px auto; padding: 0 16px; }
+    h1 { margin: 0 0 8px; font-size: 28px; }
+    .sub { color: #a5b4fc; margin-bottom: 24px; }
+    .row { display: grid; grid-template-columns: 1fr auto; gap: 12px; }
+    textarea { width: 100%; min-height: 110px; padding: 12px; border-radius: 10px; background: #0f172a; color: #e2e8f0; border: 1px solid #243257; resize: vertical; }
+    button { padding: 12px 16px; border-radius: 10px; border: 0; background: #4f46e5; color: white; font-weight: 600; cursor: pointer; }
+    button:disabled { opacity: .6; cursor: not-allowed; }
+    .out { margin-top: 20px; padding: 16px; background: #0f172a; border: 1px solid #243257; border-radius: 10px; white-space: pre-wrap; line-height: 1.5; }
+    .ctx { margin-top: 10px; color: #94a3b8; font-size: 12px; }
+    .ok { color: #22c55e; font-weight: 600; }
+    .err { color: #f87171; font-weight: 600; }
+    a { color: #a5b4fc; }
+  </style>
+</head>
+<body>
+  <div class="wrap">
+    <h1>GarvanGPT — Pharmacist Avatar</h1>
+    <div class="sub">Ask a question. The backend is your local API at <code>http://localhost:3001</code>.</div>
+
+    <div class="row">
+      <textarea id="q" placeholder="e.g., What are the main side effects of Efexor XL?"></textarea>
+      <button id="ask">Ask</button>
+    </div>
+
+    <div class="ctx" id="status">Status: <span>checking…</span></div>
+
+    <div class="out" id="a" hidden></div>
+  </div>
+
+<script>
+(async function() {
+  const API = "http://localhost:3001";
+  const qEl = document.getElementById('q');
+  const aEl = document.getElementById('a');
+  const btn = document.getElementById('ask');
+  const statusEl = document.getElementById('status').querySelector('span');
+
+  // health check
+  try {
+    const r = await fetch(API + "/health");
+    statusEl.textContent = r.ok ? "backend OK" : "backend not responding";
+    statusEl.className = r.ok ? "ok" : "err";
+  } catch {
+    statusEl.textContent = "backend not reachable";
+    statusEl.className = "err";
+  }
+
+  btn.addEventListener('click', async () => {
+    const question = (qEl.value || "").trim();
+    if (!question) { qEl.focus(); return; }
+
+    btn.disabled = true;
+    btn.textContent = "Thinking…";
+    aEl.hidden = false;
+    aEl.textContent = "Waiting for GarvanGPT…";
+
+    try {
+      const res = await fetch(API + "/ask", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ question })
+      });
+      if (!res.ok) throw new Error("HTTP " + res.status);
+      const data = await res.json();
+      aEl.textContent = data.answer || "(no answer)";
+    } catch (err) {
+      aEl.textContent = "Error: " + (err.message || err);
+    } finally {
+      btn.disabled = false;
+      btn.textContent = "Ask";
+    }
+  });
+})();
+</script>
+</body>
+</html>

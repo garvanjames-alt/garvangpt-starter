@@ -1,298 +1,296 @@
+// src/App.jsx
 import React, { useEffect, useRef, useState } from "react";
+import Avatar from "./Avatar.jsx";
+import VoiceChat from "./VoiceChat.jsx";
 
-// Where the backend lives (Vite can override with VITE_API_URL)
-const API_BASE = (import.meta && import.meta.env && import.meta.env.VITE_API_URL) || "http://localhost:3001";
+/**
+ * App: GarvanGPT — Almost Human
+ * - Lists memories (GET/POST/DELETE /api/memory)
+ * - Asks backend for an answer (POST /api/respond)
+ * - Shows which memories were used, with cosine scores
+ * - Pulses the avatar mouth briefly when a new answer arrives
+ */
 
-/* --- Typewriter helper ---
-   Emits the full text-so-far every tick.
-   Returns a cancel() function. */
-function typeInto(fullText, { chunkSize = 3, intervalMs = 18, onChunk, onDone }) {
-  let i = 0;
-  const id = setInterval(() => {
-    const next = fullText.slice(0, i + chunkSize);
-    if (next.length === 0) {
-      clearInterval(id);
-      onDone?.();
-      return;
-    }
-    onChunk(next);
-    i += chunkSize;
-    if (i >= fullText.length) {
-      clearInterval(id);
-      onDone?.();
-    }
-  }, intervalMs);
-  return () => clearInterval(id);
-}
+const API_BASE = import.meta.env?.VITE_API_BASE || "/api";
 
 export default function App() {
-  // ---- Health check state + function (kept INSIDE the component; hooks must be here) ----
-  const [health, setHealth] = useState({ api: null, memory: null, error: null });
-  async function checkHealth() {
-    try {
-      const sid = sessionIdRef.current || "default";
-      const [hRes, mRes] = await Promise.all([
-        fetch(`${API_BASE}/health`),
-        fetch(`${API_BASE}/memory/status`, { headers: { "X-Session-ID": sid } }),
-      ]);
-      const h = await hRes.json().catch(() => ({}));
-      const m = await mRes.json().catch(() => ({}));
-      const apiOk = h && (h.ok === true || h.body === "ok");
-      const memCount = typeof m?.count === "number" ? m.count : null;
-      setHealth({ api: apiOk, memory: memCount, error: null });
-    } catch (e) {
-      setHealth({ api: false, memory: null, error: String(e) });
-    }
-  }
+  // --- UI state
+  const [memories, setMemories] = useState([]); // [{id,text}]
+  const [newMemory, setNewMemory] = useState("");
+  const [prompt, setPrompt] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  // ---- Core UI state ----
-  const [input, setInput] = useState("");
-  const [messages, setMessages] = useState([]);
-  const [status, setStatus] = useState("connecting...");
-  const [sessionId, setSessionId] = useState("");
-  const [count, setCount] = useState(0);
-  const [isTyping, setIsTyping] = useState(false);
+  // RAG debug
+  const [usedMemories, setUsedMemories] = useState([]); // ['id', ...]
+  const [usedDetails, setUsedDetails] = useState([]);   // [{id,text,score}]
+  const [rawResp, setRawResp] = useState(null);
 
-  const sessionIdRef = useRef(null);
-  const endRef = useRef(null);
-  const cancelTypeRef = useRef(null); // cancel any running typewriter
+  // Score filter slider
+  const [minScore, setMinScore] = useState(0.0);
 
-  // ---- Session boot ----
+  // Avatar mouth pulse
+  const [speaking, setSpeaking] = useState(false);
+  const speakTimer = useRef(null);
+
   useEffect(() => {
-    const sid =
-      "web-" +
-      Math.random().toString(36).slice(2, 8) +
-      Math.random().toString(36).slice(2, 5);
-    setSessionId(sid);
-    sessionIdRef.current = sid;
-    setStatus("backend ?");
-    // Auto health check on load
-    checkHealth().then(() => setStatus("backend OK")).catch(() => setStatus("backend ?"));
+    refreshMemories();
+    return () => {
+      if (speakTimer.current) clearTimeout(speakTimer.current);
+    };
   }, []);
 
-  // ---- Scroll to bottom when messages change ----
-  useEffect(() => {
-    endRef.current?.scrollIntoView({ behavior: "smooth" });
-  }, [messages, isTyping]);
-
-  // ---- Memory helpers ----
-  async function refreshCount() {
-    const r = await fetch(`${API_BASE}/memory/status`, {
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await r.json();
-    setCount(Number(data.count || 0));
-  }
-
-  async function loadMemory() {
-    const r = await fetch(`${API_BASE}/memory/list`, {
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await r.json();
-    const items = Array.isArray(data.items) ? data.items : [];
-    // Show as messages
-    const restored = items.map((it) => ({
-      role: it.type === "answer" ? "assistant" : "user",
-      content: String(it.text || ""),
-    }));
-    setMessages(restored);
-  }
-
-  async function clearMemory() {
-    await fetch(`${API_BASE}/memory/clear`, {
-      method: "POST",
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    setMessages([]);
-    setCount(0);
-  }
-
-  async function exportJSON() {
-    const r = await fetch(`${API_BASE}/memory/list`, {
-      headers: { "X-Session-ID": sessionIdRef.current },
-    });
-    const data = await r.json();
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `memory-${sessionIdRef.current}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }
-
-  // ---- Ask flow ----
-  async function handleAsk() {
-    const q = input.trim();
-    if (!q) return;
-
-    // stop any previous typer
-    if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} finally { cancelTypeRef.current = null; } }
-
-    setMessages((prev) => [...prev, { role: "user", content: q }, { role: "assistant", content: "" }]);
-    setInput("");
-    setIsTyping(true);
-
+  // ---- API helpers
+  async function refreshMemories() {
     try {
-      // Save question
-      await fetch(`${API_BASE}/memory/save`, {
-        method: "POST",
-        headers: {
-          Origin: window.location.origin,
-          "Content-Type": "application/json",
-          "X-Session-ID": sessionIdRef.current,
-        },
-        body: JSON.stringify({ type: "question", text: q }),
-      });
-
-      // Ask backend
-      const r = await fetch(`${API_BASE}/respond`, {
-        method: "POST",
-        headers: {
-          Origin: window.location.origin,
-          "Content-Type": "application/json",
-          "X-Session-ID": sessionIdRef.current,
-        },
-        body: JSON.stringify({ prompt: q }),
-      });
-
+      const r = await fetch(`${API_BASE}/memory`, { cache: "no-store" });
       const data = await r.json();
-      const fullAnswer = data.reply ?? data.answer ?? String(data.body ?? "");
-
-      // Stream into UI with overlap-safe writer
-      cancelTypeRef.current = typeInto(fullAnswer, {
-        chunkSize: 3,
-        intervalMs: 18,
-        onChunk: (chunk) => {
-          setMessages((prev) => {
-            const copy = [...prev];
-            const i = copy.length - 1; // assistant bubble
-            const prevText = copy[i].content || "";
-
-            // If 'chunk' is full text so far, just set it. If it's delta, append only the non-overlapping tail.
-            if (chunk.startsWith(prevText)) {
-              copy[i].content = chunk;
-            } else {
-              let overlap = 0;
-              const maxK = Math.min(prevText.length, chunk.length);
-              for (let k = maxK; k > 0; k--) {
-                if (prevText.endsWith(chunk.slice(0, k))) { overlap = k; break; }
-              }
-              copy[i].content = prevText + chunk.slice(overlap);
-            }
-            return copy;
-          });
-        },
-        onDone: async () => {
-          setIsTyping(false);
-          cancelTypeRef.current = null;
-          await fetch(`${API_BASE}/memory/save`, {
-            method: "POST",
-            headers: {
-              Origin: window.location.origin,
-              "Content-Type": "application/json",
-              "X-Session-ID": sessionIdRef.current,
-            },
-            body: JSON.stringify({ type: "answer", text: fullAnswer }),
-          });
-          await refreshCount();
-        },
-      });
-    } catch (err) {
-      setIsTyping(false);
-      cancelTypeRef.current = null;
-      setMessages((prev) => {
-        const copy = [...prev];
-        const i = copy.length - 1;
-        copy[i] = { role: "assistant", content: "⚠️ Error fetching response." };
-        return copy;
-      });
+      setMemories(data?.items || []);
+    } catch (e) {
+      console.error("Failed to load memories", e);
     }
   }
 
-  // ---- Render ----
+  async function addMemory(e) {
+    e?.preventDefault();
+    const text = newMemory.trim();
+    if (!text) return;
+    try {
+      await fetch(`${API_BASE}/memory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      setNewMemory("");
+      refreshMemories();
+    } catch (e) {
+      console.error("Add memory failed", e);
+    }
+  }
+
+  async function clearMemories() {
+    if (!confirm("Delete all memories?")) return;
+    try {
+      await fetch(`${API_BASE}/memory`, { method: "DELETE" });
+      refreshMemories();
+    } catch (e) {
+      console.error("Clear memories failed", e);
+    }
+  }
+
+  async function askBackend(e) {
+    e?.preventDefault();
+    const p = prompt.trim();
+    if (!p) return;
+    setLoading(true);
+    try {
+      const r = await fetch(`${API_BASE}/respond`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: p }),
+      });
+      const data = await r.json();
+      setRawResp(data || null);
+
+      // core fields
+      setAnswer(data?.answer || "");
+
+      // details from enhanced backend (id,text,score)
+      const details = Array.isArray(data?.used_details) ? data.used_details : [];
+
+      // fallback: if backend didn’t send details, synthesize from ids we got
+      const ids = Array.isArray(data?.used_memories) ? data.used_memories : [];
+      setUsedMemories(ids);
+      if (details.length) {
+        setUsedDetails(details);
+      } else {
+        // map ids -> text, score=NaN
+        const m = new Map(memories.map((x) => [x.id, x.text]));
+        setUsedDetails(ids.map((id) => ({ id, text: m.get(id) || "", score: NaN })));
+      }
+
+      // pulse the avatar mouth ~1.2s
+      if (speakTimer.current) clearTimeout(speakTimer.current);
+      setSpeaking(true);
+      speakTimer.current = setTimeout(() => setSpeaking(false), 1200);
+    } catch (e) {
+      console.error("Ask failed", e);
+      setAnswer("Sorry — something went sideways talking to the backend.");
+      setUsedMemories([]);
+      setUsedDetails([]);
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  // derived view of details after minScore filter
+  const filteredDetails = usedDetails.filter((d) =>
+    Number.isFinite(d.score) ? d.score >= minScore : true
+  );
+
   return (
-    <div style={{ padding: 24, fontFamily: "system-ui, -apple-system, Segoe UI, Roboto, sans-serif" }}>
-      <h1 style={{ fontSize: 42, margin: "0 0 8px" }}>GarvanGPT — Pharmacist</h1>
+    <div className="app">
+      <header className="header">
+        <h1>GarvanGPT — Almost Human</h1>
+        <div className="subtle">
+          API base: <code>(proxy via Vite)</code> · local dev UI → <code>backend</code>{" "}
+          <code>/api</code>
+        </div>
+      </header>
 
-      <div style={{ marginBottom: 16, color: "#334" }}>
-        Status: <span style={{ color: health.api ? "green" : "#999" }}>{status}</span> •{" "}
-        Session: <code>{sessionId}</code> • API at <code>{API_BASE}</code>
-      </div>
-
-      {/* ---- Ask box ---- */}
-      <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-        <input
-          style={{ flex: 1, padding: 10, borderRadius: 8, border: "1px solid #ccc" }}
-          placeholder="e.g., What are the main side effects of Efexor XL?"
-          value={input}
-          onChange={(e) => setInput(e.target.value)}
-          onKeyDown={(e) => {
-            if (e.key === "Enter" && !e.shiftKey) { e.preventDefault(); handleAsk(); }
-          }}
-        />
-        <button onClick={handleAsk} disabled={isTyping}>Ask</button>
-        {isTyping && <button onClick={() => { if (cancelTypeRef.current) { try { cancelTypeRef.current(); } catch {} } setIsTyping(false); }}>Stop</button>}
-      </div>
-
-      {/* ---- Health Check UI ---- */}
-      <div style={{ display: "flex", gap: 8, alignItems: "center", margin: "8px 0" }}>
-        <button onClick={checkHealth}>Health check</button>
-        {health.api !== null && (
-          <span>
-            API: <strong style={{ color: health.api ? "green" : "red" }}>{health.api ? "OK" : "DOWN"}</strong>
-            {"  "}• Memory items: <strong>{health.memory ?? "—"}</strong>
-            {health.error && <span style={{ color: "crimson" }}> • {health.error}</span>}
-          </span>
-        )}
-      </div>
-
-      {/* ---- Memory controls ---- */}
-      <div style={{ marginBottom: 20 }}>
-        <strong>Memory:</strong>{" "}
-        <button onClick={loadMemory}>Load memory</button>
-        <button onClick={refreshCount} style={{ marginLeft: 8 }}>Refresh count</button>
-        <span style={{ marginLeft: 8 }}>(items: {count})</span>
-        <button onClick={clearMemory} style={{ background: "#fce4ec", marginLeft: 8 }}>Clear memory</button>
-        <button onClick={exportJSON} style={{ marginLeft: 8 }}>Export JSON</button>
-      </div>
-
-      {/* ---- Transcript ---- */}
-      <div style={{
-        background: "#f8f9fa",
-        padding: 20,
-        borderRadius: 10,
-        minHeight: 300,
-        maxHeight: 460,
-        overflow: "auto",
-        border: "1px solid #e2e5e7"
-      }}>
-        {messages.map((m, i) => (
-          <div key={i} style={{
-            marginBottom: 10, padding: 10, borderRadius: 8,
-            background: m.role === "user" ? "rgba(0,128,255,.08)" : "rgba(0,255,128,.08)"
-          }}>
-            <strong>{m.role}</strong>
-            <p style={{ whiteSpace: "pre-wrap", margin: 0 }}>{m.content}</p>
+      {/* Avatar preview */}
+      <section className="card">
+        <h2>Avatar (preview)</h2>
+        <div className="row">
+          <Avatar role="Pharmacist" speaking={speaking} />
+          <div className="muted">
+            Static preview — mouth animation pulses briefly when a reply arrives.
           </div>
-        ))}
+        </div>
+      </section>
 
-        {/* typing indicator */}
-        {isTyping && (
-          <div style={{ opacity: .8, fontStyle: "italic", padding: "4px 8px" }}>
-            assistant is typing<span className="dots">…</span>
+      {/* Memories */}
+      <section className="card">
+        <h2>Memories</h2>
+        <form className="row gap" onSubmit={addMemory}>
+          <input
+            value={newMemory}
+            onChange={(e) => setNewMemory(e.target.value)}
+            placeholder="Add a memory…"
+          />
+          <button type="submit">Add</button>
+          <button type="button" onClick={clearMemories}>
+            Clear
+          </button>
+        </form>
+
+        <ul className="list">
+          {memories.map((m) => (
+            <li key={m.id}>
+              <span>{m.text}</span>
+              <small className="idtag">{m.id}</small>
+            </li>
+          ))}
+        </ul>
+      </section>
+
+      {/* Ask / Respond */}
+      <section className="card">
+        <h2>Ask / Respond</h2>
+        <form onSubmit={askBackend} className="col gap">
+          <textarea
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+            placeholder="Ask the Almost Human avatar…"
+            rows={3}
+          />
+          <div className="row gap wrap">
+            <button type="submit" disabled={loading}>
+              {loading ? "Thinking…" : "Ask"}
+            </button>
+            <button
+              type="button"
+              onClick={() => {
+                setPrompt("");
+                setAnswer("");
+                setUsedMemories([]);
+                setUsedDetails([]);
+              }}
+            >
+              Reset
+            </button>
+          </div>
+        </form>
+
+        {/* Score filter only visible when we have details */}
+        {usedDetails.length > 0 && (
+          <div className="row gap center">
+            <label className="muted">Min score: {minScore.toFixed(2)}</label>
+            <input
+              type="range"
+              min="0"
+              max="1"
+              step="0.01"
+              value={minScore}
+              onChange={(e) => setMinScore(parseFloat(e.target.value))}
+              style={{ width: 320 }}
+            />
+            <small className="muted">
+              showing {filteredDetails.length}/{usedDetails.length}
+            </small>
           </div>
         )}
-        <div ref={endRef} />
-      </div>
 
-      {/* tiny inline animation for the typing dots */}
+        <div className="answer">
+          <h3>Answer</h3>
+          <p>{answer || "—"}</p>
+
+          {/* Used memories pills */}
+          {usedDetails.length > 0 && (
+            <>
+              <div className="muted">Used memories</div>
+              <div className="pills">
+                {filteredDetails.map((u) => (
+                  <span key={u.id} className="pill">
+                    {u.id}
+                    {Number.isFinite(u.score) && (
+                      <span className="score">{u.score.toFixed(3)}</span>
+                    )}
+                  </span>
+                ))}
+              </div>
+            </>
+          )}
+        </div>
+
+        {/* Debug block */}
+        <details>
+          <summary>Raw response (debug)</summary>
+          <pre>{JSON.stringify(rawResp, null, 2)}</pre>
+        </details>
+      </section>
+
+      {/* Realtime voice */}
+      <section className="card">
+        <h2>Realtime Voice (beta)</h2>
+        <VoiceChat />
+      </section>
+
+      {/* minimal styles */}
       <style>{`
-        @keyframes blink { 0%{opacity:.2} 20%{opacity:1} 100%{opacity:.2} }
-        .dots::after { content: '…'; animation: blink 1.2s infinite; }
-        button { padding: 8px 12px; border-radius: 8px; border: 1px solid #ccd; background:#fff; }
-        button:disabled { opacity: .6; }
-        input, button { font-size: 14px; }
+        :root { --bg:#0b0c10; --fg:#e8eef2; --muted:#9aa7b2; --card:#14171c; --pill:#1f2430; --accent:#2f7cf6; }
+        * { box-sizing:border-box; }
+        body { margin:0; background:var(--bg); color:var(--fg); font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+        .app { max-width: 920px; margin: 24px auto 80px; padding: 0 16px; }
+        .header h1 { margin: 0 0 6px; font-size: 40px; letter-spacing: 0.2px; }
+        .subtle { color: var(--muted); font-size: 14px; margin-bottom: 6px; }
+        .muted { color: var(--muted); }
+        .card { background: var(--card); border: 1px solid #1b1f26; border-radius: 14px; padding: 16px 18px; margin: 18px 0; }
+        .row { display:flex; align-items:center; gap:14px; }
+        .col { display:flex; flex-direction:column; }
+        .gap { gap: 10px; }
+        .wrap { flex-wrap: wrap; }
+        .center { align-items: center; }
+        input[type="text"], input[type="search"], textarea, input:not([type]) {
+          width: 100%; background: #0f1318; color: var(--fg); border: 1px solid #202531; padding: 10px 12px; border-radius: 10px;
+        }
+        input[type="range"] { accent-color: var(--accent); }
+        button {
+          background: #0f141a; color: var(--fg); border: 1px solid #232a36; padding: 9px 14px;
+          border-radius: 10px; cursor: pointer;
+        }
+        button:hover { border-color:#2b3445; }
+        .list { list-style: disc; margin: 12px 0 0 22px; padding: 0; }
+        .list li { margin: 10px 0; }
+        .idtag { margin-left: 10px; color: var(--muted); }
+        .answer { margin-top: 12px; }
+        .answer h3 { margin: 0 0 8px; }
+        .pills { display:flex; gap:8px; flex-wrap:wrap; margin-top: 8px; }
+        .pill {
+          display:inline-flex; align-items:center; gap:8px; background: var(--pill);
+          border: 1px solid #2a3140; border-radius: 999px; padding: 6px 10px; font-size: 12px;
+        }
+        .pill .score { color: #9ad0ff; font-weight: 600; }
       `}</style>
     </div>
   );

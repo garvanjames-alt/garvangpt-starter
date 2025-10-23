@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "type": "module",
   "scripts": {
-    "start": "node index.js"
+    "start": "node index.cjs"
   },
   "dependencies": {
     "@chroma-core/default-embed": "^0.1.8",
@@ -17,6 +17,7 @@
     "express": "^5.1.0",
     "lowdb": "^7.0.1",
     "markdown-it": "^14.1.0",
+    "morgan": "^1.10.1",
     "node-fetch": "^3.3.2",
     "openai": "^4.104.0",
     "pdf-parse": "1.1.1",

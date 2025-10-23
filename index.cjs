@@ -1,127 +1,238 @@
 // backend/index.cjs
-// Minimal Express API for GarvanGPT — dev-friendly and resilient
+// GarvanGPT — Almost Human (MVP backend)
+// Express API + simple RAG (embeddings + cosine) with Top-K control.
 
 require("dotenv").config();
 
+const fs = require("fs");
 const path = require("path");
 const express = require("express");
-const cors = require("cors");
+const morgan = require("morgan");
+const OpenAI = require("openai");
 
-const app = express();
-const PORT = Number(process.env.PORT || 3001);
+// ---------- Config ----------
+const PORT = process.env.PORT || 3001;
+const MODEL = process.env.MODEL || "gpt-4o-mini";
+const EMB_MODEL = process.env.EMB_MODEL || "text-embedding-3-small";
+const MEMORY_PATH = path.join(__dirname, "memory.jsonl");
 
-// --- Boot log ---------------------------------------------------------------
-console.log(
-  ">>> BOOT:",
-  path.join(__dirname, path.basename(__filename)),
-  "PID:",
-  process.pid
-);
-
-// --- Middleware -------------------------------------------------------------
-app.use(
-  cors({
-    origin: process.env.CORS_ORIGIN || /http:\/\/localhost:\d+/, // dev
-  })
-);
-app.use(express.json({ limit: "1mb" }));
-
-// --- Diagnostics ------------------------------------------------------------
-app.get("/__whoami", (_req, res) => {
-  res.json({ file: path.join(__dirname, path.basename(__filename)), pid: process.pid });
+// ---------- OpenAI ----------
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
 });
 
-app.get("/api/health", (_req, res) => res.json({ ok: true }));
-
-// --- Tiny in-memory "memories" store (dev only) ----------------------------
-let __MEM__ = [];
-
-function addMemory(text) {
-  const t = String(text || "").trim();
-  if (!t) return { ok: false, error: "text required" };
-  __MEM__.push({ text: t, createdAt: new Date().toISOString() });
-  return { ok: true };
+// ---------- Helpers ----------
+function safeParse(line) {
+  try {
+    return JSON.parse(line);
+  } catch {
+    return null;
+  }
 }
 
-// Add (singular + plural)
-app.post("/api/memory", (req, res) => {
-  const out = addMemory(req.body && req.body.text);
-  if (!out.ok) return res.status(400).json(out);
-  res.json(out);
+function cosine(a, b) {
+  if (!Array.isArray(a) || !Array.isArray(b) || a.length !== b.length) return 0;
+  let dot = 0,
+    na = 0,
+    nb = 0;
+  for (let i = 0; i < a.length; i++) {
+    const x = a[i] || 0;
+    const y = b[i] || 0;
+    dot += x * y;
+    na += x * x;
+    nb += y * y;
+  }
+  if (!na || !nb) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
+
+async function embed(text) {
+  const res = await openai.embeddings.create({
+    model: EMB_MODEL,
+    input: text,
+  });
+  return res.data[0].embedding;
+}
+
+function nowTs() {
+  return Date.now().toString();
+}
+
+// ---------- Memory Store ----------
+let MEMORY = [];
+function loadMemoryFromDisk() {
+  MEMORY = [];
+  if (!fs.existsSync(MEMORY_PATH)) return;
+  const lines = fs.readFileSync(MEMORY_PATH, "utf8").split("\n").filter(Boolean);
+  for (const line of lines) {
+    const rec = safeParse(line);
+    if (rec && rec.id && typeof rec.text === "string") MEMORY.push(rec);
+  }
+}
+function appendMemoryToDisk(rec) {
+  fs.appendFileSync(MEMORY_PATH, JSON.stringify(rec) + "\n");
+}
+
+// Initial load
+loadMemoryFromDisk();
+
+// ---------- Express ----------
+const app = express();
+app.use(express.json({ limit: "1mb" }));
+app.use(morgan("dev"));
+
+// ---------- Routes ----------
+app.get("/health", (req, res) => {
+  res.set("Cache-Control", "no-store");
+  res.json({ ok: true, service: "GarvanGPT", ts: Date.now() });
 });
-app.post("/api/memories", (req, res) => {
-  const out = addMemory(req.body && req.body.text);
-  if (!out.ok) return res.status(400).json(out);
-  res.json(out);
+
+// GET memories
+app.get(["/api/memory", "/memory"], (req, res) => {
+  res.set("Cache-Control", "no-store");
+  // Only send id/text (embeddings stay server-side)
+  res.json({
+    items: MEMORY.map((m) => ({ id: m.id, text: m.text, ts: m.ts })),
+  });
 });
 
-// List (singular + plural)
-app.get("/api/memory/list", (_req, res) => res.json(__MEM__));
-app.get("/api/memories/list", (_req, res) => res.json(__MEM__));
+// POST memory
+app.post(["/api/memory", "/memory"], async (req, res) => {
+  try {
+    const text = (req.body?.text || "").toString().trim();
+    if (!text) return res.status(400).json({ error: "missing text" });
 
-// Clear (singular + plural)
-app.delete("/api/memory", (_req, res) => {
-  __MEM__ = [];
-  res.json({ ok: true });
-});
-app.delete("/api/memories", (_req, res) => {
-  __MEM__ = [];
-  res.json({ ok: true });
-});
+    const rec = {
+      id: nowTs(),
+      text,
+      ts: Date.now(),
+    };
 
-// --- /api/respond (router) --------------------------------------------------
-let respondHandler;
-try {
-  // Prefer external handler (OpenAI-backed)
-  respondHandler = require("./respondHandler.cjs");
-  console.log(
-    ">>> respondHandler: OpenAI mode (file:",
-    path.join(__dirname, "respondHandler.cjs"),
-    ")"
-  );
-} catch (err) {
-  console.log(
-    ">>> /api/respond no external handler found — using stub",
-    String(err && err.message ? "- " + err.message : "")
-  );
-
-  // Very small, safe stub so UI never looks empty in dev
-  respondHandler = function stubRespond(req, res) {
-    const question = (req.body && req.body.question) || "";
-    const minScore = (req.body && req.body.minScore) ?? null;
-    const q = String(question).toLowerCase();
-
-    if (q.includes("travel") && q.includes("vaccine")) {
-      return res.json({
-        answer:
-          "For travel, start 6–8 weeks before departure. Core considerations:\n" +
-          "• Routine: MMR, Tdap/Td, influenza, COVID up to date.\n" +
-          "• Hepatitis A: most travelers; 2‑dose series.\n" +
-          "• Typhoid: high‑risk food/water exposure or rural travel.\n" +
-          "• Hepatitis B: if sexual exposure, medical work, or long stay.\n" +
-          "• Yellow fever: only if required/recommended for destination; certificate may be needed.\n" +
-          "• Rabies pre‑exposure: remote areas, animal contact, limited access to PEP.\n" +
-          "• Malaria: not a vaccine—use region‑specific chemoprophylaxis and bite prevention.\n" +
-          "Always check your destination’s latest requirements and book a travel clinic consult.",
-        sources: [],
-        usedMemories: [],
-      });
+    // Compute embedding so it’s immediately retrievable
+    try {
+      rec.embedding = await embed(text);
+    } catch (e) {
+      // If embedding fails, still save; retrieval will skip non-embedded records
+      console.error("Embedding failed for new memory:", e?.message || e);
     }
 
-    res.json({
-      answer:
-        `I received your question: “${question}”. I’m running in “simple mode” right now (minScore: ${minScore ?? "?"}). Ask about travel vaccines, RSV, shingles, tetanus, or COVID boosters to see a fuller reply.`,
-      sources: [],
-      usedMemories: [],
+    MEMORY.push(rec);
+    appendMemoryToDisk(rec);
+
+    res.json({ id: rec.id });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "failed to add memory" });
+  }
+});
+
+// DELETE memories
+app.delete(["/api/memory", "/memory"], (req, res) => {
+  try {
+    fs.writeFileSync(MEMORY_PATH, "");
+    MEMORY = [];
+    res.json({ ok: true });
+  } catch (e) {
+    console.error(e);
+    res.status(500).json({ error: "failed to clear memory" });
+  }
+});
+
+// POST respond (RAG v2 with Top-K and used_details)
+app.post(["/api/respond", "/respond"], async (req, res) => {
+  try {
+    const prompt = (req.body?.prompt || "").toString().trim();
+    if (!prompt) return res.status(400).json({ error: "missing prompt" });
+
+    // 1) Embed the user query
+    const qVec = await embed(prompt);
+
+    // 2) Score each embedded memory by cosine similarity
+    const scored = [];
+    for (const m of MEMORY) {
+      if (Array.isArray(m.embedding)) {
+        scored.push({ m, score: cosine(qVec, m.embedding) });
+      }
+    }
+    scored.sort((a, b) => b.score - a.score);
+
+    // 3) Top-K slicing (default 4, min 1, max 8)
+    const topK = Math.max(1, Math.min(Number(req.body?.top_k) || 4, 8));
+    const top = scored.slice(0, topK);
+
+    const used = top.map((s) => s.m);
+    const usedDetails = top.map((s) => ({
+      id: s.m.id,
+      text: s.m.text,
+      score: s.score,
+    }));
+
+    // 4) Build the chat prompt with the retrieved snippets
+    const contextBlock =
+      used.length > 0
+        ? `Relevant memory snippets:\n${used
+            .map((u) => `- (${u.id}) ${u.text}`)
+            .join("\n")}\n\n`
+        : "";
+
+    const system =
+      "You are GarvanGPT (Pharmacist and AI Health Educator). " +
+      "Be concise, friendly, and evidence-aware. Do not diagnose or provide personalized medical advice. " +
+      "Encourage professional care for red flags. Where helpful, explain trade-offs and uncertainty. " +
+      "Tone: clear, kind, and pragmatic.";
+
+    const userMsg =
+      contextBlock +
+      "Using the relevant snippets (if any), answer the user's request clearly and briefly.\n\n" +
+      `User question: ${prompt}`;
+
+    // 5) Call the model
+    const out = await openai.chat.completions.create({
+      model: MODEL,
+      temperature: 0.3,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: userMsg },
+      ],
     });
-  };
-}
 
-app.post("/api/respond", respondHandler);
-// convenience alias (clients may call without /api in some setups)
-app.post("/respond", respondHandler);
+    const answer = (out.choices?.[0]?.message?.content || "—").trim();
 
-// --- Listen -----------------------------------------------------------------
+    // Optionally log for debugging
+    console.log(
+      "[retriever]",
+      prompt,
+      "->",
+      usedDetails.map((u) => `${u.id}:${u.score.toFixed(3)}`).join(", ")
+    );
+    console.log(
+      "[respond] used_memories =",
+      used.map((u) => u.id)
+    );
+
+    // 6) Return answer + used ids + scored details
+    res.json({
+      answer,
+      used_memories: used.map((u) => u.id),
+      used_details: usedDetails, // [{id,text,score}]
+    });
+  } catch (err) {
+    console.error(err);
+    res.status(500).json({ error: "failed to respond" });
+  }
+});
+
+// ---------- Startup ----------
 app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
+  console.log("✅ Registered routes:");
+  console.log("  GET    /health");
+  console.log("  GET    /api/memory   (alias: /memory)");
+  console.log("  POST   /api/memory   (alias: /memory)");
+  console.log("  DELETE /api/memory   (alias: /memory)");
+  console.log("  POST   /api/respond  (alias: /respond)");
+  console.log();
+  console.log(`GarvanGPT backend running at http://localhost:${PORT}`);
+  console.log(`Persona model: ${MODEL}`);
+  console.log(`Embedding model: ${EMB_MODEL}`);
+  console.log(`Loaded ${MEMORY.length} record(s) from ${path.basename(MEMORY_PATH)}`);
 });

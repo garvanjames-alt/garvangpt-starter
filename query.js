@@ -1,82 +1,124 @@
-// query.js — Ask questions against your ingested PDFs using Garvan's persona
+// backend/query.js
+// Tiny local RAG indexer + retriever (no embeddings). Reads ./data/*.txt|md
+// BM25-ish TF‑IDF scoring with quick sentence snippets.
 
-import dotenv from "dotenv";
-import fs from "fs";
-import OpenAI from "openai";
-import { ChromaClient } from "chromadb";
+const fs = require("fs");
+const path = require("path");
 
-dotenv.config();
-
-// === Load Persona ===
-const persona = JSON.parse(fs.readFileSync("./persona.json", "utf8"));
-
-// === Constants ===
-const COLLECTION_NAME = "ah_knowledge";
-const CHROMA_URL = "http://localhost:8000"; // ensure chroma docker is running
-
-// === Initialize Clients ===
-const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-const chroma = new ChromaClient({ path: CHROMA_URL });
-
-// === Helper: Build the persona-based prompt ===
-function buildPrompt(question, context) {
-  return `
-You are ${persona.name}, a ${persona.role} based in ${persona.background.location}.
-Speak with a ${persona.style.tone} tone and ${persona.style.humour} humour.
-Your communication style should be ${persona.style.formality} in formality.
-You uphold the values of ${persona.style.values.join(", ")}.
-Education: ${persona.background.education}.
-Interests: ${persona.background.interests.join(", ")}.
-You occasionally use expressions like: ${persona.catchphrases.join(" / ")}.
-
-Answer the following question truthfully and conversationally,
-based on the retrieved context from PDFs. If uncertain, state your reasoning clearly.
-
-Question: ${question}
-
-Relevant context:
-${context.map(c => c.pageContent).join("\n\n")}
-  `;
+// ---- Tokenizer (very lenient, ASCII fold-ish) ----
+function tokenize(s) {
+  return (s || "")
+    .toLowerCase()
+    .normalize("NFKD")
+    .replace(/[\u0300-\u036f]/g, "") // strip diacritics
+    .replace(/[^a-z0-9]+/g, " ")
+    .trim()
+    .split(/\s+/)
+    .filter(Boolean);
 }
 
-// === Main function ===
-async function main() {
-  const question = process.argv.slice(2).join(" ").trim() || "What is this document about?";
+// ---- Build index ----
+let _INDEX = null; // { docs: [...], df: Map, idf: Map, avgLen }
 
-  try {
-    const collection = await chroma.getOrCreateCollection({ name: COLLECTION_NAME });
+function buildIndex({ dataDir = path.join(__dirname, "data") } = {}) {
+  const files = fs
+    .readdirSync(dataDir)
+    .filter((f) => /\.(txt|md)$/i.test(f))
+    .sort();
 
-    // --- Build the embedding for the question with the SAME model used at ingest ---
-    const qEmb = await openai.embeddings.create({
-      model: "text-embedding-3-large",
-      input: [question],
-    });
-    const queryVec = qEmb.data[0].embedding;
+  const docs = [];
+  const df = new Map(); // term -> doc frequency
 
-    // --- Ask Chroma using the vector (not queryTexts) ---
-    const results = await collection.query({
-      nResults: 3,
-      queryEmbeddings: [queryVec],
-    });
+  for (const file of files) {
+    const full = path.join(dataDir, file);
+    const text = fs.readFileSync(full, "utf8");
 
-    const context = results.documents[0].map(text => ({ pageContent: text }));
-    const prompt = buildPrompt(question, context);
+    // Keep a line-broken version to craft snippets later
+    const lines = text.split(/\r?\n/);
 
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: "You are a knowledgeable and personable pharmacist." },
-        { role: "user", content: prompt },
-      ],
-      temperature: 0.7,
-    });
+    const tokens = tokenize(text);
+    const len = tokens.length || 1;
+    const tf = new Map();
+    for (const t of tokens) tf.set(t, (tf.get(t) || 0) + 1);
 
-    console.log("\n💊 GarvanGPT says:\n");
-    console.log(completion.choices[0].message.content);
-  } catch (err) {
-    console.error("⚠️ Error:", err);
+    // doc frequency update (unique terms only)
+    for (const t of new Set(tokens)) df.set(t, (df.get(t) || 0) + 1);
+
+    docs.push({ id: docs.length, file: `data/${file}`, text, lines, tokens, tf, len });
   }
+
+  const N = Math.max(1, docs.length);
+  const idf = new Map();
+  for (const [term, freq] of df.entries()) {
+    // BM25 idf: ln((N - df + 0.5)/(df + 0.5) + 1)
+    const val = Math.log((N - freq + 0.5) / (freq + 0.5) + 1);
+    idf.set(term, val > 0 ? val : 0.0001);
+  }
+
+  const avgLen = docs.reduce((a, d) => a + d.len, 0) / N;
+
+  _INDEX = { docs, df, idf, avgLen, N };
+  console.log(
+    `>>> RAG index built: { docs: ${N}, terms: ${idf.size}, avgLen: ${avgLen.toFixed(1)} }`
+  );
+  return _INDEX;
 }
 
-// === Run ===
-main();
+function ensureIndex() {
+  return _INDEX || buildIndex();
+}
+
+// ---- Scoring (BM25-ish) ----
+const k1 = 1.5;
+const b = 0.75;
+
+function scoreDoc(queryTokens, doc, idf) {
+  let score = 0;
+  for (const q of queryTokens) {
+    const f = doc.tf.get(q) || 0;
+    if (!f) continue;
+    const idfQ = idf.get(q) || 0;
+    const denom = f + k1 * (1 - b + (b * doc.len) / (ensureIndex().avgLen || 1));
+    score += idfQ * ((f * (k1 + 1)) / denom);
+  }
+  return score;
+}
+
+// ---- Snippet: choose line with most query terms; fall back to first 200 chars ----
+function bestSnippet(doc, queryTokens) {
+  const qset = new Set(queryTokens);
+  let best = "";
+  let bestHits = -1;
+  for (const line of doc.lines) {
+    const hits = tokenize(line).filter((t) => qset.has(t)).length;
+    if (hits > bestHits && line.trim().length > 0) {
+      bestHits = hits;
+      best = line.trim();
+    }
+  }
+  if (!best) {
+    best = doc.text.slice(0, 200).replace(/\s+/g, " ").trim();
+  }
+  return best;
+}
+
+// ---- Query API ----
+function queryDocs(query, { k = 5 } = {}) {
+  const idx = ensureIndex();
+  const qTokens = tokenize(query).slice(0, 40);
+  if (qTokens.length === 0) return [];
+
+  const scored = idx.docs.map((d) => ({ doc: d, raw: scoreDoc(qTokens, d, idx.idf) }));
+  scored.sort((a, b) => b.raw - a.raw);
+
+  // normalize to [0,1]
+  const max = Math.max(1e-9, scored[0]?.raw || 0);
+  const top = scored.slice(0, k).map(({ doc, raw }) => ({
+    file: doc.file,
+    score: raw / max,
+    snippet: bestSnippet(doc, qTokens),
+  }));
+  return top;
+}
+
+module.exports = { buildIndex, ensureIndex, queryDocs };

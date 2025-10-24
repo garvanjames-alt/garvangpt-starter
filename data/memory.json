@@ -1,0 +1,33 @@
+{
+  "sessions": {
+    "web-test1": [
+      {
+        "type": "note",
+        "text": "persist test 1",
+        "ts": 1760821476014
+      }
+    ],
+    "web-mys817": [
+      {
+        "type": "question",
+        "text": "what is efexor?",
+        "ts": 1760821568453
+      },
+      {
+        "type": "answer",
+        "text": "Efexor (venlafaxine) is an SNRI antidepressant used for depression and anxiety disorders. It works by increasing serotonin and norepinephrine. Always follow your prescriber’s directions.",
+        "ts": 1760821568455
+      },
+      {
+        "type": "question",
+        "text": "what is efexor?",
+        "ts": 1760821568462
+      },
+      {
+        "type": "answer",
+        "text": "Efexor (venlafaxine) is an SNRI antidepressant used for depression and anxiety disorders. It works by increasing serotonin and norepinephrine. Always follow your prescriber’s directions.",
+        "ts": 1760821568466
+      }
+    ]
+  }
+}

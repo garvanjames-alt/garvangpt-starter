@@ -1,27 +1,11 @@
 {
-  "name": "backend",
-  "version": "1.0.0",
+  "name": "garvangpt-starter-root",
+  "private": true,
   "type": "module",
   "scripts": {
-    "start": "node index.cjs"
+    "proxy": "node server.mjs"
   },
   "dependencies": {
-    "@chroma-core/default-embed": "^0.1.8",
-    "@pinecone-database/pinecone": "^6.1.2",
-    "@qdrant/js-client-rest": "^1.15.1",
-    "better-sqlite3": "^12.4.1",
-    "body-parser": "^2.2.0",
-    "chromadb": "^3.0.17",
-    "cors": "^2.8.5",
-    "dotenv": "^17.2.3",
-    "express": "^5.1.0",
-    "lowdb": "^7.0.1",
-    "markdown-it": "^14.1.0",
-    "morgan": "^1.10.1",
-    "node-fetch": "^3.3.2",
-    "openai": "^4.104.0",
-    "pdf-parse": "1.1.1",
-    "pdf-parse-fixed": "^1.1.1",
-    "uuid": "^13.0.0"
+    "http-proxy": "^1.18.1"
   }
 }

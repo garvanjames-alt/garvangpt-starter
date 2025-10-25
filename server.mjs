@@ -1,56 +1,78 @@
-// Lightweight dev proxy so the frontend (5175) can talk to the backend (3001)
-// via http://localhost:8080 for both HTTP (/api/*) and WebSocket (/realtime).
-// Run from the REPO ROOT:
-//   npm i http-proxy
-//   node server.mjs
+// server.mjs
+import express from "express";
+import cors from "cors";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import http from "node:http";
-import httpProxy from "http-proxy";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const TARGET = process.env.PROXY_TARGET || "http://localhost:3001"; // your backend
-const PORT = Number(process.env.PORT || 8080);
+const app = express();
+app.use(express.json());
 
-// Helpful in dev: allow Vite origin by default
-const DEV_ORIGIN = process.env.ALLOW_ORIGIN || "http://localhost:5175";
+// Allow your local dev and any *.onrender.com origins
+app.use(
+  cors({
+    origin: (origin, cb) => cb(null, true), // permissive; tighten later if you like
+    methods: ["GET", "POST", "DELETE"],
+  })
+);
 
-const proxy = httpProxy.createProxyServer({
-  target: TARGET,
-  ws: true,
-  changeOrigin: true,
-  secure: false,
-});
+// --- simple JSONL storage ---
+const MEMO_FILE = path.join(__dirname, "backend", "memory.jsonl");
 
-proxy.on("error", (err, req, res) => {
-  console.error("[proxy] error:", err?.message || err);
-  if (!res.headersSent) {
-    res.writeHead(502, { "Content-Type": "application/json" });
+function ensureFile() {
+  if (!fs.existsSync(MEMO_FILE)) {
+    fs.mkdirSync(path.dirname(MEMO_FILE), { recursive: true });
+    fs.writeFileSync(MEMO_FILE, "", "utf8");
   }
-  res.end(JSON.stringify({ ok: false, error: "proxy_error" }));
+}
+function readAll() {
+  ensureFile();
+  const raw = fs.readFileSync(MEMO_FILE, "utf8");
+  return raw
+    .split("\n")
+    .map((l) => l.trim())
+    .filter(Boolean)
+    .map((l) => {
+      try {
+        return JSON.parse(l);
+      } catch {
+        return null;
+      }
+    })
+    .filter(Boolean);
+}
+function appendItem(obj) {
+  ensureFile();
+  fs.appendFileSync(MEMO_FILE, JSON.stringify(obj) + "\n", "utf8");
+}
+function clearAll() {
+  ensureFile();
+  fs.writeFileSync(MEMO_FILE, "", "utf8");
+}
+
+// --- routes ---
+app.get("/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+
+// IMPORTANT: return a plain array so the frontend can JSON.parse into mem[]
+app.get("/memory", (_req, res) => {
+  res.json(readAll());
 });
 
-const server = http.createServer((req, res) => {
-  // Basic CORS for dev
-  res.setHeader("Access-Control-Allow-Origin", DEV_ORIGIN);
-  res.setHeader(
-    "Access-Control-Allow-Headers",
-    "Origin, X-Requested-With, Content-Type, Accept, Authorization"
-  );
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,PUT,PATCH,DELETE,OPTIONS");
-
-  if (req.method === "OPTIONS") {
-    res.writeHead(204);
-    return res.end();
-  }
-
-  // Forward everything to the backend
-  proxy.web(req, res, { target: TARGET });
+app.post("/memory", (req, res) => {
+  const text = String(req.body?.text || "").trim();
+  if (!text) return res.status(400).json({ error: "text is required" });
+  const item = { id: Date.now(), ts: new Date().toISOString(), text };
+  appendItem(item);
+  res.json({ ok: true, item });
 });
 
-server.on("upgrade", (req, socket, head) => {
-  // Forward WebSocket upgrades (used for /realtime)
-  proxy.ws(req, socket, head, { target: TARGET });
+app.delete("/memory", (_req, res) => {
+  clearAll();
+  res.json({ ok: true });
 });
 
-server.listen(PORT, () => {
-  console.log(`[proxy] listening on http://localhost:${PORT} -> ${TARGET}`);
-});
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));

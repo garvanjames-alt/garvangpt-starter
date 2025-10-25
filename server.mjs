@@ -1,71 +1,59 @@
-// server.mjs
 import express from "express";
 import cors from "cors";
 import fs from "fs";
 import path from "path";
-import { fileURLToPath } from "url";
-
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
 
 const app = express();
+const PORT = process.env.PORT || 10000;
+
+// Allow your deployed frontend origin
+const FRONTEND_ORIGIN = "https://garvangpt-frontend.onrender.com";
+
+app.use(cors({
+  origin: FRONTEND_ORIGIN, // strictly allow your static site
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type"],
+  credentials: false
+}));
+
+// Parse JSON request bodies
 app.use(express.json());
 
-// Allow your local dev and any *.onrender.com origins
-app.use(
-  cors({
-    origin: (origin, cb) => cb(null, true), // permissive; tighten later if you like
-    methods: ["GET", "POST", "DELETE"],
-  })
-);
+// --- simple file-backed memory store ---
+const DATA_FILE = path.join(process.cwd(), "backend", "memory.jsonl");
 
-// --- simple JSONL storage ---
-const MEMO_FILE = path.join(__dirname, "backend", "memory.jsonl");
-
-function ensureFile() {
-  if (!fs.existsSync(MEMO_FILE)) {
-    fs.mkdirSync(path.dirname(MEMO_FILE), { recursive: true });
-    fs.writeFileSync(MEMO_FILE, "", "utf8");
-  }
-}
 function readAll() {
-  ensureFile();
-  const raw = fs.readFileSync(MEMO_FILE, "utf8");
-  return raw
+  if (!fs.existsSync(DATA_FILE)) return [];
+  const lines = fs.readFileSync(DATA_FILE, "utf8")
     .split("\n")
-    .map((l) => l.trim())
     .filter(Boolean)
-    .map((l) => {
-      try {
-        return JSON.parse(l);
-      } catch {
-        return null;
-      }
-    })
-    .filter(Boolean);
+    .map(l => JSON.parse(l));
+  return lines;
 }
-function appendItem(obj) {
-  ensureFile();
-  fs.appendFileSync(MEMO_FILE, JSON.stringify(obj) + "\n", "utf8");
+
+function append(item) {
+  fs.mkdirSync(path.dirname(DATA_FILE), { recursive: true });
+  fs.appendFileSync(DATA_FILE, JSON.stringify(item) + "\n");
 }
+
 function clearAll() {
-  ensureFile();
-  fs.writeFileSync(MEMO_FILE, "", "utf8");
+  if (fs.existsSync(DATA_FILE)) fs.unlinkSync(DATA_FILE);
 }
 
 // --- routes ---
-app.get("/health", (_req, res) => res.json({ ok: true, ts: new Date().toISOString() }));
+app.get("/health", (req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString() });
+});
 
-// IMPORTANT: return a plain array so the frontend can JSON.parse into mem[]
-app.get("/memory", (_req, res) => {
-  res.json(readAll());
+app.get("/memory", (req, res) => {
+  res.json(readAll()); // return an array
 });
 
 app.post("/memory", (req, res) => {
-  const text = String(req.body?.text || "").trim();
+  const text = (req.body && req.body.text || "").trim();
   if (!text) return res.status(400).json({ error: "text is required" });
   const item = { id: Date.now(), ts: new Date().toISOString(), text };
-  appendItem(item);
+  append(item);
   res.json({ ok: true, item });
 });
 
@@ -74,5 +62,6 @@ app.delete("/memory", (_req, res) => {
   res.json({ ok: true });
 });
 
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`API listening on http://localhost:${PORT}`));
+app.listen(PORT, () => {
+  console.log(`Server listening on ${PORT}`);
+});

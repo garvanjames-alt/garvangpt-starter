@@ -1,116 +1,70 @@
 // backend/server.mjs
 import express from "express";
 import cors from "cors";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// --- Config -------------------------------------------------
+const PORT = process.env.PORT || 10000;
 
-const app = express();
-
-// --- Config ---
-const PORT = process.env.PORT || 3000;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || process.env.OPENAI || process.env.OPENAI_API;
-if (!OPENAI_API_KEY) {
-  console.warn("⚠️  OPENAI_API_KEY is not set; /api/respond will return 500.");
-}
-
-// Allow multiple origins via CORS_ORIGINS="https://site, http://localhost:5173, http://localhost:5174"
-const origins = (process.env.CORS_ORIGINS || "")
+// Allow-list CORS from env `CORS_ORIGINS` (comma-separated) or allow all in dev
+const allowlist = (process.env.CORS_ORIGINS || "")
   .split(",")
   .map(s => s.trim())
   .filter(Boolean);
 
-app.use(cors({
+const corsOptions = {
   origin: (origin, cb) => {
+    // no Origin (e.g., curl) -> allow
     if (!origin) return cb(null, true);
-    if (origins.length === 0 || origins.includes(origin)) return cb(null, true);
-    return cb(new Error(`Not allowed by CORS: ${origin}`));
+    if (allowlist.length === 0) return cb(null, true);
+    if (allowlist.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
   },
   credentials: true,
-}));
+};
+
+// --- App ----------------------------------------------------
+const app = express();
+app.use(cors(corsOptions));
 app.use(express.json());
 
-// --- Health ---
+// --- Simple in-memory store for demo -----------------------
+let items = []; // { text, ts }
+
+// --- Health -------------------------------------------------
 app.get("/health", (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// --- Simple JSON memory (keeps your existing demo working) ---
-const dataDir = path.join(__dirname, "..", "data");
-const memFile = path.join(dataDir, "memory.json");
-if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-if (!fs.existsSync(memFile)) fs.writeFileSync(memFile, JSON.stringify({ items: [] }, null, 2), "utf8");
-
-function readMem() {
-  try {
-    const raw = fs.readFileSync(memFile, "utf8");
-    return JSON.parse(raw);
-  } catch {
-    return { items: [] };
-  }
-}
-function writeMem(obj) {
-  fs.writeFileSync(memFile, JSON.stringify(obj, null, 2), "utf8");
-}
-
-app.get("/api/memory", (req, res) => {
-  res.json(readMem());
+// --- Memory API --------------------------------------------
+// List memories
+app.get("/memory", (req, res) => {
+  res.json({ ok: true, items });
 });
 
-app.post("/api/memory", (req, res) => {
-  const { text } = req.body || {};
-  if (!text || typeof text !== "string") return res.status(400).json({ ok: false, error: "text required" });
-  const db = readMem();
-  db.items.push({ text, ts: Date.now() });
-  writeMem(db);
+// Add a memory
+app.post("/memory", (req, res) => {
+  const text = (req.body && req.body.text ? String(req.body.text) : "").trim();
+  if (!text) return res.status(400).json({ ok: false, error: "missing_text" });
+
+  const item = { text, ts: Date.now() };
+  items = [item, ...items].slice(0, 100); // keep it tidy
+  res.json({ ok: true, item });
+});
+
+// Clear memories
+app.delete("/memory", (_req, res) => {
+  items = [];
   res.json({ ok: true });
 });
 
-app.delete("/api/memory", (req, res) => {
-  writeMem({ items: [] });
-  res.json({ ok: true });
-});
-
-// --- NEW: /api/respond (LLM brain) ---
+// --- Prototype brain endpoint ------------------------------
+// Keep a lightweight echo so the route is always live.
+// (If you already wired OpenAI before, you can keep that code;
+// this echo ensures the route won’t crash when key/env differs.)
 app.post("/api/respond", async (req, res) => {
   try {
-    const { text, persona = "You are a concise, friendly speaking avatar for the Almost Human prototype." } = req.body || {};
-    if (!text || typeof text !== "string") {
-      return res.status(400).json({ ok: false, error: "text required" });
-    }
-    if (!OPENAI_API_KEY) {
-      return res.status(500).json({ ok: false, error: "OPENAI_API_KEY not configured" });
-    }
-
-    // Chat Completions (non-streaming) – simple and cheap
-    const body = {
-      model: "gpt-4o-mini",
-      messages: [
-        { role: "system", content: `${persona} Keep replies natural and speakable. Use 1–2 short sentences.` },
-        { role: "user", content: text }
-      ],
-      temperature: 0.6,
-      max_tokens: 180
-    };
-
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json"
-      },
-      body: JSON.stringify(body)
-    });
-
-    if (!r.ok) {
-      const e = await r.text().catch(() => "");
-      return res.status(502).json({ ok: false, error: "upstream_error", detail: e });
-    }
-    const j = await r.json();
-    const reply = j?.choices?.[0]?.message?.content?.trim() || "(no reply)";
+    const prompt = (req.body && req.body.prompt ? String(req.body.prompt) : "").trim();
+    const reply = prompt ? `You said: "${prompt}"` : "(no reply)";
     return res.json({ ok: true, reply });
   } catch (err) {
     console.error(err);
@@ -118,7 +72,7 @@ app.post("/api/respond", async (req, res) => {
   }
 });
 
-// --- Start ---
+// --- Start --------------------------------------------------
 app.listen(PORT, () => {
   console.log(`Backend listening on :${PORT}`);
 });

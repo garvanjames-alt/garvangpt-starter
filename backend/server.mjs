@@ -1,96 +1,41 @@
-// backend/server.mjs
 import express from "express";
 import cors from "cors";
-import OpenAI from "openai";
 
-// --- Config ---------------------------------------------------
 const app = express();
-const PORT = process.env.PORT || 10000;
+app.use(express.json());
 
-// Allow your Render frontend and local dev
-const allowlist = [
-  process.env.FRONTEND_ORIGIN,               // e.g. https://garvangpt-frontend.onrender.com
-  "http://localhost:5173",                   // Vite dev
-  "https://garvangpt-frontend.onrender.com", // safety net
-].filter(Boolean);
+// CORS: allow local dev + your Render Static Site (set later)
+const allowed = (process.env.CORS_ORIGINS || "http://localhost:5173").split(",").map(s=>s.trim());
+app.use(cors({
+  origin(origin, cb) {
+    // allow tools/no-origin and exact allowlist
+    if (!origin || allowed.includes(origin)) return cb(null, true);
+    return cb(new Error("Not allowed by CORS"));
+  },
+  credentials: true
+}));
 
-app.use(
-  cors({
-    origin(origin, cb) {
-      if (!origin) return cb(null, true); // curl / health checks etc.
-      if (allowlist.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
-    },
-    methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  })
-);
-
-app.use(express.json({ limit: "1mb" }));
-app.use(express.urlencoded({ extended: true }));
-
-// OpenAI client (used by /ask)
-const openai = new OpenAI({
-  apiKey: process.env.OPENAI_API_KEY,
+// --- Health check ---
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true, service: "almosthuman-starter", ts: new Date().toISOString() });
 });
 
-// --- In-memory store (demo only) -------------------------------
-let memories = []; // [{ id, ts, text }]
-
-// --- Routes ----------------------------------------------------
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() });
+// --- Memory API (alias /api/memory and /memory)
+let MEMORY = [];
+app.get(["/api/memory", "/memory"], (req, res) => {
+  res.json({ items: MEMORY });
+});
+app.post(["/api/memory", "/memory"], (req, res) => {
+  const text = (req.body && req.body.text) ? String(req.body.text) : "";
+  if (!text.trim()) return res.status(400).json({ error: "text is required" });
+  const item = { text, ts: Date.now() };
+  MEMORY.push(item);
+  res.status(201).json(item);
+});
+app.delete(["/api/memory", "/memory"], (req, res) => {
+  MEMORY = [];
+  res.json({ ok: true });
 });
 
-// Memory: list
-app.get("/memory", (_req, res) => {
-  res.json(memories);
-});
-
-// Memory: add one
-app.post("/memory", (req, res) => {
-  const text = (req.body?.text ?? "").trim();
-  if (!text) return res.status(400).json({ error: "Missing text" });
-
-  const item = { id: Date.now(), ts: new Date().toISOString(), text };
-  memories.push(item);
-  res.json({ ok: true, item });
-});
-
-// Memory: clear all
-app.delete("/memory", (_req, res) => {
-  const count = memories.length;
-  memories = [];
-  res.json({ ok: true, cleared: count });
-});
-
-// Ask: call OpenAI
-app.post("/ask", async (req, res) => {
-  try {
-    const prompt = (req.body?.prompt ?? "").trim();
-    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
-
-    if (!process.env.OPENAI_API_KEY) {
-      return res
-        .status(500)
-        .json({ error: "Server is missing OPENAI_API_KEY" });
-    }
-
-    const completion = await openai.chat.completions.create({
-      model: "gpt-4o-mini",
-      messages: [{ role: "user", content: prompt }],
-      temperature: 0.2,
-    });
-
-    const answer =
-      completion.choices?.[0]?.message?.content?.trim() || "No answer.";
-    res.json({ ok: true, answer });
-  } catch (err) {
-    console.error("ASK error:", err);
-    res.status(500).json({ error: "Ask failed." });
-  }
-});
-
-// --- Start -----------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`API listening on http://localhost:${PORT}`);
-});
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`[API] listening on :${PORT}`));

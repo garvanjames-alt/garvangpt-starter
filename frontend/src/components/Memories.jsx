@@ -1,63 +1,91 @@
+// frontend/src/components/Memories.jsx
 import React, { useEffect, useState } from "react";
-import { listMemories, addMemory, clearMemories } from "../lib/api";
 
 export default function Memories() {
   const [items, setItems] = useState([]);
   const [text, setText] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function refresh() {
+  // Load existing memories
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        const res = await fetch("/api/memory");
+        const data = await res.json();
+        if (!cancelled) setItems(Array.isArray(data.items) ? data.items : []);
+      } catch (e) {
+        console.error("Failed to load memories", e);
+      }
+    })();
+    return () => { cancelled = true; };
+  }, []);
+
+  // Add a new memory
+  async function addMemory(e) {
+    e.preventDefault();
+    const value = text.trim();
+    if (!value) return;
+    setLoading(true);
     try {
-      const rows = await listMemories();
-      setItems(rows);
+      const res = await fetch("/api/memory", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text: value }),
+      });
+      const item = await res.json();
+      setItems((prev) => [...prev, item]);
+      setText("");
     } catch (e) {
-      console.error(e);
-      alert("Failed to load memories");
+      console.error("Failed to add memory", e);
+    } finally {
+      setLoading(false);
     }
   }
 
-  useEffect(() => {
-    refresh();
-  }, []);
-
-  async function onAdd() {
-    if (!text.trim()) return;
-    await addMemory(text.trim());
-    setText("");
-    await refresh();
-  }
-
-  async function onClear() {
+  // Clear all memories
+  async function clearAll() {
     if (!confirm("Clear all memories?")) return;
-    await clearMemories();
-    await refresh();
+    setLoading(true);
+    try {
+      await fetch("/api/memory", { method: "DELETE" });
+      setItems([]);
+    } catch (e) {
+      console.error("Failed to clear memories", e);
+    } finally {
+      setLoading(false);
+    }
   }
 
   return (
-    <div className="p-4 max-w-xl mx-auto">
-      <h2 className="text-xl font-semibold mb-2">Memories</h2>
-
-      <div className="flex gap-2 mb-3">
+    <div>
+      {/* form row */}
+      <form className="controls" onSubmit={addMemory}>
+        <label htmlFor="memory-input" className="sr-only">Add a memory</label>
         <input
+          id="memory-input"
+          type="text"
+          placeholder="Add a memory…"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          className="border p-2 rounded w-full"
-          placeholder="Add a memory…"
+          disabled={loading}
         />
-        <button onClick={onAdd} className="px-3 py-2 border rounded">
+        <button type="submit" className="primary" disabled={loading || !text.trim()}>
           Add
         </button>
-        <button onClick={onClear} className="px-3 py-2 border rounded">
+        <button type="button" onClick={clearAll} disabled={loading || items.length === 0}>
           Clear
         </button>
-      </div>
+      </form>
 
-      <ul className="list-disc ml-6">
+      {/* list */}
+      <ul className="memories">
         {items.map((m, i) => (
           <li key={i}>
-            {m && m.text ? m.text : JSON.stringify(m)}{" "}
-            {m && m.ts ? (
-              <span className="text-gray-500">
-                ({new Date(m.ts).toLocaleString()})
+            {m.text}{" "}
+            {m.ts ? (
+              <span style={{ opacity: 0.6 }}>
+                ({new Date(m.ts).toLocaleDateString()} {new Date(m.ts).toLocaleTimeString()})
               </span>
             ) : null}
           </li>
@@ -66,3 +94,5 @@ export default function Memories() {
     </div>
   );
 }
+
+/* Small utility class used by content.css styles above */

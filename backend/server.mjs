@@ -2,59 +2,29 @@ import express from "express";
 import cors from "cors";
 
 const app = express();
-app.use(express.json());
 
-// CORS allowlist (comma-separated)
-const allowed = (process.env.CORS_ORIGINS || "http://localhost:5173")
+// Allow list from env (comma-separated)
+const allowed = (process.env.CORS_ORIGINS || "")
   .split(",")
-  .map(s => s.trim());
+  .map(s => s.trim())
+  .filter(Boolean);
 
+// CORS middleware
 app.use(
   cors({
     origin(origin, cb) {
-      if (!origin || allowed.includes(origin)) return cb(null, true);
-      return cb(new Error("Not allowed by CORS"));
+      // allow same-origin / curl / health checks (no Origin header)
+      if (!origin) return cb(null, true);
+      if (allowed.includes(origin)) return cb(null, true);
+      return cb(new Error(`Not allowed by CORS: ${origin}`));
     },
-    credentials: true,
+    methods: ["GET", "POST", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
+    credentials: false,
   })
 );
 
-// --- Health check ---
-app.get("/health", (req, res) => {
-  res.status(200).json({ ok: true, ts: new Date().toISOString() });
-});
+// Explicitly handle preflight for all routes
+app.options("*", cors());
 
-// --- Simple in-memory store for Phase 0 ---
-let MEMORY = [];
-
-// List memories
-app.get(["/api/memory", "/memory"], (req, res) => {
-  res.json({ items: MEMORY });
-});
-
-// Add a memory (POST {text})
-app.post(["/api/memory", "/memory"], (req, res) => {
-  const text = (req.body && req.body.text) ? String(req.body.text) : "";
-  if (!text.trim()) return res.status(400).json({ error: "text is required" });
-  const item = { text, ts: Date.now() };
-  MEMORY.push(item);
-  res.status(201).json(item);
-});
-
-// Quick add via URL: /api/memory/add?text=Hello
-app.get("/api/memory/add", (req, res) => {
-  const text = String(req.query.text || "");
-  if (!text.trim()) return res.status(400).json({ error: "text is required" });
-  const item = { text, ts: Date.now() };
-  MEMORY.push(item);
-  res.status(201).json(item);
-});
-
-// Clear memories
-app.delete(["/api/memory", "/memory"], (req, res) => {
-  MEMORY = [];
-  res.json({ ok: true });
-});
-
-const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`[API] listening on :${PORT}`));
+// …the rest of your routes…

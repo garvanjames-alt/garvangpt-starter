@@ -1,3 +1,4 @@
+import React from "react";
 import { useEffect, useState } from "react";
 
 const API_BASE = "https://garvangpt-starter-1.onrender.com"; // <-- hardcoded backend URL

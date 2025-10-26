@@ -1,85 +1,118 @@
-import React from "react";
-import { useEffect, useState } from "react";
+// frontend/src/App.jsx
+import React, { useEffect, useState } from "react";
 
-const API_BASE = "https://garvangpt-starter-1.onrender.com"; // <-- hardcoded backend URL
+const API_BASE =
+  import.meta.env.VITE_API_BASE || "https://garvangpt-starter-1.onrender.com";
 
 export default function App() {
+  // health + memories
+  const [health, setHealth] = useState("checking...");
   const [items, setItems] = useState([]);
   const [text, setText] = useState("");
-  const [error, setError] = useState(null);
-  const [health, setHealth] = useState("checking…");
+  const [memError, setMemError] = useState(null);
 
-  // Load memories
-  async function load() {
-    try {
-      setError(null);
-      const res = await fetch(`${API_BASE}/memory`, { credentials: "omit" });
-      if (!res.ok) throw new Error(`GET /memory failed: ${res.status}`);
-      const data = await res.json();
-      // data can be [] or {count, items}; normalize to an array for display
-      const normalized = Array.isArray(data)
-        ? data
-        : Array.isArray(data.items)
-        ? data.items
-        : [];
-      setItems(normalized);
-    } catch (e) {
-      setError("Could not load memories.");
-      console.error(e);
-    }
-  }
+  // ask/response
+  const [prompt, setPrompt] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [askBusy, setAskBusy] = useState(false);
+  const [askError, setAskError] = useState(null);
 
-  // Health check
-  async function ping() {
-    try {
-      const res = await fetch(`${API_BASE}/health`, { credentials: "omit" });
-      setHealth(res.ok ? "ok" : `bad (${res.status})`);
-    } catch {
-      setHealth("bad (network)");
-    }
-  }
-
+  // load health
   useEffect(() => {
-    ping();
-    load();
+    let cancelled = false;
+    (async () => {
+      try {
+        const r = await fetch(`${API_BASE}/health`);
+        const ok = r.ok ? "ok" : `bad (${r.status})`;
+        if (!cancelled) setHealth(ok);
+      } catch {
+        if (!cancelled) setHealth("offline");
+      }
+    })();
+    return () => (cancelled = true);
+  }, []);
+
+  // load memories
+  useEffect(() => {
+    let cancelled = false;
+    (async () => {
+      try {
+        setMemError(null);
+        const r = await fetch(`${API_BASE}/memory`, { credentials: "omit" });
+        if (!r.ok) throw new Error(`GET /memory failed: ${r.status}`);
+        const data = await r.json();
+        const arr = Array.isArray(data) ? data : data?.items || [];
+        if (!cancelled) setItems(arr);
+      } catch (e) {
+        if (!cancelled) setMemError("Could not load memories.");
+        console.error(e);
+      }
+    })();
+    return () => (cancelled = true);
   }, []);
 
   async function add() {
-    if (!text.trim()) return;
+    const t = text.trim();
+    if (!t) return;
     try {
-      setError(null);
-      const res = await fetch(`${API_BASE}/memory`, {
+      setMemError(null);
+      const r = await fetch(`${API_BASE}/memory`, {
         method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ text: t }),
         credentials: "omit",
       });
-      if (!res.ok) throw new Error(`POST /memory failed: ${res.status}`);
+      if (!r.ok) throw new Error(`POST /memory failed: ${r.status}`);
       setText("");
-      await load();
+      // reload
+      const g = await fetch(`${API_BASE}/memory`);
+      setItems(await g.json());
     } catch (e) {
-      setError("Failed to add memory.");
+      setMemError("Failed to add memory.");
       console.error(e);
     }
   }
 
   async function clearAll() {
     try {
-      setError(null);
-      const res = await fetch(`${API_BASE}/memory`, {
+      setMemError(null);
+      const r = await fetch(`${API_BASE}/memory`, {
         method: "DELETE",
         credentials: "omit",
       });
-      if (!res.ok) throw new Error(`DELETE /memory failed: ${res.status}`);
-      await load();
+      if (!r.ok) throw new Error(`DELETE /memory failed: ${r.status}`);
+      setItems([]);
     } catch (e) {
-      setError("Failed to clear memories.");
+      setMemError("Failed to clear memories.");
       console.error(e);
     }
   }
 
+  async function ask() {
+    const q = prompt.trim();
+    if (!q) return;
+    setAskBusy(true);
+    setAskError(null);
+    setAnswer("");
+    try {
+      const r = await fetch(`${API_BASE}/ask`, {
+        method: "POST",
+        headers: { "content-type": "application/json" },
+        body: JSON.stringify({ prompt: q }),
+      });
+      if (!r.ok) throw new Error(`POST /ask failed: ${r.status}`);
+      const data = await r.json();
+      setAnswer(data.answer || "(no answer)");
+    } catch (e) {
+      setAskError("Ask failed.");
+      console.error(e);
+    } finally {
+      setAskBusy(false);
+    }
+  }
+
   return (
-    <div style={{ maxWidth: 820, margin: "40px auto", padding: "0 16px" }}>
+    <div style={{ maxWidth: 760, margin: "40px auto", padding: 16, lineHeight: 1.4 }}>
       <h1>GarvanGPT — Almost Human</h1>
 
       <p>
@@ -90,45 +123,73 @@ export default function App() {
 
       <hr />
 
-      {error && (
-        <p style={{ color: "crimson", marginTop: 16 }}>
-          {error}
-        </p>
-      )}
+      {/* Ask/Respond */}
+      <section>
+        <h2>Ask</h2>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input
+            style={{ flex: 1, padding: 8 }}
+            placeholder="Ask me anything..."
+            value={prompt}
+            onChange={(e) => setPrompt(e.target.value)}
+          />
+          <button onClick={ask} disabled={askBusy}>
+            {askBusy ? "Asking..." : "Ask"}
+          </button>
+        </div>
+        {askError && <p style={{ color: "crimson" }}>{askError}</p>}
+        {answer && (
+          <pre
+            style={{
+              background: "#fafafa",
+              border: "1px solid #eee",
+              padding: 12,
+              borderRadius: 6,
+              whiteSpace: "pre-wrap",
+            }}
+          >
+            {answer}
+          </pre>
+        )}
+      </section>
 
-      <h2>Memory</h2>
+      <hr style={{ margin: "24px 0" }} />
 
-      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
-        <input
-          style={{ flex: 1, padding: 8 }}
-          placeholder="Add a memory..."
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <button onClick={add}>Add</button>
-        <button onClick={clearAll}>Clear</button>
-      </div>
+      {/* Memory demo */}
+      <section>
+        <h2>Memory</h2>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <input
+            style={{ flex: 1, padding: 8 }}
+            placeholder="Add a memory..."
+            value={text}
+            onChange={(e) => setText(e.target.value)}
+          />
+          <button onClick={add}>Add</button>
+          <button onClick={clearAll}>Clear</button>
+        </div>
 
-      <div style={{ marginTop: 8 }}>
+        {memError && <p style={{ color: "crimson" }}>{memError}</p>}
+
         <strong>Items: {items.length}</strong>
-      </div>
+        <pre
+          style={{
+            background: "#fafafa",
+            border: "1px solid #eee",
+            padding: 12,
+            borderRadius: 6,
+            minHeight: 56,
+            marginTop: 10,
+          }}
+        >
+          {JSON.stringify(items, null, 2)}
+        </pre>
 
-      <pre
-        style={{
-          background: "#fafafa",
-          border: "1px solid #eee",
-          padding: 12,
-          borderRadius: 6,
-          minHeight: 56,
-          marginTop: 10,
-        }}
-      >
-        {JSON.stringify(items, null, 2)}
-      </pre>
-
-      <p style={{ marginTop: 20 }}>
-        If you can read this, React mounted correctly and the white screen is defeated.
-      </p>
+        <p style={{ marginTop: 20 }}>
+          If you can read this, React mounted correctly and the white screen is
+          defeated.
+        </p>
+      </section>
     </div>
   );
 }

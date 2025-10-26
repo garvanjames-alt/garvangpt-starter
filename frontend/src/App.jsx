@@ -3,36 +3,39 @@ import React from "react";
 import Memories from "./components/Memories.jsx";
 
 export default function App() {
-  const scrollToMemories = () => {
-    document.getElementById("memories")?.scrollIntoView({ behavior: "smooth" });
-  };
-
   return (
     <div className="page">
-      {/* Hero */}
-      <section>
-        <h1>Almost Human</h1>
-        <p>A speaking avatar that learns your preferences and actually remembers.</p>
+      {/* ---- Hero ---- */}
+      <header style={{ margin: "0 0 28px" }}>
+        <h1 style={{ margin: "0 0 8px" }}>Almost Human</h1>
+        <p style={{ margin: "0 0 16px", maxWidth: 680 }}>
+          A speaking avatar that learns your preferences and actually remembers.
+        </p>
 
         <div className="controls" style={{ justifyContent: "flex-start" }}>
+          {/* TODO: replace you@example.com with your real inbox */}
           <a
-            className="button primary"
-            href="mailto:hello@almosthuman.ai?subject=Almost%20Human%20Waitlist&body=Hi%20Garvan%2C%0A%0APlease%20add%20me%20to%20the%20Almost%20Human%20early%20access%20waitlist.%0A"
+            href="mailto:garvanjames@gmail.com?subject=Almost%20Human%20early%20access&body=Hi%20Garvan,%20I%E2%80%99d%20like%20early%20access."
+            style={{ fontWeight: 600 }}
           >
             Get early access
           </a>
-          <button className="button" onClick={scrollToMemories}>
-            Try the memory demo
-          </button>
-        </div>
-      </section>
 
-      {/* Demo (no extra heading here to avoid duplicates) */}
+          <a href="#memories" style={{ marginLeft: 16 }}>
+            Try the memory demo
+          </a>
+        </div>
+
+        <hr style={{ margin: "24px 0" }} />
+      </header>
+
+      {/* ---- Demo (kept simple on purpose) ---- */}
       <section id="memories" style={{ marginTop: 40 }}>
+        <h2 style={{ margin: "0 0 12px" }}>Memories</h2>
         <Memories />
       </section>
 
-      {/* Footer */}
+      {/* ---- Footer ---- */}
       <footer style={{ marginTop: 48, opacity: 0.7 }}>
         © {new Date().getFullYear()} Almost Human
       </footer>

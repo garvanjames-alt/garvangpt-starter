@@ -1,47 +1,99 @@
-/* --- Base --- */
+/* === Base === */
 :root {
-    --fg: #0f172a;        /* slate-900 */
-    --muted: #64748b;     /* slate-500 */
-    --border: #e2e8f0;    /* slate-200 */
-    --accent: #2563eb;    /* blue-600 */
-    --accent-600: #1d4ed8;/* blue-700 */
-    --bg: #ffffff;
-  }
-  * { box-sizing: border-box; }
-  html, body { height: 100%; }
-  body {
-    margin: 0;
-    color: var(--fg);
-    background: var(--bg);
-    font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji";
-    line-height: 1.6;
-  }
-  html { scroll-behavior: smooth; }
-  /* --- Page layout --- */
-  .page { max-width: 760px; margin: 48px auto; padding: 0 20px; }
-  h1 { font-size: 44px; line-height: 1.1; margin: 0 0 12px; }
-  h2 { font-size: 28px; margin: 24px 0 12px; }
-  .muted { color: var(--muted); }
-  
-  /* --- Controls --- */
-  .controls { display: flex; gap: 8px; align-items: center; margin: 8px 0 18px; flex-wrap: wrap; }
-  input[type="text"] {
-    flex: 1 1 320px; padding: 10px 12px; border: 1px solid var(--border); border-radius: 8px; outline: none;
-  }
-  input[type="text"]:focus { border-color: var(--accent); box-shadow: 0 0 0 3px rgba(37,99,235,.15); }
-  button { padding: 9px 14px; border: 1px solid var(--border); background: #fff; border-radius: 8px; cursor: pointer; }
-  button.primary { background: var(--accent); color: #fff; border-color: var(--accent); }
-  button.primary:hover { background: var(--accent-600); }
-  button:hover { filter: brightness(0.98); }
-  
-  /* --- List --- */
-  ul.memories { padding-left: 22px; margin: 0; }
-  ul.memories li { margin: 8px 0; }
-  
-  /* --- Small screens --- */
-  @media (max-width: 640px) {
-    h1 { font-size: 36px; }
-    .controls { gap: 6px; }
-    input[type="text"] { flex-basis: 100%; }
-  }
-  
+  --fg: #0f172a;           /* slate-900 */
+  --muted: #64748b;        /* slate-500 */
+  --border: #e2e8f0;       /* slate-200 */
+  --accent: #2563eb;       /* blue-600 */
+  --accent-600: #1d4ed8;   /* blue-700 */
+  --bg: #ffffff;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* Smooth scroll for in-page anchors (e.g. #memories) */
+html { scroll-behavior: smooth; }
+
+/* --- Page layout --- */
+.page { max-width: 760px; margin: 48px auto; padding: 0 20px; }
+h1 { font-size: 44px; line-height: 1.1; margin: 0 0 12px; }
+h2 { font-size: 28px; margin: 24px 0 12px; }
+.muted { color: var(--muted); }
+
+/* --- Controls --- */
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 18px;
+  flex-wrap: wrap;
+}
+input[type="text"] {
+  flex: 1 1 320px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+button {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.button.primary:hover { background: var(--accent-600); }
+button:hover:not(:disabled) { filter: brightness(0.98); }
+
+/* --- List --- */
+ul.memories { padding-left: 22px; margin: 0; }
+ul.memories li { margin: 4px 0; }
+
+/* --- Small screens --- */
+@media (max-width: 640px) {
+  h1 { font-size: 36px; }
+  .controls { gap: 6px; }
+  input[type="text"] { flex-basis: 100%; }
+}
+
+/* --- Toast --- */
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #10b981;   /* green */
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  opacity: 0.98;
+  transform: translateY(0);
+  transition: opacity 200ms ease, transform 200ms ease;
+  z-index: 9999;
+}
+.toast--err {
+  background: #ef4444;   /* red */
+}

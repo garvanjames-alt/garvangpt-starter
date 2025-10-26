@@ -1,98 +1,135 @@
-// frontend/src/components/Memories.jsx
-import React, { useEffect, useState } from "react";
+import React, { useEffect, useState } from 'react';
 
+/**
+ * Memories.jsx
+ * - Lists memories from the backend
+ * - Lets you add a new memory
+ * - Lets you clear all memories
+ * - Shows a small toast on success/failure
+ */
 export default function Memories() {
   const [items, setItems] = useState([]);
-  const [text, setText] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [text, setText] = useState('');
+  const [busy, setBusy] = useState(false);
 
-  // Load existing memories
+  // toast: { text: string, kind: 'ok' | 'err' }
+  const [notice, setNotice] = useState({ text: '', kind: 'ok' });
+
+  // Load on mount
   useEffect(() => {
-    let cancelled = false;
-    (async () => {
-      try {
-        const res = await fetch("/api/memory");
-        const data = await res.json();
-        if (!cancelled) setItems(Array.isArray(data.items) ? data.items : []);
-      } catch (e) {
-        console.error("Failed to load memories", e);
-      }
-    })();
-    return () => { cancelled = true; };
+    refresh();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
-  // Add a new memory
-  async function addMemory(e) {
-    e.preventDefault();
-    const value = text.trim();
-    if (!value) return;
-    setLoading(true);
+  async function refresh() {
     try {
-      const res = await fetch("/api/memory", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: value }),
-      });
-      const item = await res.json();
-      setItems((prev) => [...prev, item]);
-      setText("");
-    } catch (e) {
-      console.error("Failed to add memory", e);
-    } finally {
-      setLoading(false);
+      const res = await fetch('/api/memory', { method: 'GET' });
+      if (!res.ok) throw new Error(`GET /api/memory failed: ${res.status}`);
+      const data = await res.json();
+      setItems(Array.isArray(data.items) ? data.items : []);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to load memories', 'err');
     }
   }
 
-  // Clear all memories
-  async function clearAll() {
-    if (!confirm("Clear all memories?")) return;
-    setLoading(true);
+  function showToast(msg, kind = 'ok', ms = 1800) {
+    setNotice({ text: msg, kind });
+    window.clearTimeout(showToast._t);
+    showToast._t = window.setTimeout(() => setNotice({ text: '', kind: 'ok' }), ms);
+  }
+
+  async function onAdd(e) {
+    e.preventDefault();
+    if (busy) return;
+    const value = text.trim();
+    if (!value) return;
+
+    setBusy(true);
     try {
-      await fetch("/api/memory", { method: "DELETE" });
-      setItems([]);
-    } catch (e) {
-      console.error("Failed to clear memories", e);
+      const res = await fetch('/api/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text: value })
+      });
+      if (!res.ok) throw new Error(`POST /api/memory failed: ${res.status}`);
+      setText('');
+      await refresh();
+      showToast('Saved ✓', 'ok', 1800);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to save', 'err', 2200);
     } finally {
-      setLoading(false);
+      setBusy(false);
+    }
+  }
+
+  async function onClear() {
+    if (busy || items.length === 0) return;
+    setBusy(true);
+    try {
+      const res = await fetch('/api/memory', { method: 'DELETE' });
+      if (!res.ok) throw new Error(`DELETE /api/memory failed: ${res.status}`);
+      setItems([]);
+      showToast('Cleared ✓', 'ok', 1400);
+    } catch (err) {
+      console.error(err);
+      showToast('Failed to clear', 'err', 2200);
+    } finally {
+      setBusy(false);
     }
   }
 
   return (
-    <div>
-      {/* form row */}
-      <form className="controls" onSubmit={addMemory}>
-        <label htmlFor="memory-input" className="sr-only">Add a memory</label>
+    <div className="page">
+      {/* Controls */}
+      <div className="controls">
+        <label htmlFor="mem-input" className="muted" style={{ fontWeight: 600 }}>
+          Add a memory
+        </label>
+
         <input
-          id="memory-input"
+          id="mem-input"
           type="text"
           placeholder="Add a memory…"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          disabled={loading}
+          disabled={busy}
+          aria-label="Memory text"
         />
-        <button type="submit" className="primary" disabled={loading || !text.trim()}>
-          Add
+
+        <button className="button primary" onClick={onAdd} disabled={busy || !text.trim()}>
+          {busy ? 'Saving…' : 'Add'}
         </button>
-        <button type="button" onClick={clearAll} disabled={loading || items.length === 0}>
+
+        <button onClick={onClear} disabled={busy || items.length === 0}>
           Clear
         </button>
-      </form>
+      </div>
 
-      {/* list */}
-      <ul className="memories">
-        {items.map((m, i) => (
-          <li key={i}>
-            {m.text}{" "}
-            {m.ts ? (
-              <span style={{ opacity: 0.6 }}>
-                ({new Date(m.ts).toLocaleDateString()} {new Date(m.ts).toLocaleTimeString()})
-              </span>
-            ) : null}
-          </li>
-        ))}
+      {/* List */}
+      <ul className="memories" style={{ marginTop: 20 }}>
+        {items.length === 0 ? (
+          <li className="muted">No memories yet.</li>
+        ) : (
+          items.map((m, i) => (
+            <li key={i}>
+              <span style={{ display: 'inline-block', marginRight: 8 }}>•</span>
+              <span>{m.text}</span>
+              {m.ts ? (
+                <span className="muted" style={{ marginLeft: 8 }}>
+                  ({new Date(m.ts).toLocaleDateString()} {new Date(m.ts).toLocaleTimeString()})
+                </span>
+              ) : null}
+            </li>
+          ))
+        )}
       </ul>
+
+      {/* Toast */}
+      {notice.text ? (
+        <div className={`toast ${notice.kind === 'err' ? 'toast--err' : ''}`}>{notice.text}</div>
+      ) : null}
     </div>
   );
 }
-
-/* Small utility class used by content.css styles above */

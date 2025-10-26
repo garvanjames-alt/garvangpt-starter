@@ -3,6 +3,9 @@ import cors from "cors";
 
 const app = express();
 
+// parse JSON bodies (needed for POST /api/memory)
+app.use(express.json());
+
 // Allow list from env (comma-separated)
 const allowed = (process.env.CORS_ORIGINS || "")
   .split(",")
@@ -24,7 +27,34 @@ app.use(
   })
 );
 
-// Explicitly handle preflight for all routes
+// Explicitly handle preflight
 app.options("*", cors());
 
-// …the rest of your routes…
+// ---- Health check (Render & manual tests) ----
+app.get("/health", (req, res) => {
+  res.status(200).json({ ok: true, ts: new Date().toISOString() });
+});
+
+// ---- Phase 0 memory routes (in-memory store) ----
+let MEMORY = [];
+
+app.get("/api/memory", (req, res) => {
+  res.json({ items: MEMORY });
+});
+
+app.post("/api/memory", (req, res) => {
+  const text = (req.body && req.body.text) ? String(req.body.text) : "";
+  if (!text.trim()) return res.status(400).json({ error: "text is required" });
+  const item = { text, ts: Date.now() };
+  MEMORY.push(item);
+  res.status(201).json(item);
+});
+
+app.delete("/api/memory", (req, res) => {
+  MEMORY = [];
+  res.json({ ok: true });
+});
+
+// Start the server
+const PORT = process.env.PORT || 3001;
+app.listen(PORT, () => console.log(`[API] listening on :${PORT}`));

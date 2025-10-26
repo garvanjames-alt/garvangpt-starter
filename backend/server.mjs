@@ -1,80 +1,96 @@
 // backend/server.mjs
 import express from "express";
 import cors from "cors";
+import OpenAI from "openai";
 
+// --- Config ---------------------------------------------------
 const app = express();
 const PORT = process.env.PORT || 10000;
 
-// CORS (reflects the request Origin; fine for our demo)
+// Allow your Render frontend and local dev
+const allowlist = [
+  process.env.FRONTEND_ORIGIN,               // e.g. https://garvangpt-frontend.onrender.com
+  "http://localhost:5173",                   // Vite dev
+  "https://garvangpt-frontend.onrender.com", // safety net
+].filter(Boolean);
+
 app.use(
   cors({
-    origin: true,
-    credentials: false,
-    methods: ["GET", "POST", "PUT", "PATCH", "DELETE", "OPTIONS", "HEAD"],
-    allowedHeaders: ["content-type"],
+    origin(origin, cb) {
+      if (!origin) return cb(null, true); // curl / health checks etc.
+      if (allowlist.includes(origin)) return cb(null, true);
+      return cb(new Error("Not allowed by CORS"));
+    },
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
   })
 );
 
-// Body parsers
-app.use(express.json());
-app.use(express.text({ type: "text/plain" }));
+app.use(express.json({ limit: "1mb" }));
+app.use(express.urlencoded({ extended: true }));
 
-// --- Simple in-memory microstore for /memory ---
-let store = [];
+// OpenAI client (used by /ask)
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
-// Healthcheck
-app.get("/health", (req, res) => {
+// --- In-memory store (demo only) -------------------------------
+let memories = []; // [{ id, ts, text }]
+
+// --- Routes ----------------------------------------------------
+app.get("/health", (_req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// List memories
-app.get("/memory", (req, res) => {
-  res.json(store);
+// Memory: list
+app.get("/memory", (_req, res) => {
+  res.json(memories);
 });
 
-// Add a memory (accepts {text} as JSON or raw text/plain)
+// Memory: add one
 app.post("/memory", (req, res) => {
-  const text =
-    (typeof req.body === "string" ? req.body : req.body?.text) || "";
-  const t = `${text}`.trim();
-  if (!t) return res.status(400).json({ error: "text is required" });
+  const text = (req.body?.text ?? "").trim();
+  if (!text) return res.status(400).json({ error: "Missing text" });
 
-  const item = { id: Date.now(), ts: new Date().toISOString(), text: t };
-  store.push(item);
-  res.json(item);
+  const item = { id: Date.now(), ts: new Date().toISOString(), text };
+  memories.push(item);
+  res.json({ ok: true, item });
 });
 
-// Clear memories
-app.delete("/memory", (req, res) => {
-  store = [];
-  res.json({ ok: true });
+// Memory: clear all
+app.delete("/memory", (_req, res) => {
+  const count = memories.length;
+  memories = [];
+  res.json({ ok: true, cleared: count });
 });
 
-// --- NEW: /ask endpoint the frontend calls ---
-app.post("/ask", (req, res) => {
-  // Accept { question } JSON, or { text }, or raw text
-  const q =
-    (typeof req.body === "string"
-      ? req.body
-      : req.body?.question ?? req.body?.text) || "";
-  const question = `${q}`.trim();
+// Ask: call OpenAI
+app.post("/ask", async (req, res) => {
+  try {
+    const prompt = (req.body?.prompt ?? "").trim();
+    if (!prompt) return res.status(400).json({ error: "Missing prompt" });
 
-  if (!question) return res.status(400).json({ error: "question is required" });
+    if (!process.env.OPENAI_API_KEY) {
+      return res
+        .status(500)
+        .json({ error: "Server is missing OPENAI_API_KEY" });
+    }
 
-  // Stubbed answer for now
-  const answer = `You asked: "${question}". This is a stub reply from the backend.`;
+    const completion = await openai.chat.completions.create({
+      model: "gpt-4o-mini",
+      messages: [{ role: "user", content: prompt }],
+      temperature: 0.2,
+    });
 
-  res.json({
-    answer,
-    sources: [], // placeholder so the UI can later show citations
-  });
+    const answer =
+      completion.choices?.[0]?.message?.content?.trim() || "No answer.";
+    res.json({ ok: true, answer });
+  } catch (err) {
+    console.error("ASK error:", err);
+    res.status(500).json({ error: "Ask failed." });
+  }
 });
 
-// Fallback for unknown routes
-app.use((req, res) => {
-  res.status(404).json({ error: "Not found" });
-});
-
+// --- Start -----------------------------------------------------
 app.listen(PORT, () => {
   console.log(`API listening on http://localhost:${PORT}`);
 });

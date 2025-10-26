@@ -1,97 +1,133 @@
-import React, { useState, useEffect } from 'react';
+import { useEffect, useState } from "react";
+
+const API_BASE = "https://garvangpt-starter-1.onrender.com"; // <-- hardcoded backend URL
 
 export default function App() {
-  const [text, setText] = useState('');
-  const [mem, setMem] = useState([]);
-  const [loading, setLoading] = useState(false);
+  const [items, setItems] = useState([]);
+  const [text, setText] = useState("");
   const [error, setError] = useState(null);
+  const [health, setHealth] = useState("checking…");
 
-  // Fetch memory list
-  useEffect(() => {
-    (async () => {
-      setLoading(true);
-      try {
-        const res = await fetch('http://localhost:3001/api/memory');
-        if (!res.ok) throw new Error(`GET failed: ${res.status}`);
-        const data = await res.json();
-        setMem(Array.isArray(data?.items) ? data.items : []);
-        setError(null);
-      } catch (err) {
-        console.error(err);
-        setError('Could not load memories.');
-      } finally {
-        setLoading(false);
-      }
-    })();
-  }, []);
-
-  // Add new memory
-  async function onAdd(e) {
-    e.preventDefault();
-    const payload = text.trim();
-    if (!payload) return;
-
+  // Load memories
+  async function load() {
     try {
-      const res = await fetch('http://localhost:3001/api/memory', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ text: payload }),
-      });
-      const data = await res.json();
-
-      if (Array.isArray(data?.items)) setMem(data.items);
-      else if (data?.item) setMem(prev => [...prev, data.item]);
-
-      setText('');
       setError(null);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to add memory.');
+      const res = await fetch(`${API_BASE}/memory`, { credentials: "omit" });
+      if (!res.ok) throw new Error(`GET /memory failed: ${res.status}`);
+      const data = await res.json();
+      // data can be [] or {count, items}; normalize to an array for display
+      const normalized = Array.isArray(data)
+        ? data
+        : Array.isArray(data.items)
+        ? data.items
+        : [];
+      setItems(normalized);
+    } catch (e) {
+      setError("Could not load memories.");
+      console.error(e);
     }
   }
 
-  // Clear all memories
-  async function onClear() {
+  // Health check
+  async function ping() {
     try {
-      const res = await fetch('http://localhost:3001/api/memory', { method: 'DELETE' });
-      if (!res.ok) throw new Error('DELETE /api/memory failed');
-      setMem([]);
+      const res = await fetch(`${API_BASE}/health`, { credentials: "omit" });
+      setHealth(res.ok ? "ok" : `bad (${res.status})`);
+    } catch {
+      setHealth("bad (network)");
+    }
+  }
+
+  useEffect(() => {
+    ping();
+    load();
+  }, []);
+
+  async function add() {
+    if (!text.trim()) return;
+    try {
       setError(null);
-    } catch (err) {
-      console.error(err);
-      setError('Failed to clear memories.');
+      const res = await fetch(`${API_BASE}/memory`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+        credentials: "omit",
+      });
+      if (!res.ok) throw new Error(`POST /memory failed: ${res.status}`);
+      setText("");
+      await load();
+    } catch (e) {
+      setError("Failed to add memory.");
+      console.error(e);
+    }
+  }
+
+  async function clearAll() {
+    try {
+      setError(null);
+      const res = await fetch(`${API_BASE}/memory`, {
+        method: "DELETE",
+        credentials: "omit",
+      });
+      if (!res.ok) throw new Error(`DELETE /memory failed: ${res.status}`);
+      await load();
+    } catch (e) {
+      setError("Failed to clear memories.");
+      console.error(e);
     }
   }
 
   return (
-    <div style={{ fontFamily: 'system-ui, -apple-system, Segoe UI, Roboto, sans-serif', padding: '2rem' }}>
-      <h1 style={{ marginBottom: '0.5rem' }}>GarvanGPT — Almost Human</h1>
-      <p>Frontend is alive ✅</p>
-      <p><strong>Backend /health:</strong> <code>ok</code></p>
-      <hr style={{ margin: '1.5rem 0' }} />
+    <div style={{ maxWidth: 820, margin: "40px auto", padding: "0 16px" }}>
+      <h1>GarvanGPT — Almost Human</h1>
 
-      {loading && <p style={{ color: '#666' }}>Loading memories…</p>}
-      {error && <p style={{ color: 'red' }}>{error}</p>}
+      <p>
+        Frontend is alive ✅
+        <br />
+        <strong>Backend /health:</strong> {health}
+      </p>
 
-      <h2 style={{ marginTop: 0 }}>Memory</h2>
-      <form onSubmit={onAdd} style={{ display: 'flex', gap: '0.5rem', marginBottom: '1rem' }}>
+      <hr />
+
+      {error && (
+        <p style={{ color: "crimson", marginTop: 16 }}>
+          {error}
+        </p>
+      )}
+
+      <h2>Memory</h2>
+
+      <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
         <input
-          type="text"
-          value={text}
-          onChange={e => setText(e.target.value)}
+          style={{ flex: 1, padding: 8 }}
           placeholder="Add a memory..."
-          style={{ flex: 1, padding: '0.5rem' }}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
         />
-        <button type="submit">Add</button>
-        <button type="button" onClick={onClear}>Clear</button>
-      </form>
+        <button onClick={add}>Add</button>
+        <button onClick={clearAll}>Clear</button>
+      </div>
 
-      <p><strong>Items:</strong> {mem.length}</p>
-      <pre style={{ background: '#fafafa', padding: '1rem', borderRadius: '8px' }}>
-        {JSON.stringify(mem, null, 2)}
+      <div style={{ marginTop: 8 }}>
+        <strong>Items: {items.length}</strong>
+      </div>
+
+      <pre
+        style={{
+          background: "#fafafa",
+          border: "1px solid #eee",
+          padding: 12,
+          borderRadius: 6,
+          minHeight: 56,
+          marginTop: 10,
+        }}
+      >
+        {JSON.stringify(items, null, 2)}
       </pre>
 
-      <p>If you can read this, React mounted correctly and the white screen is defeated.</p>
+      <p style={{ marginTop: 20 }}>
+        If you can read this, React mounted correctly and the white screen is defeated.
+      </p>
     </div>
   );
 }

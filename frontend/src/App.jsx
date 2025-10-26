@@ -3,42 +3,32 @@ import React from "react";
 import Memories from "./components/Memories.jsx";
 
 export default function App() {
+  const scrollToMemories = () => {
+    document.getElementById("memories")?.scrollIntoView({ behavior: "smooth" });
+  };
+
   return (
     <div className="page">
       {/* Hero */}
-      <header style={{ marginTop: 32, marginBottom: 24 }}>
-        <h1 style={{ fontSize: 44, lineHeight: 1.1, margin: "0 0 8px" }}>
-          Almost Human
-        </h1>
-        <p style={{ fontSize: 18, color: "var(--muted)", margin: "0 0 16px" }}>
-          A speaking avatar that learns your preferences and actually remembers.
-        </p>
+      <section>
+        <h1>Almost Human</h1>
+        <p>A speaking avatar that learns your preferences and actually remembers.</p>
 
         <div className="controls" style={{ justifyContent: "flex-start" }}>
           <a
             className="button primary"
-            href="mailto:hello@yourdomain.com?subject=Almost%20Human%20—%20Early%20Access"
+            href="mailto:hello@almosthuman.ai?subject=Almost%20Human%20Waitlist&body=Hi%20Garvan%2C%0A%0APlease%20add%20me%20to%20the%20Almost%20Human%20early%20access%20waitlist.%0A"
           >
             Get early access
           </a>
-          <a
-            className="button"
-            href="https://garvangpt-frontend.onrender.com"
-            target="_self"
-            rel="noreferrer"
-            style={{ marginLeft: 8 }}
-          >
+          <button className="button" onClick={scrollToMemories}>
             Try the memory demo
-          </a>
+          </button>
         </div>
-      </header>
+      </section>
 
-      {/* Divider */}
-      <hr style={{ border: 0, borderTop: "1px solid var(--border)", margin: "28px 0" }} />
-
-      {/* Demo section */}
-      <section>
-        <h2 style={{ margin: "0 0 12px" }}>Memories</h2>
+      {/* Demo (no extra heading here to avoid duplicates) */}
+      <section id="memories" style={{ marginTop: 40 }}>
         <Memories />
       </section>
 

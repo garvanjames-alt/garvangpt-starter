@@ -1,88 +1,117 @@
 // frontend/src/components/Memories.jsx
-import React, { useEffect, useState } from 'react';
-import { addMemory, clearMemories, listMemories } from '../lib/api';
+import React, { useEffect, useState } from "react";
+import { API_BASE, getMemories, addMemory, clearMemories } from "../lib/api";
 
 export default function Memories() {
-  const [text, setText] = useState('');
   const [items, setItems] = useState([]);
-  const [busy, setBusy] = useState(false);
-  const [error, setError] = useState('');
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(true);
+  const [adding, setAdding] = useState(false);
+  const [clearing, setClearing] = useState(false);
+  const [note, setNote] = useState(null);   // success/error message
+
+  function flash(msg, type = "ok") {
+    setNote({ msg, type });
+    setTimeout(() => setNote(null), 2500);
+  }
 
   async function refresh() {
+    setLoading(true);
     try {
-      setError('');
-      const res = await listMemories();
-      setItems(res.items ?? []);
-    } catch (e) {
-      setError(e?.message || 'Failed to load memories');
+      const data = await getMemories();
+      setItems(Array.isArray(data?.items) ? data.items : []);
+    } catch (err) {
+      flash(`Failed to load memories: ${err.message}`, "err");
+    } finally {
+      setLoading(false);
     }
   }
 
-  useEffect(() => {
-    refresh();
-  }, []);
+  useEffect(() => { refresh(); }, []);
 
   async function onAdd() {
-    if (!text.trim()) return;
-    setBusy(true);
-    setError('');
+    if (!input.trim()) return;
+    setAdding(true);
     try {
-      await addMemory(text.trim());
-      setText('');
+      await addMemory(input.trim());
+      setInput("");
       await refresh();
-    } catch (e) {
-      setError(e?.message || 'Failed to add memory');
+      flash("Saved.");
+    } catch (err) {
+      flash(`Save failed: ${err.message}`, "err");
     } finally {
-      setBusy(false);
+      setAdding(false);
     }
   }
 
   async function onClear() {
-    setBusy(true);
-    setError('');
+    if (!items.length) return;
+    setClearing(true);
     try {
       await clearMemories();
       await refresh();
-    } catch (e) {
-      setError(e?.message || 'Failed to clear memories');
+      flash("Cleared.");
+    } catch (err) {
+      flash(`Clear failed: ${err.message}`, "err");
     } finally {
-      setBusy(false);
+      setClearing(false);
     }
   }
 
   return (
-    <section>
+    <section style={{ marginTop: 8 }}>
       <h2>Memories</h2>
 
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '8px 0' }}>
+      <div style={{ display: "flex", gap: 8, alignItems: "center", marginTop: 6 }}>
         <input
-          aria-label="Add a memory…"
           placeholder="Add a memory…"
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-          disabled={busy}
-          style={{ flex: 1, padding: 8 }}
+          value={input}
+          onChange={(e) => setInput(e.target.value)}
+          disabled={adding || clearing}
+          style={{ flex: 1, padding: "8px 10px" }}
         />
-        <button onClick={onAdd} disabled={busy}>Add</button>
-        <button onClick={onClear} disabled={busy}>Clear</button>
+        <button onClick={onAdd} disabled={adding || clearing || !input.trim()}>
+          {adding ? "Saving…" : "Add"}
+        </button>
+        <button onClick={onClear} disabled={clearing || adding || !items.length}>
+          {clearing ? "Clearing…" : "Clear"}
+        </button>
       </div>
 
-      {error && <div style={{ color: 'crimson', marginBottom: 8 }}>{error}</div>}
+      {note && (
+        <div
+          style={{
+            marginTop: 8,
+            fontSize: 13,
+            color: note.type === "err" ? "#a00" : "#0a0",
+          }}
+        >
+          {note.msg}
+        </div>
+      )}
 
-      <ul>
-        {items.length === 0 ? (
-          <li style={{ opacity: 0.7 }}>No memories yet.</li>
+      <div style={{ marginTop: 14, minHeight: 24 }}>
+        {loading ? (
+          <div>Loading memories…</div>
+        ) : items.length ? (
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {items.map((m, i) => (
+              <li key={`${m.ts || i}-${m.text}`}>
+                <span style={{ color: "#666" }}>
+                  {m.ts ? new Date(m.ts).toLocaleString() + " " : ""}
+                </span>
+                {m.text}
+              </li>
+            ))}
+          </ul>
         ) : (
-          items.map((m, i) => (
-            <li key={m.id ?? i}>
-              <span style={{ opacity: 0.6, marginRight: 6 }}>
-                {m.ts ? new Date(m.ts).toLocaleString() : ''}
-              </span>
-              {m.text ?? String(m)}
-            </li>
-          ))
+          <div style={{ color: "#666" }}>• No memories yet.</div>
         )}
-      </ul>
+      </div>
+
+      <div style={{ marginTop: 12, fontSize: 12, color: "#777" }}>
+        API: {API_BASE}
+      </div>
     </section>
   );
 }

@@ -1,111 +1,88 @@
-import React, { useEffect, useState } from "react";
-import { getMemories, addMemory, clearMemories, API_BASE } from "../api";
+// frontend/src/components/Memories.jsx
+import React, { useEffect, useState } from 'react';
+import { addMemory, clearMemories, listMemories } from '../lib/api';
 
 export default function Memories() {
+  const [text, setText] = useState('');
   const [items, setItems] = useState([]);
-  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
+  const [error, setError] = useState('');
 
-  // initial load
+  async function refresh() {
+    try {
+      setError('');
+      const res = await listMemories();
+      setItems(res.items ?? []);
+    } catch (e) {
+      setError(e?.message || 'Failed to load memories');
+    }
+  }
+
   useEffect(() => {
-    (async () => {
-      try {
-        const res = await getMemories(); // ALWAYS via API_BASE
-        if (res?.ok && Array.isArray(res.items)) setItems(res.items || []);
-        else toast("Failed to load memories", true);
-      } catch (err) {
-        console.error(err);
-        toast("Failed to load memories", true);
-      }
-    })();
+    refresh();
   }, []);
 
   async function onAdd() {
     if (!text.trim()) return;
     setBusy(true);
+    setError('');
     try {
-      const res = await addMemory(text.trim());
-      if (res?.ok && res.item) {
-        setItems((cur) => [res.item, ...(cur || [])]);
-        setText("");
-        toast("Saved.");
-      } else {
-        toast("Save failed.", true);
-      }
-    } catch (err) {
-      console.error(err);
-      toast("Save failed.", true);
+      await addMemory(text.trim());
+      setText('');
+      await refresh();
+    } catch (e) {
+      setError(e?.message || 'Failed to add memory');
     } finally {
       setBusy(false);
     }
   }
 
   async function onClear() {
-    if (!confirm("Clear all memories?")) return;
     setBusy(true);
+    setError('');
     try {
-      const res = await clearMemories();
-      if (res?.ok) {
-        setItems([]);
-        toast("Cleared.");
-      } else {
-        toast("Clear failed", true);
-      }
-    } catch (err) {
-      console.error(err);
-      toast("Clear failed", true);
+      await clearMemories();
+      await refresh();
+    } catch (e) {
+      setError(e?.message || 'Failed to clear memories');
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <section id="memories" className="page">
+    <section>
       <h2>Memories</h2>
 
-      <div className="controls" style={{ display: "flex", gap: 12, alignItems: "center" }}>
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', margin: '8px 0' }}>
         <input
+          aria-label="Add a memory…"
           placeholder="Add a memory…"
           value={text}
           onChange={(e) => setText(e.target.value)}
-          onKeyDown={(e) => e.key === "Enter" && onAdd()}
           disabled={busy}
+          style={{ flex: 1, padding: 8 }}
         />
-        <button onClick={onAdd} disabled={busy || !text.trim()}>Add</button>
-        <button onClick={onClear} disabled={busy || items.length === 0}>Clear</button>
+        <button onClick={onAdd} disabled={busy}>Add</button>
+        <button onClick={onClear} disabled={busy}>Clear</button>
       </div>
 
-      <ul style={{ marginTop: 12 }}>
+      {error && <div style={{ color: 'crimson', marginBottom: 8 }}>{error}</div>}
+
+      <ul>
         {items.length === 0 ? (
-          <li className="muted">No memories yet.</li>
+          <li style={{ opacity: 0.7 }}>No memories yet.</li>
         ) : (
-          items.map((m) => (
-            <li key={m.id || m.ts}>
-              <span style={{ opacity: 0.7, marginRight: 8 }}>
-                {new Date(m.ts).toLocaleDateString()}{" "}
-                {new Date(m.ts).toLocaleTimeString()}
+          items.map((m, i) => (
+            <li key={m.id ?? i}>
+              <span style={{ opacity: 0.6, marginRight: 6 }}>
+                {m.ts ? new Date(m.ts).toLocaleString() : ''}
               </span>
-              {m.text}
+              {m.text ?? String(m)}
             </li>
           ))
         )}
       </ul>
-
-      {/* debug hint so we can see which host is used */}
-      <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
-        API: {API_BASE || "(unset)"}
-      </div>
     </section>
   );
-}
-
-// --- tiny toast helper (uses your existing CSS .toast / .toast--err) ---
-function toast(msg, err = false) {
-  const el = document.createElement("div");
-  el.className = err ? "toast toast--err" : "toast";
-  el.textContent = msg;
-  document.body.appendChild(el);
-  setTimeout(() => {
-    el.remove();
-  }, 1500);
 }

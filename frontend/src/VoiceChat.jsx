@@ -1,4 +1,5 @@
 // frontend/src/VoiceChat.jsx
+import React from "react";
 import React, { useEffect, useRef, useState } from "react";
 
 const SR =

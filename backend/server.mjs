@@ -1,6 +1,6 @@
 // --- ElevenLabs TTS proxy ----------------------------------------------------
 import express from "express";
-import fetch from "node-fetch"; // If Node 22+, global fetch exists; this import is safe either way.
+// If Node 22+, global fetch exists; this import is safe either way.
 
 const VOICE_IDS = {
   // Default high-quality voice; change later if you like.

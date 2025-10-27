@@ -1,158 +1,201 @@
 // frontend/src/VoiceChat.jsx
-import React, { useEffect, useRef, useState } from "react";
+import React, { useEffect, useMemo, useRef, useState } from "react";
 
 /**
- * Mic + transcript + tiny TTS smoke test.
- * - Mic uses Web Speech Recognition if available (Chrome)
- * - TTS uses Web Speech Synthesis (built-in)
+ * Tiny helper to feature-detect Web Speech APIs on each browser.
  */
-export default function VoiceChat() {
-  const [readySR, setReadySR] = useState(false);
-  const [readyTTS, setReadyTTS] = useState(false);
-  const [listening, setListening] = useState(false);
-  const [status, setStatus] = useState("idle");
-  const [transcript, setTranscript] = useState("");
-  const recogRef = useRef(null);
-  const streamRef = useRef(null);
-
-  // Feature detect once
-  useEffect(() => {
-    const SR = !!(window.SpeechRecognition || window.webkitSpeechRecognition);
-    setReadySR(SR);
-    const TTS = typeof window.speechSynthesis !== "undefined";
-    setReadyTTS(TTS);
+function useSpeechApis() {
+  const SR = useMemo(() => {
+    return (
+      window.SpeechRecognition ||
+      window.webkitSpeechRecognition ||
+      window.mozSpeechRecognition ||
+      window.msSpeechRecognition ||
+      null
+    );
   }, []);
+  const synth = useMemo(() => window.speechSynthesis || null, []);
+  return { SR, synth };
+}
 
-  async function ensureMic() {
-    try {
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      streamRef.current = stream;
-      return true;
-    } catch (e) {
-      setStatus(`mic error: ${e.name}`);
-      return false;
-    }
-  }
+export default function VoiceChat() {
+  // ---- Config ----
+  const API_BASE = "https://almosthuman-starter.onrender.com";
 
-  function stopMicStream() {
-    if (streamRef.current) {
-      streamRef.current.getTracks().forEach(t => t.stop());
-      streamRef.current = null;
-    }
-  }
+  // ---- UI state ----
+  const [transcript, setTranscript] = useState("");
+  const [listening, setListening] = useState(false);
+  const [status, setStatus] = useState("idle"); // idle | listening | spoken | error
+  const [srOk, setSrOk] = useState(false);
+  const [ssOk, setSsOk] = useState(false);
 
-  async function start() {
-    setStatus("starting…");
+  // ---- SpeechRecognition setup ----
+  const { SR, synth } = useSpeechApis();
+  const recRef = useRef(null);
 
-    const ok = await ensureMic();
-    if (!ok) return;
+  useEffect(() => {
+    setSrOk(Boolean(SR));
+    setSsOk(Boolean(synth));
+    if (!SR) return;
 
-    const SRClass = window.SpeechRecognition || window.webkitSpeechRecognition;
-    if (SRClass) {
-      const r = new SRClass();
-      recogRef.current = r;
-      r.lang = "en-US";
-      r.continuous = true;
-      r.interimResults = true;
+    const rec = new SR();
+    rec.lang = "en-US";
+    rec.interimResults = true;
+    rec.continuous = true;
 
-      r.onresult = (ev) => {
-        let finalText = "";
-        for (let i = ev.resultIndex; i < ev.results.length; i++) {
-          const chunk = ev.results[i][0]?.transcript ?? "";
-          if (ev.results[i].isFinal) finalText += chunk;
-        }
-        if (finalText) setTranscript(t => (t ? t + " " : "") + finalText.trim());
-      };
-      r.onerror = (e) => setStatus(`recognition error: ${e.error}`);
-      r.onend = () => {
-        setListening(false);
-        setStatus("stopped");
-        stopMicStream();
-      };
-
-      r.start();
+    rec.onstart = () => {
       setListening(true);
       setStatus("listening");
-    } else {
-      setListening(true);
-      setStatus("mic active (no speech API)");
+    };
+    rec.onend = () => {
+      setListening(false);
+      setStatus("idle");
+    };
+    rec.onerror = (e) => {
+      console.error("SpeechRecognition error:", e);
+      setStatus("error");
+      setListening(false);
+    };
+    rec.onresult = (e) => {
+      let text = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        text += e.results[i][0].transcript;
+      }
+      setTranscript(text.trim());
+    };
+
+    recRef.current = rec;
+    return () => {
+      try {
+        rec.stop();
+      } catch (_) {}
+    };
+  }, [SR, synth]);
+
+  // ---- Actions ----
+  const startMic = () => {
+    if (!recRef.current) return;
+    try {
+      recRef.current.start();
+    } catch {
+      // In some browsers start() throws if already started
     }
-  }
+  };
 
-  function stop() {
-    try { recogRef.current?.stop(); } catch {}
-    setListening(false);
-    setStatus("stopped");
-    stopMicStream();
-  }
+  const stopMic = () => {
+    if (!recRef.current) return;
+    try {
+      recRef.current.stop();
+    } catch {}
+  };
 
-  // --- Tiny TTS helpers ------------------------------------------------------
+  const clearTranscript = () => {
+    setTranscript("");
+    setStatus("idle");
+  };
 
-  function speak(text) {
-    if (!readyTTS) {
-      setStatus("tts not available");
-      return;
+  const readTranscript = async () => {
+    if (!synth) return;
+    try {
+      const u = new SpeechSynthesisUtterance(
+        transcript || "There is no transcript yet."
+      );
+      u.rate = 1.0;
+      u.pitch = 1.0;
+      u.onend = () => setStatus("spoken");
+      synth.cancel(); // stop any current speech
+      synth.speak(u);
+    } catch (err) {
+      console.error("SpeechSynthesis error:", err);
+      setStatus("error");
     }
-    // Cancel anything pending and speak fresh
-    window.speechSynthesis.cancel();
-    const utt = new SpeechSynthesisUtterance(text);
-    utt.rate = 1.0;
-    utt.pitch = 1.0;
-    utt.onend = () => setStatus("spoken");
-    utt.onerror = (e) => setStatus(`tts error: ${e.error || "unknown"}`);
-    window.speechSynthesis.speak(utt);
-    setStatus("speaking…");
-  }
+  };
 
-  function speakTest() {
-    speak("Hello! Your microphone and speaker test is working.");
-  }
+  /**
+   * Calls your backend /tts and plays the returned audio blob.
+   * This is the same logic you tested in the console, now as a function.
+   */
+  const playTestVoice = async () => {
+    try {
+      const r = await fetch(`${API_BASE}/tts`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          text: "Hi there — your ElevenLabs voice pipeline is live.",
+        }),
+      });
+      if (!r.ok) {
+        const msg = await r.text().catch(() => "");
+        throw new Error(`HTTP ${r.status} ${r.statusText} ${msg || ""}`.trim());
+      }
+      const blob = await r.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      await audio.play();
+      setStatus("spoken");
+      // URL.revokeObjectURL(url) after audio ends is optional here
+    } catch (err) {
+      console.error("TTS failed:", err);
+      setStatus("error");
+    }
+  };
 
-  function speakTranscript() {
-    const text = transcript.trim();
-    speak(text || "There is no transcript yet.");
-  }
-
-  // --------------------------------------------------------------------------
-
+  // ---- UI ----
   return (
-    <section id="voice" className="page" style={{ marginTop: 24 }}>
+    <section style={{ marginTop: 24 }}>
       <h2>Talk to me</h2>
 
-      <div className="controls" style={{ display: "flex", flexWrap: "wrap", gap: 12 }}>
-        <button onClick={listening ? stop : start} id="startMic">
-          {listening ? "Stop mic" : "Start mic"}
-        </button>
-        <button onClick={() => setTranscript("")} disabled={listening}>
-          Clear transcript
-        </button>
-        <button onClick={speakTest}>
-          🔊 Play test voice
-        </button>
-        <button onClick={speakTranscript} disabled={!readyTTS}>
-          🔊 Read transcript
-        </button>
-      </div>
-
-      <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
-        {readySR ? "SpeechRecognition OK" : "SpeechRecognition not available (Chrome recommended)"} •{" "}
-        {readyTTS ? "SpeechSynthesis OK" : "SpeechSynthesis not available"} •{" "}
-        Status: {status}
+      <div style={{ display: "flex", gap: 12, marginBottom: 12, flexWrap: "wrap" }}>
+        {!listening ? (
+          <button onClick={startMic}>🎙️ Start mic</button>
+        ) : (
+          <button onClick={stopMic}>⏹️ Stop mic</button>
+        )}
+        <button onClick={clearTranscript}>🧹 Clear transcript</button>
+        <button onClick={playTestVoice}>🔊 Play test voice</button>
+        <button onClick={readTranscript}>📖 Read transcript</button>
       </div>
 
       <div
-        id="transcript"
         style={{
-          border: "1px solid #ddd",
-          padding: 12,
-          borderRadius: 8,
-          marginTop: 12,
-          minHeight: 80,
-          background: "#fafafa",
-          fontSize: 14
+          fontSize: 12,
+          color: "#3a3a3a",
+          marginBottom: 8,
         }}
       >
-        {transcript || <span className="muted">Your transcript will appear here.</span>}
+        <span>
+          {srOk ? "SpeechRecognition OK" : "SpeechRecognition not available"}
+        </span>
+        {" • "}
+        <span>{ssOk ? "SpeechSynthesis OK" : "SpeechSynthesis not available"}</span>
+        {" • "}
+        <span>
+          Status:{" "}
+          {status === "idle"
+            ? "idle"
+            : status === "listening"
+            ? "listening"
+            : status === "spoken"
+            ? "spoken"
+            : "error"}
+        </span>
+      </div>
+
+      <textarea
+        placeholder="Your transcript will appear here."
+        value={transcript}
+        onChange={(e) => setTranscript(e.target.value)}
+        rows={5}
+        style={{
+          width: "100%",
+          maxWidth: 640,
+          resize: "vertical",
+          padding: 12,
+        }}
+      />
+
+      <div style={{ marginTop: 12, fontSize: 12, color: "#666" }}>
+        API: {API_BASE}
       </div>
     </section>
   );

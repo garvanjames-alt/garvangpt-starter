@@ -4,14 +4,16 @@
 export const API_BASE =
   import.meta.env.VITE_API_BASE || "https://almosthuman-starter.onrender.com";
 
-/** List memories (optional helper; UI may not use yet) */
+/** --- Memories --- */
 export async function listMemories() {
   const res = await fetch(`${API_BASE}/memory`, { method: "GET", cache: "no-store" });
   if (!res.ok) throw new Error(`Failed to list memories (${res.status})`);
   return res.json(); // {items:[{ts,text}]}
 }
 
-/** Add one memory */
+// Back-compat for Memories.jsx (imports getMemories)
+export const getMemories = listMemories;
+
 export async function addMemory(text) {
   const res = await fetch(`${API_BASE}/memory`, {
     method: "POST",
@@ -22,14 +24,13 @@ export async function addMemory(text) {
   return res.json();
 }
 
-/** Clear all memories */
 export async function clearMemories() {
   const res = await fetch(`${API_BASE}/memory`, { method: "DELETE" });
   if (!res.ok) throw new Error("Failed to clear memories");
   return res.json();
 }
 
-/** Send text to prototype (LLM). Returns {reply: string} */
+/** --- Prototype chat --- */
 export async function sendToPrototype(text) {
   const res = await fetch(`${API_BASE}/chat`, {
     method: "POST",
@@ -40,7 +41,7 @@ export async function sendToPrototype(text) {
   return res.json(); // { reply: "..." }
 }
 
-/** Turn text into speech via backend ElevenLabs proxy. Returns a Blob (audio/mpeg). */
+/** --- TTS --- */
 export async function ttsToBlob(text) {
   const res = await fetch(`${API_BASE}/tts`, {
     method: "POST",

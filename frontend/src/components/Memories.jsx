@@ -1,49 +1,39 @@
-import { useEffect, useRef, useState } from "react";
-import { getMemories, addMemory, clearMemories } from "../api";
-
-const styles = {
-  card: { marginTop: 16 },
-  list: { padding: "8px 0 0 0" },
-  item: { margin: "6px 0" },
-  ts: { opacity: 0.7, marginRight: 8 },
-  row: { display: "flex", gap: 8, alignItems: "center" },
-  input: { flex: 1 }
-};
+import { useEffect, useState } from "react";
+import { listMemory, addMemory, clearMemory, API_BASE } from "../api.js";
 
 export default function Memories() {
   const [items, setItems] = useState([]);
+  const [text, setText] = useState("");
   const [busy, setBusy] = useState(false);
-  const inputRef = useRef(null);
 
-  // initial load
   useEffect(() => {
     (async () => {
       try {
-        const data = await getMemories(); // ALWAYS via API_BASE
-        if (data?.ok && Array.isArray(data.items)) setItems(data.items);
+        const res = await listMemory();
+        if (res?.ok) setItems(res.items || []);
+        else toast("Failed to load memories", true);
       } catch (err) {
-        console.error("GET /memory failed:", err);
-        toast("request_failed", true);
+        console.error(err);
+        toast("Failed to load memories", true);
       }
     })();
   }, []);
 
   async function onAdd() {
-    const text = (inputRef.current?.value || "").trim();
-    if (!text) return;
+    if (!text.trim()) return;
     setBusy(true);
     try {
-      const data = await addMemory(text);
-      if (data?.ok && data.item) {
-        setItems((prev) => [data.item, ...prev]);
-        inputRef.current.value = "";
+      const res = await addMemory(text.trim());
+      if (res?.ok && res.item) {
+        setItems((cur) => [res.item, ...cur]);
+        setText("");
         toast("Saved.");
       } else {
-        toast("Save failed", true);
+        toast("Save failed.", true);
       }
     } catch (err) {
       console.error(err);
-      toast("request_failed", true);
+      toast("Save failed.", true);
     } finally {
       setBusy(false);
     }
@@ -53,44 +43,47 @@ export default function Memories() {
     if (!confirm("Clear all memories?")) return;
     setBusy(true);
     try {
-      const data = await clearMemories(); // ALWAYS via API_BASE
-      if (data?.ok) {
+      const res = await clearMemory();
+      if (res?.ok) {
         setItems([]);
         toast("Cleared.");
       } else {
-        toast("Clear failed", true);
+        toast("Clear failed.", true);
       }
     } catch (err) {
       console.error(err);
-      toast("request_failed", true);
+      toast("Clear failed.", true);
     } finally {
       setBusy(false);
     }
   }
 
   return (
-    <div style={styles.card}>
+    <section id="memories" className="page">
       <h2>Memories</h2>
 
-      <div style={styles.row}>
+      <div className="controls" style={{ justifyContent: "flex-start" }}>
         <input
-          ref={inputRef}
-          style={styles.input}
           placeholder="Add a memory…"
-          onKeyDown={(e) => e.key === "Enter" && onAdd()}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
           disabled={busy}
         />
-        <button onClick={onAdd} disabled={busy}>Add</button>
-        <button onClick={onClear} disabled={busy}>Clear</button>
+        <button onClick={onAdd} disabled={busy} style={{ marginLeft: 12 }}>
+          Add
+        </button>
+        <button onClick={onClear} disabled={busy} style={{ marginLeft: 12 }}>
+          Clear
+        </button>
       </div>
 
-      <ul style={styles.list}>
+      <ul style={{ marginTop: 12 }}>
         {items.length === 0 ? (
           <li className="muted">No memories yet.</li>
         ) : (
-          items.map((m, i) => (
-            <li key={m.id ?? i} style={styles.item}>
-              <span style={styles.ts}>
+          items.map((m) => (
+            <li key={m.id || m.ts}>
+              <span style={{ opacity: 0.7, marginRight: 8 }}>
                 {new Date(m.ts).toLocaleDateString()}{" "}
                 {new Date(m.ts).toLocaleTimeString()}
               </span>
@@ -99,11 +92,15 @@ export default function Memories() {
           ))
         )}
       </ul>
-    </div>
+
+      {/* debug hint so we can see which host is used */}
+      <div className="muted" style={{ marginTop: 8, fontSize: 12 }}>
+        API: {API_BASE || "(unset)"}
+      </div>
+    </section>
   );
 }
 
-/* --- tiny toast helper (uses your existing CSS .toast / .toast--err) --- */
 function toast(msg, err = false) {
   const el = document.createElement("div");
   el.className = err ? "toast toast--err" : "toast";

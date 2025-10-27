@@ -1,78 +1,47 @@
-// backend/server.mjs
+// --- ElevenLabs TTS proxy ----------------------------------------------------
 import express from "express";
-import cors from "cors";
+import fetch from "node-fetch"; // If Node 22+, global fetch exists; this import is safe either way.
 
-// --- Config -------------------------------------------------
-const PORT = process.env.PORT || 10000;
-
-// Allow-list CORS from env `CORS_ORIGINS` (comma-separated) or allow all in dev
-const allowlist = (process.env.CORS_ORIGINS || "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
-
-const corsOptions = {
-  origin: (origin, cb) => {
-    // no Origin (e.g., curl) -> allow
-    if (!origin) return cb(null, true);
-    if (allowlist.length === 0) return cb(null, true);
-    if (allowlist.includes(origin)) return cb(null, true);
-    return cb(new Error("Not allowed by CORS"));
-  },
-  credentials: true,
+const VOICE_IDS = {
+  // Default high-quality voice; change later if you like.
+  Rachel: "21m00Tcm4TlvDq8ikWAM",
 };
 
-// --- App ----------------------------------------------------
-const app = express();
-app.use(cors(corsOptions));
-app.use(express.json());
-
-// --- Simple in-memory store for demo -----------------------
-let items = []; // { text, ts }
-
-// --- Health -------------------------------------------------
-app.get("/health", (req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() });
-});
-
-// --- Memory API --------------------------------------------
-// List memories
-app.get("/memory", (req, res) => {
-  res.json({ ok: true, items });
-});
-
-// Add a memory
-app.post("/memory", (req, res) => {
-  const text = (req.body && req.body.text ? String(req.body.text) : "").trim();
-  if (!text) return res.status(400).json({ ok: false, error: "missing_text" });
-
-  const item = { text, ts: Date.now() };
-  items = [item, ...items].slice(0, 100); // keep it tidy
-  res.json({ ok: true, item });
-});
-
-// Clear memories
-app.delete("/memory", (_req, res) => {
-  items = [];
-  res.json({ ok: true });
-});
-
-// --- Prototype brain endpoint ------------------------------
-// Keep a lightweight echo so the route is always live.
-// (If you already wired OpenAI before, you can keep that code;
-// this echo ensures the route won’t crash when key/env differs.)
-app.post("/api/respond", async (req, res) => {
+app.post("/tts", express.json(), async (req, res) => {
   try {
-    const prompt = (req.body && req.body.prompt ? String(req.body.prompt) : "").trim();
-    const reply = prompt ? `You said: "${prompt}"` : "(no reply)";
-    return res.json({ ok: true, reply });
-  } catch (err) {
-    console.error(err);
-    res.status(500).json({ ok: false, error: "internal_error" });
-  }
-});
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    if (!apiKey) {
+      return res.status(500).json({ error: "ELEVENLABS_API_KEY is not set" });
+    }
 
-// --- Start --------------------------------------------------
-app.listen(PORT, () => {
-  console.log(`Backend listening on :${PORT}`);
+    const { text, voiceId = VOICE_IDS.Rachel } = req.body || {};
+    if (!text || typeof text !== "string") {
+      return res.status(400).json({ error: "text (string) is required" });
+    }
+
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}/stream?optimize_streaming_latency=3&output_format=mp3_44100_128`;
+    const r = await fetch(url, {
+      method: "POST",
+      headers: {
+        "xi-api-key": apiKey,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        text,
+        voice_settings: { stability: 0.4, similarity_boost: 0.7 },
+      }),
+    });
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => "");
+      return res.status(r.status).send(errText || "TTS failed");
+    }
+
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.setHeader("Cache-Control", "no-store");
+    // Stream audio back to the browser
+    r.body.pipe(res);
+  } catch (e) {
+    res.status(500).json({ error: e.message || "tts error" });
+  }
 });

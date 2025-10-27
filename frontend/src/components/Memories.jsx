@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import React, { useEffect, useState } from "react";
 import { getMemories, addMemory, clearMemories, API_BASE } from "../api";
 
 export default function Memories() {
@@ -82,7 +82,7 @@ export default function Memories() {
           items.map((m) => (
             <li key={m.id || m.ts}>
               <span style={{ opacity: 0.7, marginRight: 8 }}>
-                {new Date(m.ts).toLocaleDateString()} {" "}
+                {new Date(m.ts).toLocaleDateString()}{" "}
                 {new Date(m.ts).toLocaleTimeString()}
               </span>
               {m.text}

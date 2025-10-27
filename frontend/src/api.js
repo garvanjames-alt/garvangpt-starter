@@ -1,59 +1,41 @@
-// frontend/src/api.js
+// Simple frontend API client for the Memory demo (and /api/respond later)
 
-// 1) Where is the backend?
-// Prefer an explicit Vite env var, otherwise fall back to same-origin (dev).
 const BASE =
-  import.meta?.env?.VITE_BACKEND_URL?.replace(/\/+$/, "") ||
-  `${window.location.origin.replace(/\/+$/, "")}`;
+  import.meta?.env?.VITE_API_BASE?.replace(/\/+$/, "") || ""; // e.g. https://almosthuman-starter.onrender.com
 
-// 2) Small helper around fetch
-async function jfetch(path, opts = {}) {
-  const res = await fetch(`${BASE}${path}`, {
-    headers: { "Content-Type": "application/json", ...(opts.headers || {}) },
-    ...opts,
-  });
-  const text = await res.text();
-  let data = null;
-  try {
-    data = text ? JSON.parse(text) : null;
-  } catch {
-    // non-JSON is fine for /health, etc.
-  }
-  if (!res.ok) {
-    const message = (data && (data.error || data.message)) || res.statusText;
-    throw new Error(message || "request_failed");
-  }
-  return data ?? {};
+function url(path) {
+  // always hit the backend, never the static origin
+  return `${BASE}${path.startsWith("/") ? path : `/${path}`}`;
 }
 
-// 3) API surface used by the UI
-export async function listMemories() {
-  return jfetch("/memory", { method: "GET" }); // -> { items: [...] }
+export async function getMemories() {
+  const r = await fetch(url("/memory"), { method: "GET" });
+  if (!r.ok) throw new Error(`GET /memory failed: ${r.status}`);
+  return r.json(); // -> { ok:true, items:[...] }
 }
 
 export async function addMemory(text) {
-  return jfetch("/memory", {
+  const r = await fetch(url("/memory"), {
     method: "POST",
-    body: JSON.stringify({ text }),
-  }); // -> { ok: true }
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ text })
+  });
+  if (!r.ok) throw new Error(`POST /memory failed: ${r.status}`);
+  return r.json(); // -> { ok:true, item:{...} }
 }
 
 export async function clearMemories() {
-  return jfetch("/memory", { method: "DELETE" }); // -> { ok: true }
+  // clear all memories
+  const r = await fetch(url("/memory"), { method: "DELETE" });
+  if (!r.ok) throw new Error(`DELETE /memory failed: ${r.status}`);
+  return r.json(); // -> { ok:true, cleared:n }
 }
 
-// Prototype voice reply (text in, text out)
-export async function respond(prompt) {
-  return jfetch("/api/respond", {
-    method: "POST",
-    body: JSON.stringify({ prompt }),
-  }); // -> { ok: true, reply: "..." }
-}
-
-// Optional: health check you can call from console if you like.
+// Optional health probe you can run from the console if needed
 export async function health() {
-  return jfetch("/health", { method: "GET" }); // -> { ok: true, ts: ... }
+  const r = await fetch(url("/health"), { method: "GET" });
+  return r.json(); // -> { ok:true, ts:"..." }
 }
 
-// Expose BASE for quick sanity checks in the console
+// Export BASE for quick sanity checks from the browser console
 export const API_BASE = BASE;

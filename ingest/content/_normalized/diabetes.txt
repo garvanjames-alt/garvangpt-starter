@@ -1,0 +1,847 @@
+# Normalized
+# Encoding: UTF-8
+# Format: plain-text
+# Source-Stem: diabetes
+---
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+ 
+ (adsbygoogle = window.adsbygoogle || []).push({ 
+ google_ad_client: "ca-pub-6744151061288343", 
+ enable_page_level_ads: true 
+ }); 
+
+
+ Lynchs Pharmacy, Broadale, Diabetes Introduktion
+ 
+ 
+
+ 
+@import url("http://lynchspharmacy.com/modules/system/system.base.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/system/system.messages.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_api/date.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_popup/themes/datepicker.1.7.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/field/theme/field.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/node/node.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/user/user.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/views/css/views.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/ckeditor/css/ckeditor.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/ctools/css/ctools.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/print/print_ui/css/print_ui.theme.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/expanding_formatter/css/expanding_formatter.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/global.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/portfolio.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/social.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/typo.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/page-nav.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/boxes.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/comments.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/testimonials.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/accordion.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/counters.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tabs.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/shadows.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/pricing-tables.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tooltips.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/slider.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/animations.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/timeline.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/fontello/css/fontello.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/colorbox/colorbox.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/bootstrap.min.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/drupal.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/aurum_sub/css/custom.css?rveunr");
+
+ 
+ 
+
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ Home
+ 
+ 
+
+
+ 
+ 
+ Medicine A-Z
+ 
+ 
+
+
+ 
+ 
+ Health A-Z
+ 
+ 
+
+
+ 
+ 
+ Video Series
+ 
+ 
+
+
+ 
+ 
+ Asthma
+ 
+ 
+
+
+ 
+ 
+ Diabetes
+ 
+ 
+
+
+ 
+ 
+ Alzheimers
+ 
+ 
+
+
+ 
+ 
+ Blog
+ 
+ 
+
+
+ 
+ 
+ Health In The News
+ 
+ 
+
+
+ 
+ 
+ Contact
+ 
+ 
+ 
+ 
+
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+ HomeMedicine A-ZHealth A-ZVideo SeriesAsthmaDiabetesAlzheimersBlogHealth In The NewsContact 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Health In The News
+Learn more about your health or illness with our health video series. 
+Please read our policy and consent to Marketing and Preferencesby clicking the icon on bottom left corner to view YouTube videos 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cough Treatment 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Types of coughs 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cold &amp; Flu 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ More Health in The News videos &nbsp; Message us with your health query 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Diabetes 
+
+ You are here:HomeDiabetes 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ Diabetes mellitus is an umbrella term that describes a group of conditions where the body&#039;s ability to control and use glucose (blood sugar) is altered.
+ HOW DOES LYNCH'S PHARMACY HELP?
+Here at Lynchs Pharmacy, our goal is to improve the consistency and accuracy in how you take your medicines. According to the World Health Organisation, As your understanding of your medicines improves, your overall health also improves.
+
+ 
+ Here, on this webiste, we provide you with everything you need to know about diabetes, from what causes diabetes to how to better live with diabetes.
+ 
+ We also provide easy to read and in plain english, information on all diabetes medicines and different types of insulins available.&nbsp;
+ 
+ We also have videos explaining your medicines and insulins plus demonstration videos on how to use your blood sugar machine, videos on how to correctly inject insulin and how to correctly use a glucagon injection.
+ 
+ So, just click on your medicine and watch our videos, if you have any questions, you can ask us using our live chat on the website.
+
+For everything you need to know about Type 1 Diabetes in Adults - Click Here -&nbsp;http://www.lynchspharmacy.com/health/diabetes-type-1
+For everything you need to know about Type 1 Diabetes in Kids - Click Here -&nbsp;http://www.lynchspharmacy.com/health/diabetes-type-1in-children
+For everything you need to know about Type 2 Diabetes in Adults - Click Here -&nbsp;http://www.lynchspharmacy.com/health/diabetes-type-2
+For everything you need to know about Type 2 Diabetes in Kids - Clich Here -&nbsp;http://www.lynchspharmacy.com/health/diabetes-type-2-children
+
+ An Overview of Diabetes
+There are two major types of diabetes. In type 1 (fomerly called juvenile-onset or insulin-dependent) diabetes, the body completely stops producing any insulin, a hormone that enables the body to use glucose found in foods for energy. People with type 1 diabetes must take daily insulin injections to survive. This form of diabetes usually develops in children or young adults, but can occur at any age. Type 2 (formerly called adult-onset or non insulin-dependent) diabetes results when the body doesn’t produce enough insulin and/or is unable to use insulin properly (insulin resistance). This form of diabetes usually occurs in people who are over 40, overweight, and have a family history of diabetes, although today it is increasingly occurring in younger people, particularly adolescents.
+
+ How do people know if they have diabetes?
+People with diabetes frequently experience certain symptoms. These include:
+
+ 
+ being very thirsty
+ 
+ frequent urination
+ 
+ weight loss
+ 
+ increased hunger
+ 
+ blurry vision
+ 
+ irritability
+ 
+ tingling or numbness in the hands or feet
+ 
+ frequent skin, bladder or gum infections
+ 
+ wounds that don't heal
+ 
+ extreme unexplained fatigue
+
+In some cases, there are no symptoms — this happens at times with type 2 diabetes. In this case, people can live for months, even years without knowing they have the disease. This form of diabetes comes on so gradually that symptoms may not even be recognized.
+
+ Who gets diabetes?
+Diabetes can occur in anyone. However, people who have close relatives with the disease are somewhat more likely to develop it. Other risk factors include obesity, high cholesterol, high blood pressure, and physical inactivity. The risk of developing diabetes also increases as people grow older. People who are over 40 and overweight are more likely to develop diabetes, although the incidence of type 2 diabetes in adolescents is growing. Also, people who develop diabetes while pregnant (a condition called gestational diabetes) are more likely to develop full-blown diabetes later in life.
+
+ How is diabetes treated?
+
+ 
+ There are certain things that everyone who has diabetes, whether type 1 or type 2, needs to do to be healthy. They need to have a meal (eating) plan. They need to pay attention to how much physical activity they engage in, because physical activity can help the body use insulin better so it can convert glucose into energy for cells. Everyone with type 1 diabetes, and some people with type 2 diabetes, also need to take insulin injections. Some people with type 2 diabetes take pills called "oral agents" which help their bodies produce more insulin and/or use the insulin it is producing better. Some people with type 2 diabetes can manage their disease without medication by appropriate meal planning and adequate physical activity.
+ 
+ Everyone who has diabetes should be seen at least once every six months by a diabetes specialist (an endocrinologist or a diabetologist). He or she should also be seen periodically by other members of a diabetes treatment team, including a diabetes nurse educator, and a dietitian who will help develop a meal plan for the individual. Ideally, one should also see an exercise physiologist for help in developing a physical activity plan, and, perhaps, a social worker, psychologist or other mental health professional for help with the stresses and challenges of living with a chronic disease. Everyone who has diabetes should have regular eye exams (once a year) by an ophthalmologist to make sure that any eye problems associated with diabetes are caught early and treated before they become serious.
+
+Also, people with diabetes need to learn how to monitor their blood glucose. Daily testing will help determine how well their meal plan, activity plan, and medication are working to keep blood glucose levels in a normal range.
+
+ What other problems can diabetes cause?
+Your healthcare team will encourage you to follow your meal plan and exercise program, use your medications and monitor your blood glucose regularly to keep your blood glucose in as normal a range as possible as much of the time as possible. Why is this so important? Because poorly managed diabetes can lead to a host of long-term complications — among these are heart attacks, strokes, blindness, kidney failure, and blood vessel disease that may require an amputation, nerve damage, and impotence in men.
+But happily, a nationwide study completed over a 10-year period showed that if people keep their blood glucose as close to normal as possible, they can reduce their risk of developing some of these complications by 50 percent or more.
+
+ Can diabetes be prevented?
+Maybe someday. Type 2 diabetes is the most common type of diabetes, yet we still do not understand it completely. Recent research does suggest, however, that there are some things one can do to prevent this form of diabetes. Studies show that lifestyle changes can prevent or delay the onset of type 2 diabetes in those adults who are at high risk of getting the disease. Modest weight loss (5-10% of body weight) and modest physical activity (30 minutes a day) are recommended goals.
+
+ References:
+https://www.niddk.nih.gov/health-information/diabetes/overview
+http://www.diabetes.co.uk/what-is-diabetes.html
+http://www.netdoctor.co.uk/conditions/diabetes/a826/diabetes-overview/
+https://www.endocrineweb.com/conditions/type-1-diabetes/type-1-diabetes-overview
+https://www.ghc.org/healthAndWellness/index.jhtml?item=/common/healthAndWellness/conditions/diabetes/overview.html
+Read More &gt; 
+
+ Print This Page
+
+ 
+
+ 
+
+ 
+ 
+ 
+ More Videos...
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ What is Metabolic Syndrome? 
+ 
+ 
+ 
+ Byetta (Exenatide) Injection 
+ 
+ 
+ 
+ Have you pre-diabetes? Here are the danger signs. 
+ 
+ 
+ 
+ Aprovel (Irbesartan) Tablets 
+ 
+ 
+ 
+ 
+ 
+ Actrapid Insulin 
+ 
+ 
+ 
+ Actrapid Insulin 
+ 
+ 
+ 
+ Cozaar (Losartan) Tablets 
+ 
+ 
+ 
+ Insulatard 
+ 
+ 
+ 
+ 
+ 
+ Victoza Injection 
+ 
+ 
+ 
+ NovoRapid (Insulin aspart) 
+ 
+ 
+ 
+ NovoNorm tablets 
+ 
+ 
+ 
+ Humulin M3 
+ 
+ 
+ 
+ 
+ 
+ Humalog (insulin lispro) 
+ 
+ 
+ 
+ Tresiba FlexTouch 
+ 
+ 
+ 
+ Novomix (Insulin aspart) 
+ 
+ 
+ 
+ Trulicity (dulaglutide) PFP 
+ 
+ 
+ 
+ 
+ 
+ Toujeo (insulin glargine) Solostar 
+ 
+ 
+ 
+ Apidra SoloStar pens/cartridges 
+ 
+ 
+ 
+ Lantus SoloStar pens/cartridges 
+ 
+ 
+ 
+ Levemir FlexPen/Penfill 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Medicine Reference
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Daonil
+Actos Tablets
+Glucophage Tablets
+Diamicron MR 30mg
+Januvia Tablets
+Janumet Tablets
+Galvus - (Vildagliptin)
+Amaryl
+Avandia
+Forxiga (Dapagliflozin)
+Trajenta - (linagliptin)
+Competact Tablets
+NovoNorm 0.5mg (repaglinide)
+Novomix 30 Flexpen
+Novorapid Flexpen/Penfill
+Insulatard
+Levemir FlexPen/Penfill
+Jardiance (empagliflozin) Tablets
+Trajenta - (linagliptin)
+Synjardy Tablets 
+Apidra SoloStar pens/cartridges
+Toujeo (insulin glargine) Solostar
+Lantus SoloStar pens/cartridges
+Trulicity (dulaglutide) PFP
+Tresiba FlexTouch
+Humalog (insulin lispro) Kwickpen
+Humulin M3
+Victoza Injection
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+Order Your Prescription
+Pre-order your prescription online nowWe'll text you when it's ready to collect at our Pharmacy!
+Order Your Prescription
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ Search
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+BLOG
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 12 Dec
+
+
+ Advice on Pfizer&#039;s COVID 19 Vaccine
+
+
+ Dec 12, 20
+ 
+So first: what is a vaccine? a vaccine teaches our immune system how to create antibodies, and it is these antibodies that protect people from disease. It is much safer for our... Read more
+
+ 
+ 
+ 17 Oct
+
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+
+ Oct 17, 20
+ 
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+This article is originally posted on Proven Skincare.
+When you’re a teenager, self-conscious and unsure, acne can weigh on your self-... Read more
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+
+CONTACT US
+
+ 
+Opening Hours:Monday - Friday: 9 am - 6 pm Saturday: 10am - 12noonPhone: 021 4366923Email: garvanjames@gmail.comAddress:Lynch's PharmacyBroadale, Maryborough Hill,Douglas, CorkIrelandT12CX72
+ 
+FOLLOW US
+
+
+
+
+
+
+WHO WE ARE
+Lynch’s Pharmacy is one of the last remaining, truly independent pharmacies in Cork. Based in Broadale, Douglas, we have over 20 years experience working in the community pharmacy sector.
+Read More
+
+HEALTH LITERACY FRIENDLY POLICY
+Nearly half of all Irish people have inadequate and problematic health literacy skills. Limited health literacy is very common. Read about our Health Literacy Policy here...
+Read More
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+&nbsp;© 2023 Lynch’s Pharmacy. All rights reserved. | Privacy Notice || Admin
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+
+ 
+ 
+
+
+
+
+<!--
+(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","//www.google-analytics.com/analytics.js","ga");ga("create", "UA-19666557-1", {"Domain":"auto"});ga("set", "anonymizeIp", true);ga("send", "pageview");
+//-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"aurum_sub","theme_token":"gxScF-zVIN-s1Pr2VBrQ8-iZ3anPFVt9yngsX84v7oQ","js":{"sites\/all\/modules\/jquery_update\/replace\/jquery\/1.10\/jquery.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/google_analytics\/googleanalytics.js":1,"0":1,"sites\/all\/modules\/expanding_formatter\/js\/expanding_formatter.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.scrollTo.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.easing.1.3.js":1,"sites\/all\/themes\/aurum\/3dParty\/FitVids.js\/jquery.fitvids.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.touchSwipe.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/jquery.colorbox-min.js":1,"sites\/all\/themes\/aurum\/3dParty\/isotope\/isotope.js":1,"sites\/all\/themes\/aurum\/3dParty\/inview.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.gmap.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/bootstrap\/js\/bootstrap.min.js":1,"sites\/all\/themes\/aurum\/js\/pi.googleMapStyles.js":1,"sites\/all\/themes\/aurum\/js\/pi.accordion.js":1,"sites\/all\/themes\/aurum\/js\/pi.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.isotope.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.fitvids.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.map.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.animations.js":1,"sites\/all\/themes\/aurum\/js\/pi.global.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.messages.css":1,"sites\/all\/modules\/date\/date_api\/date.css":1,"sites\/all\/modules\/date\/date_popup\/themes\/datepicker.1.7.css":1,"modules\/field\/theme\/field.css":1,"modules\/node\/node.css":1,"modules\/user\/user.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ckeditor\/css\/ckeditor.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/modules\/print\/print_ui\/css\/print_ui.theme.css":1,"sites\/all\/modules\/expanding_formatter\/css\/expanding_formatter.css":1,"sites\/all\/themes\/aurum\/css\/blue\/global.css":1,"sites\/all\/themes\/aurum\/css\/blue\/portfolio.css":1,"sites\/all\/themes\/aurum\/css\/blue\/social.css":1,"sites\/all\/themes\/aurum\/css\/blue\/typo.css":1,"sites\/all\/themes\/aurum\/css\/blue\/page-nav.css":1,"sites\/all\/themes\/aurum\/css\/blue\/boxes.css":1,"sites\/all\/themes\/aurum\/css\/blue\/comments.css":1,"sites\/all\/themes\/aurum\/css\/blue\/testimonials.css":1,"sites\/all\/themes\/aurum\/css\/blue\/accordion.css":1,"sites\/all\/themes\/aurum\/css\/blue\/counters.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tabs.css":1,"sites\/all\/themes\/aurum\/css\/blue\/shadows.css":1,"sites\/all\/themes\/aurum\/css\/blue\/pricing-tables.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tooltips.css":1,"sites\/all\/themes\/aurum\/css\/blue\/slider.css":1,"sites\/all\/themes\/aurum\/css\/blue\/animations.css":1,"sites\/all\/themes\/aurum\/css\/blue\/timeline.css":1,"sites\/all\/themes\/aurum\/3dParty\/fontello\/css\/fontello.css":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/colorbox.css":1,"sites\/all\/themes\/aurum\/css\/bootstrap.min.css":1,"sites\/all\/themes\/aurum\/css\/drupal.css":1,"sites\/all\/themes\/aurum\/aurum_sub\/css\/custom.css":1}},"urlIsAjaxTrusted":{"\/health\/diabetes":true},"googleanalytics":{"trackOutbound":1,"trackMailto":1,"trackDownload":1,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"aurum":{"sticky":1}});
+//-->
+
+ 
+ 

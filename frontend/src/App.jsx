@@ -1,157 +1,357 @@
-// frontend/src/App.jsx
-import React, { useEffect, useMemo, useState } from "react";
-import {
-  getHealth,
-  listMemories,
-  addMemory,
-  clearMemories,
-  sendPrompt,
-  tryCall,
-} from "./lib/api";
-import VoiceChat from "./VoiceChat.jsx";
+import { useEffect, useMemo, useRef, useState } from "react";
 
+/** -----------------------------
+ *  Small API helper wrappers
+ *  ----------------------------- */
+async function apiGetMemory() {
+  const res = await fetch("/api/memory");
+  if (!res.ok) throw new Error("GET /api/memory failed");
+  return res.json(); // { items: string[] }
+}
+
+async function apiAddMemory(text) {
+  const res = await fetch("/api/memory", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ text }),
+  });
+  if (!res.ok) throw new Error("POST /api/memory failed");
+  return res.json(); // { ok: true }
+}
+
+async function apiClearMemory() {
+  const res = await fetch("/api/memory", { method: "DELETE" });
+  if (!res.ok) throw new Error("DELETE /api/memory failed");
+  return res.json(); // { ok: true }
+}
+
+async function apiRespond(prompt) {
+  const res = await fetch("/respond", {
+    method: "POST",
+    headers: { "content-type": "application/json" },
+    body: JSON.stringify({ prompt }),
+  });
+  if (!res.ok) throw new Error("POST /respond failed");
+  return res.json(); // { text, sources, usedMemories }
+}
+
+/** -----------------------------
+ *  Tiny status pill
+ *  ----------------------------- */
+function Pill({ ok }) {
+  return (
+    <span
+      style={{
+        display: "inline-block",
+        padding: "2px 8px",
+        borderRadius: 999,
+        fontSize: 12,
+        background: ok ? "#E6F8EC" : "#FDECEA",
+        color: ok ? "#077240" : "#B71C1C",
+        border: `1px solid ${ok ? "#A9E4BD" : "#F5C6C6"}`,
+      }}
+    >
+      {ok ? "healthy" : "down"}
+    </span>
+  );
+}
+
+/** -----------------------------
+ *  Main App
+ *  ----------------------------- */
 export default function App() {
-  // ---- state ----
-  const [health, setHealth] = useState(null);
-  const [memories, setMemories] = useState([]);
-  const [newMemory, setNewMemory] = useState("");
-  const [prompt, setPrompt] = useState("");
-  const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
-  const [error, setError] = useState("");
-
-  // Derived
-  const disabled = useMemo(() => loading, [loading]);
-
-  // ---- effects ----
+  // Backend health (simple ping against /health via the frontend proxy)
+  const [healthy, setHealthy] = useState(true);
   useEffect(() => {
-    (async () => {
-      // health
-      const h = await getHealth().catch(() => ({ ok: false }));
-      setHealth(h?.ok ? "healthy" : "unreachable");
-
-      // memories
-      const m = await listMemories().catch(() => ({ items: [] }));
-      setMemories(m.items || []);
-    })();
+    const ping = async () => {
+      try {
+        const res = await fetch("/health");
+        setHealthy(res.ok);
+      } catch {
+        setHealthy(false);
+      }
+    };
+    ping();
+    const id = setInterval(ping, 15000);
+    return () => clearInterval(id);
   }, []);
 
-  // ---- handlers ----
-  async function onAddMemory() {
-    setError("");
-    if (!newMemory.trim()) return;
-    setLoading(true);
-    const res = await tryCall(addMemory, newMemory.trim());
-    setLoading(false);
-    if (!res.ok) return setError(String(res.error || "Failed to add memory"));
-    setNewMemory("");
-    const m = await listMemories().catch(() => ({ items: [] }));
-    setMemories(m.items || []);
-  }
+  // Memory state
+  const [memories, setMemories] = useState([]);
+  const [memInput, setMemInput] = useState("");
+  const [memBusy, setMemBusy] = useState(false);
+  const loadMemories = async () => {
+    const { items } = await apiGetMemory();
+    setMemories(items || []);
+  };
+  useEffect(() => {
+    loadMemories().catch(() => {});
+  }, []);
 
-  async function onClearMemories() {
-    setError("");
-    setLoading(true);
-    const res = await tryCall(clearMemories);
-    setLoading(false);
-    if (!res.ok) return setError(String(res.error || "Failed to clear"));
-    const m = await listMemories().catch(() => ({ items: [] }));
-    setMemories(m.items || []);
-  }
+  // Q&A
+  const [prompt, setPrompt] = useState("");
+  const [answer, setAnswer] = useState("");
+  const [sources, setSources] = useState([]); // [{title, rel}]
+  const [usedMemories, setUsedMemories] = useState([]); // ["memory #2", ...]
+  const [asking, setAsking] = useState(false);
+  const [error, setError] = useState("");
 
-  async function onSendPrompt(e) {
-    e?.preventDefault?.();
+  // Simple debug toggle
+  const [showDebug, setShowDebug] = useState(false);
+
+  // Add/clear memory handlers
+  const onAddMemory = async () => {
+    const text = memInput.trim();
+    if (!text) return;
+    setMemBusy(true);
+    setError("");
+    try {
+      await apiAddMemory(text);
+      setMemInput("");
+      await loadMemories();
+    } catch (e) {
+      setError(e.message || "Failed to add memory");
+    } finally {
+      setMemBusy(false);
+    }
+  };
+  const onClearAll = async () => {
+    if (!confirm("Clear all memories?")) return;
+    setMemBusy(true);
+    setError("");
+    try {
+      await apiClearMemory();
+      await loadMemories();
+    } catch (e) {
+      setError(e.message || "Failed to clear memories");
+    } finally {
+      setMemBusy(false);
+    }
+  };
+
+  // Ask backend
+  const onSend = async () => {
+    const q = prompt.trim();
+    if (!q) return;
+    setAsking(true);
     setError("");
     setAnswer("");
-    if (!prompt.trim()) return;
-    setLoading(true);
-    const res = await tryCall(sendPrompt, prompt.trim());
-    setLoading(false);
-    if (!res.ok) return setError(String(res.error || "Failed to respond"));
-    setAnswer(res.data.text || "");
-  }
+    setSources([]);
+    setUsedMemories([]);
+    try {
+      const { text, sources: src = [], usedMemories: um = [] } = await apiRespond(q);
+      setAnswer(text || "");
+      setSources(src);
+      setUsedMemories(um);
+    } catch (e) {
+      setError(e.message || "Request failed");
+    } finally {
+      setAsking(false);
+    }
+  };
 
-  // ---- UI ----
+  // Keyboard submit
+  const onPromptKey = (e) => {
+    if (e.key === "Enter" && !e.shiftKey) {
+      e.preventDefault();
+      onSend();
+    }
+  };
+
+  // Very lightweight voice demo (kept from earlier UI)
+  const recRef = useRef(null);
+  const [transcript, setTranscript] = useState("");
+  const [listening, setListening] = useState(false);
+  const speechOK = useMemo(() => typeof window !== "undefined" && "speechSynthesis" in window, []);
+  const srOK = useMemo(() => {
+    const w = typeof window !== "undefined" ? window : {};
+    return !!(w.SpeechRecognition || w.webkitSpeechRecognition);
+  }, []);
+  const startMic = () => {
+    if (!srOK) return;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    const rec = new SR();
+    recRef.current = rec;
+    rec.continuous = true;
+    rec.interimResults = true;
+    rec.onresult = (e) => {
+      let t = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        t += e.results[i][0].transcript;
+      }
+      setTranscript(t);
+    };
+    rec.onend = () => setListening(false);
+    rec.start();
+    setListening(true);
+  };
+  const stopMic = () => {
+    recRef.current?.stop();
+    setListening(false);
+  };
+  const speak = (text) => {
+    if (!speechOK || !text) return;
+    const u = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.speak(u);
+  };
+
+  // Basic layout styles (kept lightweight; Vite + no Tailwind required here)
+  const card = {
+    border: "1px solid #eee",
+    borderRadius: 12,
+    padding: 16,
+    marginBottom: 16,
+    background: "#fff",
+    boxShadow: "0 1px 2px rgba(0,0,0,0.04)",
+  };
+
   return (
-    <div className="max-w-3xl mx-auto p-4 space-y-8">
-      <h1 className="text-4xl font-extrabold tracking-tight">
-        GarvanGPT — Almost Human
-      </h1>
-
-      <div className="text-sm">
-        Backend: <span className="font-medium">{health || "…"}</span>
+    <div style={{ maxWidth: 900, margin: "24px auto", padding: "0 16px", lineHeight: 1.5 }}>
+      <h1 style={{ marginBottom: 4 }}>GarvanGPT — Almost Human</h1>
+      <div style={{ fontSize: 14, marginBottom: 16 }}>
+        Backend: <Pill ok={healthy} />
       </div>
 
       {/* Memories */}
-      <section className="space-y-3">
-        <h2 className="text-2xl font-semibold">Memories</h2>
-
-        <div className="flex items-center gap-2">
-          <button
-            onClick={onClearMemories}
-            disabled={disabled}
-            className="rounded-xl px-3 py-2 border hover:bg-gray-50 disabled:opacity-50"
-          >
-            Clear all
-          </button>
-
+      <section style={card}>
+        <h2 style={{ marginTop: 0 }}>Memories</h2>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
+          <button onClick={onClearAll} disabled={memBusy}>Clear all</button>
           <input
-            className="border rounded-xl px-3 py-2 w-60"
+            style={{ flex: 1 }}
             placeholder="Add a memory..."
-            value={newMemory}
-            onChange={(e) => setNewMemory(e.target.value)}
+            value={memInput}
+            onChange={(e) => setMemInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" ? onAddMemory() : null}
           />
-          <button
-            onClick={onAddMemory}
-            disabled={disabled || !newMemory.trim()}
-            className="rounded-xl px-3 py-2 bg-black text-white disabled:opacity-50"
-          >
-            Add
-          </button>
+          <button onClick={onAddMemory} disabled={memBusy || !memInput.trim()}>Add</button>
         </div>
-
-        <ul className="list-disc pl-6">
-          {memories.length === 0 ? (
-            <li className="text-gray-600">No memories yet.</li>
-          ) : (
-            memories.map((m, i) => <li key={i}>{m}</li>)
-          )}
-        </ul>
+        {memories.length === 0 ? (
+          <div style={{ color: "#666", fontSize: 14 }}>No memories yet.</div>
+        ) : (
+          <ul style={{ margin: 0, paddingLeft: 18 }}>
+            {memories.map((m, i) => (<li key={i}>{m}</li>))}
+          </ul>
+        )}
       </section>
 
       {/* Ask */}
-      <section className="space-y-3">
-        <h2 className="text-2xl font-semibold">Ask GarvanGPT</h2>
-        <form onSubmit={onSendPrompt} className="flex items-center gap-2">
+      <section style={card}>
+        <h2 style={{ marginTop: 0 }}>Ask GarvanGPT</h2>
+        <div style={{ display: "flex", gap: 8, marginBottom: 12 }}>
           <input
-            className="border rounded-xl px-3 py-2 flex-1"
-            placeholder="Type a question..."
+            style={{ flex: 1 }}
+            placeholder="Ask a question…"
             value={prompt}
             onChange={(e) => setPrompt(e.target.value)}
+            onKeyDown={onPromptKey}
           />
-          <button
-            type="submit"
-            disabled={disabled || !prompt.trim()}
-            className="rounded-xl px-3 py-2 bg-black text-white disabled:opacity-50"
-          >
-            Send
+          <button onClick={onSend} disabled={asking || !prompt.trim()}>
+            {asking ? "Thinking…" : "Send"}
           </button>
-        </form>
-
-        <div>
-          <div className="text-sm font-medium text-gray-500 mb-1">
-            Assistant reply
-          </div>
-          <div className="text-sm whitespace-pre-wrap border rounded-xl p-3 min-h-[1.5rem]">
-            {answer || "—"}
-          </div>
         </div>
 
-        {error && <div className="text-sm text-red-600">{error}</div>}
+        {error && (
+          <div style={{ color: "#B71C1C", marginBottom: 8 }}>Error: {error}</div>
+        )}
+
+        <div>
+          <div style={{ whiteSpace: "pre-wrap" }}>{answer}</div>
+
+          {(sources?.length || 0) > 0 && (
+            <div style={{ marginTop: 12 }}>
+              <div style={{ fontWeight: 600, marginBottom: 6 }}>Sources used</div>
+              <div style={{ display: "flex", flexWrap: "wrap", gap: 6 }}>
+                {sources.map((s, i) => (
+                  <span
+                    key={i}
+                    title={s.rel || ""}
+                    style={{
+                      border: "1px solid #e3e3e3",
+                      borderRadius: 999,
+                      padding: "2px 10px",
+                      fontSize: 12,
+                      background: "#F7F7F9",
+                    }}
+                  >
+                    {s.title || "untitled"}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {(usedMemories?.length || 0) > 0 && (
+            <div style={{ marginTop: 8, color: "#555", fontSize: 13 }}>
+              <em>Memories referenced:</em> {usedMemories.join(", ")}
+            </div>
+          )}
+
+          <div style={{ marginTop: 12 }}>
+            <button onClick={() => { speak(answer); }} disabled={!speechOK || !answer}>
+              Speak answer
+            </button>
+            <label style={{ marginLeft: 12 }}>
+              <input
+                type="checkbox"
+                checked={showDebug}
+                onChange={(e) => setShowDebug(e.target.checked)}
+                style={{ marginRight: 6 }}
+              />
+              Show debug
+            </label>
+          </div>
+
+          {showDebug && (
+            <pre
+              style={{
+                marginTop: 12,
+                padding: 12,
+                background: "#0b1020",
+                color: "#d6e0ff",
+                borderRadius: 8,
+                overflowX: "auto",
+                fontSize: 12,
+              }}
+            >
+{JSON.stringify({ sources, usedMemories }, null, 2)}
+            </pre>
+          )}
+        </div>
       </section>
 
-      {/* Voice */}
-      <VoiceChat />
+      {/* Voice prototype (optional) */}
+      <section style={card}>
+        <h2 style={{ marginTop: 0 }}>Talk to the prototype</h2>
+        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
+          <button onClick={startMic} disabled={!srOK || listening}>Start mic</button>
+          <button onClick={stopMic} disabled={!listening}>Stop</button>
+          <button
+            onClick={() => { setPrompt(transcript); onSend(); }}
+            disabled={!transcript.trim() || asking}
+          >
+            Send to prototype
+          </button>
+        </div>
+        <div style={{ fontSize: 13, color: "#666", marginBottom: 8 }}>
+          {srOK ? "SpeechRecognition OK" : "SpeechRecognition unavailable"} ·{" "}
+          {speechOK ? "SpeechSynthesis OK" : "SpeechSynthesis unavailable"}
+        </div>
+        <div>
+          <div style={{ fontSize: 12, color: "#666", marginBottom: 4 }}>Transcript</div>
+          <textarea
+            value={transcript}
+            onChange={(e) => setTranscript(e.target.value)}
+            placeholder="Your transcript will appear here."
+            rows={3}
+            style={{ width: "100%" }}
+          />
+        </div>
+      </section>
+
+      <div style={{ color: "#999", fontSize: 12, textAlign: "center", marginTop: 24 }}>
+        MVP build • {new Date().toLocaleDateString()}
+      </div>
     </div>
   );
 }

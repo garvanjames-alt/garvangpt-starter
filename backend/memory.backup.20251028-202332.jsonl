@@ -1,0 +1,6 @@
+{"id":"website_chunks.jsonl","text":"Hello GarvanGPTThis is a test.","source":"website_chunks.jsonl#1","meta":{"source":"website","file":"backend/data/ingest/website/test.html","rel":"test.txt"}}
+{"id":"website_chunks.jsonl","text":"GarvanGPT FAQ\n The test page says: \"We are winning!\"","source":"website_chunks.jsonl#1","meta":{"source":"website","file":"backend/data/ingest/website/test.html","rel":"test.txt"}}
+{"id":"note1","text":"The test page says we are winning."}
+{"id":"note2","text":"GarvanGPT FAQ: The test page clearly states that we are winning, and this statement appears in the body text. This longer sentence exists so the RAG indexer has enough useful tokens like winning, page, clearly, states, and body to index. Therefore, when asked, it should retrieve this fact."}
+{"ts":1761659083275,"text":"NOTE: The test page says: \"We are winning!\""}
+{"ts":1761659083284,"text":"GarvanGPT FAQ — exact quote to learn: The test page says: \"We are winning!\""}

@@ -1,68 +1,40 @@
 // backend/respondHandler.cjs
-// RAG‑lite: retrieve top local snippets, feed them to the model, return answer + sources.
+// Minimal, deterministic responder for local dev.
+// Reads the SAME memory file the server writes (../data/memory.json)
+// and returns a concise `text` field.
 
-'use strict';
+const fs = require("fs");
+const path = require("path");
 
-const OpenAI = require('openai');
-const Client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
-
-const { ensureIndex, queryDocs } = require('./query.cjs');
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-
-const PERSONA = [
-  'You are a friendly, safety‑first pharmacist who answers clearly and concisely.',
-  "If you’re not sure, say so and recommend contacting a clinician.",
-  'Be brief and list‑like when helpful. Do not fabricate sources.'
-].join('\n');
-
-function makeContext(hits = []) {
-  if (!hits.length) return '(no local sources matched)';
-  return hits
-    .map((h, i) => `#${i + 1} ${h.file}: ${h.snippet}`)
-    .join('\n');
+function readLastMemory() {
+  try {
+    // server.mjs writes to path.join(__dirname, "..", "data", "memory.json")
+    const file = path.join(__dirname, "..", "data", "memory.json");
+    if (!fs.existsSync(file)) return null;
+    const { items } = JSON.parse(fs.readFileSync(file, "utf8"));
+    if (Array.isArray(items) && items.length) return items[items.length - 1];
+    return null;
+  } catch (e) {
+    console.error("respondHandler: failed to read memory.json", e);
+    return null;
+  }
 }
 
 module.exports = async function respondHandler(req, res) {
-  try {
-    const { question = '', minScore = 0.1 } = req.body || {};
+  const prompt = String(req.body?.prompt || req.body?.text || "").trim();
+  if (!prompt) return res.status(400).json({ error: "`prompt` is required" });
 
-    // 1) Retrieve local sources (already normalized to [0,1])
-    ensureIndex();
-    const hits = queryDocs(question, { k: 6 });
-    const usable = (hits || []).filter(h => (h.score || 0) >= Math.max(0, minScore)).slice(0, 6);
+  const lastMemory = readLastMemory();
 
-    // 2) Ask the model with sources as context
-    const messages = [
-      { role: 'system', content: PERSONA },
-      {
-        role: 'system',
-        content: [
-          'Use the provided SOURCE EXCERPTS when possible.',
-          'Cite specific points from them. If sources do not contain the answer, say so and suggest next steps.',
-          'Avoid inventing citations.'
-        ].join(' ')
-      },
-      { role: 'user', content: `QUESTION:\n${question}` },
-      { role: 'user', content: `SOURCE EXCERPTS:\n${makeContext(usable)}` },
-    ];
-
-    const out = await Client.chat.completions.create({
-      model: MODEL,
-      temperature: 0.2,
-      max_tokens: 600,
-      messages,
-    });
-
-    const answer = out?.choices?.[0]?.message?.content?.trim() || '(no answer)';
-
-    res.json({ answer, sources: usable, usedMemories: [] });
-  } catch (err) {
-    console.error('respondHandler error:', err?.status || '', err?.message || err);
-    res.status(500).json({
-      answer: 'The answer engine hiccuped. Try again in a moment.',
-      sources: [],
-      usedMemories: [],
-      error: String(err?.message || err),
-    });
+  let text;
+  const p = prompt.toLowerCase();
+  if (p.includes("what memory") || p.includes("last memory")) {
+    text = lastMemory ? `Your most recent memory is: "${lastMemory}"` : "You have no saved memories yet.";
+  } else if (p.startsWith("say ")) {
+    text = `You said: ${prompt.slice(4)}`;
+  } else {
+    text = `You said: ${prompt}`;
   }
+
+  return res.json({ text, sources: [], usedMemories: lastMemory ? [lastMemory] : [] });
 };

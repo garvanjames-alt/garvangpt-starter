@@ -1,153 +1,131 @@
 // frontend/src/VoiceChat.jsx
-import React, { useEffect, useRef, useState } from "react";
-import { API_BASE, sendToPrototype, ttsToBlob } from "./lib/api";
+// Minimal mic UI using the Web Speech API + TTS.
+// Shows live transcript, sends to backend via sendPrompt, and speaks the reply.
 
-/**
- * Simple voice demo:
- * - Mic → transcript (browser SpeechRecognition)
- * - "Send to prototype" → calls /chat
- * - Auto-speak prototype reply via /tts
- * - "Play test voice" → quick TTS smoke test
- */
+import React, { useEffect, useRef, useState } from "react";
+import { sendPrompt, tryCall } from "./lib/api"; // <-- fixed path
+
 export default function VoiceChat() {
-  const [recognitionOK, setRecognitionOK] = useState(false);
-  const [synthesisOK, setSynthesisOK] = useState(false);
-  const [status, setStatus] = useState("idle");
+  const [supported, setSupported] = useState({ stt: false, tts: false });
+  const [listening, setListening] = useState(false);
   const [transcript, setTranscript] = useState("");
   const [reply, setReply] = useState("");
   const recRef = useRef(null);
-  const audioRef = useRef(null);
 
-  // Feature detect
+  // Capability detection
   useEffect(() => {
-    const SR =
-      window.SpeechRecognition ||
-      window.webkitSpeechRecognition ||
-      window.mozSpeechRecognition ||
-      window.msSpeechRecognition;
-    setRecognitionOK(!!SR);
-    setSynthesisOK(!!window.speechSynthesis);
-    if (SR) {
-      const rec = new SR();
-      rec.lang = "en-US";
-      rec.interimResults = true;
-      rec.continuous = true;
-      rec.onresult = (e) => {
-        let t = "";
-        for (let i = e.resultIndex; i < e.results.length; i++) {
-          t += e.results[i][0].transcript;
-        }
-        setTranscript((prev) => {
-          // replace last interim chunk
-          return t;
-        });
-      };
-      rec.onend = () => setStatus("idle");
-      rec.onerror = () => setStatus("idle");
-      recRef.current = rec;
-    }
+    const stt =
+      "webkitSpeechRecognition" in window || "SpeechRecognition" in window;
+    const tts = "speechSynthesis" in window;
+    setSupported({ stt, tts });
   }, []);
 
-  const startMic = () => {
-    if (!recRef.current) return;
-    setStatus("listening");
-    recRef.current.start();
-  };
+  // Create recognizer on demand
+  function ensureRecognizer() {
+    if (recRef.current) return recRef.current;
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return null;
+    const r = new SR();
+    r.continuous = true;
+    r.interimResults = true;
+    r.lang = "en-US";
+    r.onresult = (e) => {
+      let text = "";
+      for (let i = e.resultIndex; i < e.results.length; i++) {
+        text += e.results[i][0].transcript;
+      }
+      setTranscript(text.trim());
+    };
+    r.onerror = () => setListening(false);
+    r.onend = () => setListening(false);
+    recRef.current = r;
+    return r;
+  }
 
-  const clearTranscript = () => {
+  function start() {
+    if (!supported.stt) return;
+    const r = ensureRecognizer();
+    if (!r) return;
     setTranscript("");
     setReply("");
-  };
+    setListening(true);
+    r.start();
+  }
 
-  const playBlob = async (blob) => {
-    if (!blob) return;
-    const url = URL.createObjectURL(blob);
-    if (!audioRef.current) {
-      audioRef.current = new Audio();
-    }
-    audioRef.current.src = url;
-    await audioRef.current.play();
-  };
+  function stop() {
+    const r = recRef.current;
+    if (r) r.stop();
+    setListening(false);
+  }
 
-  const playTestVoice = async () => {
-    try {
-      setStatus("speaking");
-      const blob = await ttsToBlob("This is your test voice from ElevenLabs.");
-      await playBlob(blob);
-    } catch (err) {
-      console.error("TTS test failed:", err);
-      alert("TTS test failed. Check backend / env config.");
-    } finally {
-      setStatus("idle");
-    }
-  };
-
-  const handleSend = async () => {
+  async function send() {
     const text = transcript.trim();
     if (!text) return;
-    try {
-      setStatus("thinking");
-      const { reply: modelReply } = await sendToPrototype(text);
-      setReply(modelReply || "(no reply)");
-
-      // Auto-speak the reply
-      setStatus("speaking");
-      const blob = await ttsToBlob(modelReply || "I have nothing to say.");
-      await playBlob(blob);
-    } catch (err) {
-      console.error("Send to prototype failed:", err);
-      alert("Prototype request failed. Check backend logs.");
-    } finally {
-      setStatus("idle");
+    const res = await tryCall(sendPrompt, text);
+    if (res.ok) {
+      const ans = res.data.text || "";
+      setReply(ans);
+      speak(ans);
+    } else {
+      setReply(`Error: ${res.error}`);
     }
-  };
+  }
+
+  function speak(text) {
+    if (!supported.tts) return;
+    const utter = new SpeechSynthesisUtterance(text);
+    window.speechSynthesis.cancel();
+    window.speechSynthesis.speak(utter);
+  }
 
   return (
-    <section aria-labelledby="talk-proto">
-      <h2 id="talk-proto">Talk to the prototype</h2>
+    <section className="bg-white rounded-2xl shadow p-4 space-y-3">
+      <h2 className="text-lg font-medium">Talk to the prototype</h2>
 
-      <div style={{ display: "flex", gap: 8, flexWrap: "wrap", marginBottom: 8 }}>
-        <button onClick={startMic} disabled={!recognitionOK || status === "listening"}>
-          🎙️ Start mic
-        </button>
-        <button onClick={clearTranscript}>🧽 Clear transcript</button>
-        <button onClick={playTestVoice} disabled={status !== "idle"}>
-          🎧 Play test voice
-        </button>
-        <button onClick={handleSend} disabled={status !== "idle"}>
-          🤖 Send to prototype
-        </button>
-      </div>
-
-      <div style={{ fontSize: 12, color: "#555", marginBottom: 6 }}>
-        SpeechRecognition {recognitionOK ? "OK" : "N/A"} • SpeechSynthesis{" "}
-        {synthesisOK ? "OK" : "N/A"} • Status: {status}
-      </div>
-
-      <textarea
-        value={transcript}
-        onChange={(e) => setTranscript(e.target.value)}
-        placeholder="Your transcript will appear here."
-        style={{ width: "100%", minHeight: 140 }}
-      />
-
-      <div style={{ marginTop: 12 }}>
-        <strong>Prototype reply</strong>
-        <div
-          style={{
-            marginTop: 6,
-            padding: 12,
-            background: "#f7f7f8",
-            borderRadius: 8,
-            border: "1px solid #eee",
-          }}
+      <div className="flex items-center gap-2">
+        <button
+          onClick={start}
+          disabled={!supported.stt || listening}
+          className="rounded-xl px-3 py-2 border hover:bg-gray-50 disabled:opacity-50"
         >
+          {listening ? "Listening…" : "Start mic"}
+        </button>
+        <button
+          onClick={stop}
+          disabled={!listening}
+          className="rounded-xl px-3 py-2 border hover:bg-gray-50 disabled:opacity-50"
+        >
+          Stop
+        </button>
+        <button
+          onClick={send}
+          disabled={!transcript.trim()}
+          className="rounded-xl px-3 py-2 bg-black text-white disabled:opacity-50"
+        >
+          Send to prototype
+        </button>
+      </div>
+
+      <div className="text-xs text-gray-600">
+        SpeechRecognition {supported.stt ? "OK" : "Unavailable"} ·
+        {" "}SpeechSynthesis {supported.tts ? "OK" : "Unavailable"}
+      </div>
+
+      <div>
+        <div className="text-xs font-medium text-gray-500 mb-1">Transcript</div>
+        <textarea
+          className="w-full border rounded-xl p-2 min-h-[96px]"
+          value={transcript}
+          onChange={(e) => setTranscript(e.target.value)}
+          placeholder="Your transcript will appear here."
+        />
+      </div>
+
+      <div className="border rounded-xl p-3 bg-gray-50">
+        <div className="text-xs font-medium text-gray-500 mb-1">Prototype reply</div>
+        <div className="text-sm whitespace-pre-wrap min-h-[1.5rem]">
           {reply || "—"}
         </div>
-      </div>
-
-      <div style={{ marginTop: 8, fontSize: 12, color: "#777" }}>
-        API: <code>{API_BASE}</code>
       </div>
     </section>
   );

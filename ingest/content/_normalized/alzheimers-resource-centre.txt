@@ -1,0 +1,2060 @@
+# Normalized
+# Encoding: UTF-8
+# Format: plain-text
+# Source-Stem: alzheimers-resource-centre
+---
+
+
+
+ 
+
+
+
+
+
+
+
+
+ 
+ 
+ (adsbygoogle = window.adsbygoogle || []).push({ 
+ google_ad_client: "ca-pub-6744151061288343", 
+ enable_page_level_ads: true 
+ }); 
+
+
+ Alzheimers Resources, Lynchs Pharmacy Douglas
+ 
+ 
+
+ 
+@import url("http://lynchspharmacy.com/modules/system/system.base.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/system/system.messages.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_api/date.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_popup/themes/datepicker.1.7.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/field/theme/field.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/node/node.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/user/user.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/views/css/views.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/ckeditor/css/ckeditor.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/ctools/css/ctools.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/print/print_ui/css/print_ui.theme.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/expanding_formatter/css/expanding_formatter.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/global.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/portfolio.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/social.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/typo.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/page-nav.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/boxes.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/comments.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/testimonials.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/accordion.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/counters.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tabs.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/shadows.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/pricing-tables.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tooltips.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/slider.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/animations.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/timeline.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/fontello/css/fontello.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/colorbox/colorbox.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/bootstrap.min.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/drupal.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/aurum_sub/css/custom.css?rveunr");
+
+ 
+ 
+
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ Home
+ 
+ 
+
+
+ 
+ 
+ Medicine A-Z
+ 
+ 
+
+
+ 
+ 
+ Health A-Z
+ 
+ 
+
+
+ 
+ 
+ Video Series
+ 
+ 
+
+
+ 
+ 
+ Asthma
+ 
+ 
+
+
+ 
+ 
+ Diabetes
+ 
+ 
+
+
+ 
+ 
+ Alzheimers
+ 
+ 
+
+
+ 
+ 
+ Blog
+ 
+ 
+
+
+ 
+ 
+ Health In The News
+ 
+ 
+
+
+ 
+ 
+ Contact
+ 
+ 
+ 
+ 
+
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+ HomeMedicine A-ZHealth A-ZVideo SeriesAsthmaDiabetesAlzheimersBlogHealth In The NewsContact 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Health In The News
+Learn more about your health or illness with our health video series. 
+Please read our policy and consent to Marketing and Preferencesby clicking the icon on bottom left corner to view YouTube videos 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cough Treatment 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Types of coughs 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cold &amp; Flu 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ More Health in The News videos &nbsp; Message us with your health query 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Alzheimers Resource Centre
+
+ You are here:HomeAlzheimers 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ With a dedicated Alzheimer’s section on our website, you can start learning more about treatments available for Alzheimer’s. In the early stages the Mediterranean diet, resistance exercises and brain training have all been proven to be effective. In the later stages of Alzheimer’s Disease sensory therapies (art, music, touch), reminiscence therapy, jigsaws and card games all have scientific evidence recommending their use. We provide a quick start guide to get you up and running for each therapy.
+ Memory loss: 7 tips to improve your memory
+Concerned about memory loss? Take heart. There's plenty you can do to improve your memory — from staying mentally active to including physical activity in your daily routine.
+ Can't find your car keys? Forget what's on your shopping list? You're not alone. Everyone forgets things occasionally. Still, memory loss is nothing to take lightly. You can do simple things every day to improve your memory — starting today!
+No. 1: Stay mentally active
+
+ 
+ Just as physical activity helps keep your body in shape, mentally stimulating activities help keep your brain in shape — and memory loss at bay. Do crossword puzzles. Read a section of the newspaper that you normally skip. Take alternate routes when driving. Learn to play a musical instrument. Volunteer at a local school or community organization.
+
+No. 2: Socialize regularly
+
+ 
+ Social interaction helps ward off depression and stress, both of which can contribute to memory loss. Look for opportunities to get together with loved ones, friends and others — especially if you live alone. When you're invited to share a meal or attend an event, go!
+
+No. 3: Get organized
+
+ 
+ You're more likely to forget things if your home is cluttered and your notes are in disarray. Jot down tasks, appointments and other events in a special notebook or calendar. You might even repeat each entry out loud as you write it down to help cement it in your memory. Keep to-do lists current, and check off items you've completed. Set aside a certain place for your wallet, keys and other essentials.
+
+No. 4: Focus
+
+ 
+ Limit distractions, and don't try to do too many things at once. If you focus on the information that you're trying to remember, you'll be more likely to recall it later. It might also help to connect what you're trying to remember to a favorite song or another familiar concept.
+
+No. 5: Eat a healthy diet
+
+ 
+ A heart-healthy diet is as good for your brain as it is for your heart. Focus on fruits, vegetables and whole grains. Choose low-fat protein sources, such as lean meat,
+ 
+ skinless poultry and fish. What you drink counts, too. Not enough water or too much alcohol can lead to confusion and memory loss.
+
+No. 6: Include physical activity in your daily routine
+
+ 
+ Physical activity increases blood flow to your whole body, including your brain — which may help keep your memory sharp. Aim for at least 30 minutes of aerobic activity a day. If you don't have time for a full workout, squeeze in a few 10-minute walks throughout the day.
+
+No. 7: Manage chronic conditions
+
+ 
+ Follow your doctor's treatment recommendations for any chronic conditions, such as thyroid problems, high blood pressure and depression. The better you take care of yourself, the better your memory is likely to be.
+
+When to seek help for memory loss
+
+ 
+ If you're worried about memory loss — especially if memory loss affects your ability to complete your usual daily activities — consult your doctor. He or she will likely do a physical exam, as well as check your memory and problem-solving skills. Sometimes other tests are needed as well. Treatment will depend on what's contributing to the memory loss.
+
+
+ 10 warning signs of Alzheimer's
+Sometimes it can be difficult to differentiate between the normal changes that occur with aging and the signs of something more serious like Alzheimer's disease. The Alzheimer's Association has an updated list of 10 warning signs of Alzheimer's that are helpful. Each warning sign includes a description with some examples. In addition, there is a brief statement of normal or typical age related changes that may not be a cause to worry.
+Alzheimer's Association 10 warning signs of Alzheimer's:
+Memory loss that disrupts daily life
+
+ 
+ One of the most common signs of Alzheimer's is memory loss, especially forgetting recently learned information. Others include forgetting important dates or events; asking for the same information over and over; relying on memory aides (e.g., reminder notes or electronic devices) or family members for things they used to handle on their own.
+ 
+ What's typical? Sometimes forgetting names or appointments, but remembering them later.
+
+Challenges in planning or solving problems
+
+ 
+ Some people may experience changes in their ability to develop and follow a plan or work with numbers. They may have trouble following a familiar recipe or keeping track of monthly bills. They may have difficulty concentrating and take much longer to do things than they did before.
+ 
+ What's typical? Making occasional errors when balancing a checkbook.
+
+Difficulty completing familiar tasks at home, at work or at leisure
+
+ 
+ People with Alzheimer's often find it hard to complete daily tasks. Sometimes, people may have trouble driving to a familiar location, managing a budget at work or remembering the rules of a favorite game.
+ 
+ What's typical? Occasionally needing help to use the settings on a microwave or to record a television show.
+
+Confusion with time or place
+
+ 
+ People with Alzheimer's can lose track of dates, seasons and the passage of time. They may have trouble understanding something if it is not happening immediately. Sometimes they may forget where they are or how they got there.
+ 
+ What's typical? Getting confused about the day of the week but figuring it out later.
+
+Trouble understanding visual images and spatial relationships
+
+ 
+ For some people, having vision problems is a sign of Alzheimer's. They may have difficulty reading, judging distance and determining color or contrast. In terms of perception, they may pass a mirror and think someone else is in the room. They may not realize they are the person in the mirror.
+ 
+ What's typical? Vision changes related to cataracts
+
+New problems with words in speaking or writing
+
+ 
+ People with Alzheimer's may have trouble following or joining a conversation. They may stop in the middle of a conversation and have no idea how to continue or they may repeat themselves. They may struggle with vocabulary, have problems finding the right word or call things by the wrong name (e.g., calling a "watch" a "hand- clock").
+ 
+ What's typical? Sometimes having trouble finding the right word
+
+Misplacing things and losing the ability to retrace steps
+
+ 
+ A person with Alzheimer's disease may put things in unusual places. They may lose things and be unable to go back over their steps to find them again. Sometimes, they may accuse others of stealing. This may occur more frequently over time.
+ 
+ What's typical? Misplacing things from time to time, such as a pair of glasses or the remote control
+
+Decreased or poor judgment
+
+ 
+ People with Alzheimer's may experience changes in judgment or decision-making. For example, they may use poor judgment when dealing with money, giving large amounts to telemarketers. They may pay less attention to grooming or keeping themselves clean.
+ 
+ What's typical? Making a bad decision once in a while.
+
+Withdrawal from work or social activities
+
+ 
+ A person with Alzheimer's may start to remove themselves from hobbies, social activities, work projects or sports. They may have trouble keeping up with a favorite sports team or remembering how to complete a favorite hobby. They may also avoid being social because of the changes they have experienced.
+ 
+ What's typical? Sometimes feeling weary of work, family and social obligations
+
+Changes in mood and personality
+
+ 
+ The mood and personalities of people with Alzheimer's can change. They can become confused, suspicious, depressed, fearful or anxious. They may be easily upset at home, at work, with friends or in places where they are out of their comfort zone.
+ 
+ What's typical? Developing very specific ways of doing things and becoming irritable when a routine is disrupted
+
+
+ 101 Things to do with a person with Alzheimers
+When caring for someone with Alzheimer’s the best activities are those which are F.U.N. – Familiar, Unhurried and No end objective. The objective should be to gently stimulate the memory of your loved one and give them comfort through familiarity.
+You can do this a number of ways;
+
+ 
+ Verbally – old songs, poems and prayers ...
+ 
+ Visually – old photos, magazines, atlas ...
+ 
+ Motor Skills – sweeping, cutting with scissors, buttering
+ 
+ Small Challenges – jig-saws, matching socks in pairs, card games..
+
+1. Play cards.
+ 2. Sort poker chips into colours.
+ 3. Count tickets.
+ 4. Rake leaves.
+ 5. Use the carpet sweeper.
+ 6. Read out loud.
+ 7. Bake.
+ 8. Look up names in the phone book. 9. Read the daily paper out loud.
+ 10. Ask someone with a child to visit. 11. Listen to traditional music.
+ 12. Plant seeds indoors or out.
+ 13. Look at family photographs.
+ 14. Toss a ball.
+ 15. Color pictures.
+ 16. Make homemade lemonade.
+ 17. Wipe off the table.
+ 18. Weed the flower bed.
+ 19. Make the beds.
+ 20. Have a game of “I-spy”.
+ 21. Read from the Reader's Digest.
+ 22. Fold clothes.
+ 23. Have a friend visit with a calm pet.
+ 24. Cut pictures out of greeting card.
+ 25. Name movie stars.
+ 26. Bake homemade bread.
+ 27. Sort objects by shape or color.
+ 28. Sing old songs.
+ 29. "Tell me more" when they talk about a memory.
+ 30. Put silverware away.
+ 31. Make a Valentine collage.
+ 32. Play favorite home movies.
+ 33. Take a spin in the car to familiar places.
+ 34. Make an apple tart.
+ 35. Read aloud from Irish Catholic magazine.
+ 36. Play snakes and ladders.
+ 37. Organise and tidy a basket of socks – matching pairs. 38. Take a walk.
+ 39. Reminisce about the 1st day of school.
+ 40. String Cheerios to hang outside for birds.
+ 41. Make a fresh fruit salad.
+ 42. Sweep the patio.
+ 43. Fold napkins.
+ 44. Finish famous sayings.
+ 45. Have afternoon tea.
+ 46. Remember great inventions.
+ 47. Play Pictionary.
+ 48. Paint a sheet.
+ 49. Cut out paper dolls.
+ 50. Identify towns and counties.
+ 51. Make a family tree poster.
+ 52. Color a picture of the Irish flag.
+ 53. Bar-b-que.
+ 54. Grow magic rocks.
+ 55. Water house plants.
+ 56. Reminisce about the first kiss.
+ 57. Play horse shoes.
+ 58. Dance.
+ 59. Sing favorite hymns.
+ 60. Make homemade ice cream.
+ 61. Force bulbs for winter blooming.
+ 62. Make Christmas cards.
+ 63. Sort playing cards by their color.
+ 64. Write a letter to a family member.
+ 65. Dress in your favorite football team's color. 66. Pop popcorn.
+ 67. Name the past taoiseachs.
+ 68. Give a manicure.
+ 69. Make paper butterflies.
+ 70. Plant a tree.
+ 71. Make a May basket.
+ 72. Make homemade applesauce.
+ 73. Fold towels.
+ 74. Feed the ducks.
+ 75. Mold with play dough.
+ 76. Look at pictures in National Geographic. 77. Put a puzzle together.
+ 78. Sand wood.
+ 79. Rub in hand lotion.
+ 80. Decorate paper placemats.
+ 81. Arrange fresh flowers.
+ 82. Remember famous people.
+ 83. Straighten out underwear drawer.
+ 84. Finish Nursery Rhymes.
+ 85. Make ham sandwiches.
+ 86. Wipe off patio furniture.
+ 87. Go to church and light candles.
+ 88. Take care of fish tank.
+ 89. Trace and cut out leaves.
+ 90. Ask simple trivia questions.
+ 91. Finish Bible quotes.
+ 92. Paint with string.
+ 93. Cut out pictures from magazines.
+ 94. Read classic short stories.
+ 95. Put coins in a jar.
+ 96. Sew sewing cards.
+ 97. Put bird feed out for the birds.
+ 98. Clean out a pumpkin.
+ 99. Reminisce about a favorite summer. 100. Roll yarn into a ball.
+ 101. Make a birthday cake.
+
+ THE risk of developing Alzheimer's can be greatly reduced by taking exercise and eating a Mediterranean diet, research suggests.
+
+ 
+ Both lower the risk of suffering the most common form of dementia, and together they reduce it by 60 per cent, scientists say.
+ 
+ They looked at 1,880 New Yorkers with an average age of 77, who were interviewed about their physical activity and dietary habits and then monitored for five and a half years, with standard tests for Alzheimer's disease every 18 months.
+ 
+ In total, 282 of the group developed the disease.
+ 
+ Researchers found those who were active were 33 per cent less likely to suffer Alzheimer's. Close adherence to a Mediterranean diet rich in fruits, vegetables, cereal and fish, but low in red meat and poultry, showed a 40 per cent risk reduction.
+ 
+ For those who exercised a lot and ate a Mediterranean- type diet the risk of Alzheimer's was down 60 per cent.
+ 
+ Study leader Dr Nikos Scarmeas, from Columbia University Medical Centre in New York, said even low degrees of physical activity appeared to have a protective effect.
+ 
+ The research is published today in the Journal of the American Medical Association.
+ 
+ Alzheimer's affects more than 60 per cent of around 417,000 people diagnosed with dementia in the UK, and the number of patients is rising fast.
+ 
+ Dr Susanne Sorensen, head of research at the Alzheimer's Society, said: "A Mediterranean diet full of green leafy vegetables, oily fish, nuts and low in saturated fats is an incredibly healthy approach to eating and may reduce your risk of developing dementia. This study suggests combining this diet with regular exercise is one of the best ways to cut your chances of developing dementia."
+
+
+ Coping Skills
+People with Alzheimer's disease often experience a mixture of emotions — confusion, frustration, anger, fear, uncertainty, grief and depression. You can help a person cope with the disease by being there to listen, reassuring the person that life can still be enjoyed, and doing your best to help the person retain dignity and self-respect.
+ Providing care for a person with Alzheimer's disease is physically and emotionally demanding. Feelings of anger and guilt, frustration and discouragement, worry and grief and social isolation are common. If you're a caregiver for someone with
+Alzheimer's disease, you can help yourself by:
+
+ 
+ Asking friends or other family members for help when you need it
+ 
+ Taking care of your health
+ 
+ Learning as much about the disease as you can
+ 
+ Asking questions of doctors, social workers and others involved in the care of your loved one
+ 
+ Joining a support group
+
+
+ Dealing with aggression.
+It is not simply memory or intellect that suffers, but the disease of the brain can affect other parts that control matters such as personality and inhibitions. The person may become rude and aggressive. This can be very hurtful to those who are simply doing their best to help.
+ They may pick a physical fight despite their obvious physical inability. Outbursts of violence against carers adds injury to insult. The natural reaction to the rude, aggressive and possibly even violent person is to say, "That's it! I'm leaving you to get on with it by yourself." Try to put your pride to one side and remember that it is the disease that is doing this and not the person you once knew. This is difficult but important.
+
+ Diminished Inhibitions, Disconcerting Behavior.
+Individuals with Alzheimer's may experience reduced sexual interest or -- less often -- sharply increased sexual interest or acting out, known as hypersexuality. Problem behavior can include jealous accusations that a spouse is having an affair, sexual overtures to a nonspouse or masturbation in public.
+ Other inappropriate behaviors, such as use of vulgar or obscene language, exposing themselves or undressing in public (collectively termed "disinhibition"), may not be sexual at all but can be construed as such by others.
+
+ Do not resuscitate (DNR) order
+This is a request to not have cardiopulmonary resuscitation (CPR) if your heart stops or if you stop breathing. Advance directives do not have to include a DNR order, and you don't have to have an advance directive to have a DNR order. Your doctor can put a DNR order in your medical chart.
+
+ Eating Fish, Omega-3 Oils, Fruits And Veggies Lowers Risk Of Memory Problems
+
+ 
+ A diet rich in fish, omega-3 oils, fruits and vegetables may lower your risk of dementia and Alzheimer's disease, whereas consuming omega-6 rich oils could increase chances of developing memory problems, according to a new study.
+ 
+ For the study, researchers examined the diets of 8,085 men and women over the age of 65 who did not have dementia at the beginning of the study. Over four years of follow-up, 183 of the participants developed Alzheimer's disease and 98 developed another type of dementia.
+ 
+ The study found people who regularly consumed omega-3 rich oils, such as canola oil, flaxseed oil and walnut oil, reduced their risk of dementia by 60 percent compared to people who did not regularly consume such oils. People who ate fruits and vegetables daily also reduced their risk of dementia by 30 percent compared to those who didn't regularly eat fruits and vegetables.
+ 
+ The study also found people who ate fish at least once a week had a 35-percent lower risk of Alzheimer's disease and 40-percent lower risk of dementia, but only if they did not carry the gene that increases the risk of Alzheimer's, called apolipoprotein E4, or ApoE4.
+ 
+ "Given that most people do not carry the ApoE4 gene, these results could have considerable implications in terms of public health," said study author Pascale Barberger-Gateau, PhD, of INSERM, the French National Institute for Health and Medical Research, in Bordeaux, France. "However, more research is needed to identify the optimal quantity and combination of nutrients which could be protective before implementing nutritional recommendations."
+ 
+ In addition, the study found people who did not carry the ApoE4 gene and consumed an unbalanced diet characterized by regular use of omega-6 rich oils, but not omega-3 rich oils or fish were twice as likely to develop dementia compared to those who didn't eat omega-6 rich oils, which include sunflower or grape seed oil. The study did not find any association between consuming corn oil, peanut oil, lard, meat or wine and lowering risk of dementia.
+ 
+ "While we've identified dietary patterns associated with lowering a person's risk of dementia or Alzheimer's, more research is needed to better understand the mechanisms
+ 
+ of these nutrients involved in these apparently protective foods," said Barberger-Gateau.
+ 
+ This research was published in the November 13, 2007, issue of Neurology®, the medical journal of the American Academy of Neurology.
+
+
+ Effects on sex life:
+Besides memory loss and impaired thinking, Alzheimer’s can produce daunting changes in behavior and personality. It is impossible to say how the disease will unfold for a given individual, but in some cases, it brings about unwelcome sexual -- or seemingly sexual -- behaviors.
+ For spouses and loved ones, such changes underscore the impact of the disease on even the most intimate of relationships. It is vital, though, to remember that this behavior is a result of the disease -- or possibly other health issues or medications -- not an intentional choice of the individual.
+
+ Anticipating end of life needs
+As an Alzheimer's caregiver, you may be your loved one's most powerful voice. Make decisions for your loved one that ensure respect, dignity and comfort until the end of life.
+ In the early stages of Alzheimer's disease, you may focus on keeping your loved one safe and comfortable. As the disease progresses, however, you may face difficult end- of-life questions.
+ Create advance directives
+ Advance directives are written instructions regarding your loved one's preferences for medical care at the end of life. Ideally, discuss these preferences with your loved one while he or she is still able to communicate his or her wishes. Later, make sure copies of advance directives are included in your loved one's medical charts. This is especially important if your loved one moves to a nursing home or other facility for long term care. The advance directives will help the staff know what is — and isn't — to be done in medical emergencies.
+ Focus on comfort, not life extension
+ As Alzheimer's progresses, your loved one may not be able to communicate the fact that he or she is in pain. Look for other clues, such as a sudden increase in disruptive behavior or trouble sleeping. Physical signs may include sores, swelling, and feverish or pale skin. Then speak to the medical team about adjusting your loved one's treatment plan to ensure his or her comfort.
+
+ Eating Foods Rich in Vitamin E Associated With Lower Dementia Risk
+
+ 
+ Consuming more vitamin E through the diet appears to be associated with a lower risk of dementia and Alzheimer's disease, according to a report in the July issue of Archives of Neurology, one of the JAMA/Archives journals.
+ 
+ Oxidative stress -- damage to the cells from oxygen exposure -- is thought to play a role in the development of Alzheimer's disease, according to background information in the article. Experimental data suggest that antioxidants, nutrients that help repair this damage, may protect against the degeneration of nervous system cells. "Although clinical trials have shown no benefit of antioxidant supplements for Alzheimer's disease, the wider variety of antioxidants in food sources is not well studied relative to dementia risk; a few studies, with varying lengths of follow-up, have yielded inconsistent results," the authors write.
+ 
+ Elizabeth E. Devore, Sc.D., of Erasmus Medical Center, Rotterdam, the Netherlands, and colleagues assessed 5,395 participants 55 years and older who did not have dementia between 1990 and 1993. Participants underwent a home interview and two clinical examinations at the beginning of the study, and provided dietary information through a two-step process involving a meal-based checklist and a food questionnaire.
+ 
+ The researchers focused on four antioxidants: vitamin E, vitamin C, beta carotene and flavonoids. The major food sources of vitamin E were margarine, sunflower oil, butter, cooking fat, soybean oil and mayonnaise; vitamin C came mainly from oranges, kiwi, grapefruit juice, grapefruit, cauliflower, red bell peppers and red cabbage; beta carotene, from carrots, spinach, vegetable soup, endive and tomato; and flavonoids from tea, onions, apples and carrots.
+ 
+ Over an average of 9.6 years of follow-up, 465 participants developed dementia; 365 of those were diagnosed with Alzheimer's disease. After adjusting for other potentially related factors, the one-third of individuals who consumed the most vitamin E (a median or midpoint of 18.5 milligrams per day) were 25 percent less likely to develop dementia than the one-third of participants who consumed the least (a median of 9 milligrams per day). Dietary intake levels of vitamin C, beta carotene and flavonoids were not associated with dementia risk. Results were similar when only the
+ 
+ participants diagnosed with Alzheimer's disease were assessed.
+ 
+ "The brain is a site of high metabolic activity, which makes it vulnerable to oxidative damage, and slow accumulation of such damage over a lifetime may contribute to the development of dementia," the authors write. "In particular, when beta-amyloid (a hallmark of pathologic Alzheimer's disease) accumulates in the brain, an inflammatory response is likely evoked that produces nitric oxide radicals and downstream neurodegenerative effects. Vitamin E is a powerful fat-soluble antioxidant that may help to inhibit the pathogenesis of dementia."
+ 
+ Future studies are needed to evaluate dietary intake of antioxidants and dietary risks, including different points at which consuming more antioxidants might reduce risk, the authors conclude.
+
+
+ Interview your loved one:
+You may want to start by reminiscing with your loved one about his or her family history, traditions and celebrations. Often, childhood games, homes and pets are good opening topics — especially as Alzheimer's progresses and your loved one has trouble remembering recent events. You might also talk about favorite sports, books, music and hobbies, as well as cultural and historical events. Depending on the status of your loved one's memory, you may also want to interview neighbors, co- workers, old friends and other family members.
+
+ Living wills
+
+ 
+ Living wills are one part of advance directives and describe your treatment preferences in end-of-life situations. Unexpected end-of-life situations can happen at any age, so all adults need advance directives.
+ 
+ Living wills and other advance directives describe your preferences regarding treatment if you're faced with a serious accident or illness. These legal documents speak for you when you're not able to speak for yourself — for instance, if you're in a coma.
+ 
+ Living wills and other advance directives aren't just for older adults. Unexpected end-of-life situations can happen at any age, so it's important for all adults to have advance directives.
+
+
+ Low Vitamin D Levels Associated With Cognitive Decline
+
+ 
+ Older adults with low levels of vitamin D appear more likely to experience declines in thinking, learning and memory over a six-year period, according to a report in the July 12 issue of Archives of Internal Medicine, one of the JAMA/Archives journals.
+ 
+ An estimated 40 percent to 100 percent of older adults in the United States and Europe are deficient in vitamin D, according to background information in the article. This deficiency has been linked to fractures, various chronic diseases and death. Vitamin D may help prevent the degeneration of brain tissue by having a role in formation of nervous tissue, maintaining levels of calcium in the body, or clearing of beta-amyloid, the substance that forms the brain plaques and tangles associated with Alzheimer's disease.
+ 
+ David J. Llewellyn, Ph.D., of University of Exeter, England, and colleagues assessed blood levels of vitamin D in 858 adults who were age 65 or older when the study began in 1998. Participants completed interviews and medical examinations and provided blood samples. At the beginning of the study and again after three and six years, they repeated three tests of cognitive function -- one assessing overall cognition, one focusing on attention and one that places greater emphasis on executive function, or the ability to plan, organize and prioritize.
+ 
+ Participants who were severely deficient in vitamin D (having blood levels of 25-hydroxyvitamin D of less than 25 nanomoles per liter) were 60 percent more likely to have substantial cognitive decline in general over the six- year period and 31 percent more likely to experience declines on the test measuring executive function than those with sufficient vitamin D levels. "The association remained significant after adjustment for a wide range of potential confounders and when analyses were restricted to elderly subjects who were non-demented at baseline," the authors write. However, no significant association was seen for the test measuring attention.
+ 
+ "If future prospective studies and randomized controlled trials confirm that vitamin D deficiency is causally related to cognitive decline, then this would open up important new possibilities for treatment and prevention," the authors conclude.
+
+
+ Managing Behavior without Drugs
+The Alzheimer’s Association advises family and friends of individuals with Alzheimer's to:
+
+ 
+ Avoid becoming angry at, arguing with or embarrassing the person; try to be gentle and patient.
+ 
+ Seek a reason for the behavior; for example, someone who disrobes in public may simply be hot or tired or may find their clothing uncomfortable.
+ 
+ Gently but firmly remind the individual that the behavior is inappropriate.
+ 
+ Try distracting or redirecting the person's attention, or, if necessary, take him or her someplace private.
+ 
+ Try increasing the level of appropriate physical attention, hugs, stroking the hair, massage, etc. sexual advances may reflect a need for reassuring contact.
+ 
+ Consider practical solutions; for inappropriate disrobing, try putting trousers or dresses on backward or carrying extra (more comfortable) clothing with you during outings.
+ 
+ Keep in mind the possibility of depression, medication side effects or interactions, which can reduce interest in sex or trigger inappropriate behavior.
+ 
+ Consult a specialist in Alzheimer's or dementia or a geriatric psychologist.
+ 
+ Urgent intervention is needed if the person becomes physically aggressive or violent. Have a plan of action in place, whether it be calling on family members, friends or the police for help. It may also become necessary to move the individual to a care facility better equipped to handle such behavior.
+
+
+ Managing sleep problems:
+
+ 
+ Sleep problems and Alzheimer's disease often go hand in hand. Understand what contributes to sleep problems in Alzheimer's — and what you can do to promote a good night's sleep. Many older adults have problems sleeping, but people who have Alzheimer's often have an even harder time. Alzheimer's may reverse a person's sleep- wake cycle, causing daytime drowsiness and nighttime restlessness. These sleep disturbances often increase as Alzheimer's progresses. Eventually, round-the-clock naps may replace deep, restorative nighttime sleep.
+ 
+ Sleep disturbances can take a toll on both you and your loved one. To promote better sleep:
+ 
+ Think light. Exposing your loved one to a few hours of bright sunlight in the morning may improve his or her sleep at night. Light therapy with a specialized light box may be helpful, too.
+ 
+ Avoid caffeine and alcohol. Caffeine in fizzy drinks, tea, coffee or other products may contribute to sleeplessness, and alcohol can contribute to confusion and anxiety. If your loved one insists on having a drink, offer a soft drink in a familiar cocktail glass or serve nonalcoholic beer or wine.
+ 
+ Manage medications. Find out what time of day your loved one should take his or her medications — morning for drugs that have a stimulating effect, and evening for drugs that make your loved one sleepy. Note that sleeping pills are generally discouraged for people who have Alzheimer's. These drugs can increase confusion and the risk of falls.
+ 
+ Encourage physical activity. Plan your loved one's days to include walks and other physical activities, which can help promote better sleep at night. Taper your loved one's activities as the day winds down, however. Physical activity close to bedtime may leave your loved one too energized to fall asleep.
+ 
+ Limit daytime sleep. If your loved one needs a nap, make sure it's short and not too late in the day. Have your loved one nap on the couch or in a recliner rather than in bed. If you think staying in bed too long in the morning contributes to nighttime wakefulness, wake your loved one earlier.
+ 
+ Establish a bedtime routine. Do the same things in the same way every night, such as brushing teeth, using the toilet, listening to soft music and rubbing your loved one's back. If bathing or dressing for bed is difficult, do it earlier in the day. It's also important to create a comfortable place for sleeping. Make sure the temperature in your loved one's bedroom is comfortable. Turn on a night light.
+ 
+ Place security objects, such as a favorite blanket, within easy reach.
+ 
+ Treat underlying conditions. If you suspect that an underlying condition — such as sleep apnea, depression or pain — is interfering with your loved one's sleep, consult his or her doctor. Treatment may lead to more restful sleep for everyone.
+
+
+ Medical power of attorney (POA)
+The medical POA is a legal document that designates an individual — referred to as your health care agent or proxy — to make medical decisions for you in the event that you're unable to do so. A medical POA is sometimes called a durable power of attorney for health care. However, it is different from a power of attorney authorizing someone to make financial transactions for you.
+
+ The Mediterranean Diet
+
+ 
+ Depending upon your outlook, the human body can be seen as a top-of-the-range vehicle God has given us, or evolution has left us, as a means of getting around. But, there's no detailed instruction manual, so we've had to work out how to look after it and what to feed it on.
+ 
+ Experts, politicians and lifestyle gurus all have their opinions. Manufacturers have long confused our palates with additives, whilst advertisers have enticed us with pictures of beautiful people eating their products. Journalists tantalise us with their optimistic takes on research into the latest wonder foods - and celebrity chefs' creations always look appealing on the plate.
+ 
+ But, who is right and who is wrong?
+ 
+ Food is the fuel that powers us. And for decades now, serious scientists have been looking into which foods make the human engine run smoothly and what clogs up the works, triggering such problems as heart disease, diabetes and cancer.
+ 
+ From what is known today, the Mediterranean Diet, in combination with moderate exercise and stopping smoking, is probably the closest science can get to the manufacturer's recommended fuel intake for a long and trouble free human life.
+ 
+ The Mediterranean Diet is a nutritious dietary formula for long-term health that allows for plenty of experimentation and variety and can be enjoyed using inexpensive produce available anywhere in the UK. Even better, no branded 'superfoods' are required. And, although we've linked to a few books on the subject from here, you don't have to buy any, nor do you have to join any schemes to be able to enjoy a Mediterranean Diet at home. If you decide to give the healthy Mediterranean Diet a try, it can also help you achieve and maintain an ideal weight.
+
+
+ Moderate Physical Activity Linked to Lower Dementia Risk
+
+ 
+ Susan Jeffrey,&nbsp;July 12, 2010 (Honolulu, Hawaii) — A new analysis from the Framingham Study suggests moderate to heavy physical activity is associated with a reduced risk for dementia during more than 20 years of follow-up.
+ 
+ Compared with those with lower levels of activity, participants reporting moderate to heavy physical activity had a 45% lower risk for dementia over time.
+ 
+ "A reduced risk of dementia may be one of the additional health benefits that can actually be derived from maintaining at least moderate physical activity," lead author Zaldy Tan, MD, MPH, from the Brigham and Women's Hospital, VA Boston, and Harvard Medical School, in Massachusetts, concluded.
+ 
+ Dr. Tan presented the results here at the Alzheimer's Association International Conference on Alzheimer's Disease 2010.
+ 
+ Divergent Findings
+ 
+ Previous findings from the Framingham original cohort have already shown moderate or high physical activity to be associated with a number of positive outcomes, including a reduced risk for stroke and cardiovascular disease, higher high-density lipoprotein cholesterol levels, a reduced risk for colon cancer, and lower overall rates of mortality, Dr. Tan noted.
+ 
+ "Interestingly, while there are many potentially modifiable risk factors that have been linked with Alzheimer's disease and dementia, physical activity seems to be one that is fairly consistent in being shown to be related to the risk of dementia," he said. A recent review showed that 20 of 24 population-based studies showed a link between physical activity and reduced risk for dementia or cognitive decline.
+ 
+ Still, Dr. Tan added, the evidence is not entirely consistent. "There are some studies that seem to show no relationship between physical activity and dementia," he said, including the Bronx Aging Study, the Religious Orders Study, and the Radiation Effects Research Foundation Study.
+ 
+ The present investigation then looked at this relationship in the Framingham Study original cohort — a longitudinal community-based sample of 5209 men and women living in Framingham, Massachusetts, that has been evaluated every 2 years since 1948 for cardiovascular risk factors. A dementia study began in 1975, with the administration of a battery of neuropsychological tests, and 3349 of the
+ 
+ original participants free of dementia at that time were enrolled and subsequently assessed every 2 years.
+ 
+ In 1986 to 1987, a survey was introduced to calculate a daily physical activity index (PAI) based on estimated hours spent performing physical activity and weighting each activity by an assigned caloric equivalent. The study population for this current study, then, includes those participants who were both free of dementia in 1986 and 1987 and who had a PAI available, for a total of 1211 Framingham study participants.
+ 
+ Participants were asked to estimate the amount of time they spent in various activities, ranging from sleep and sedentary states; to slight physical activity, such as standing and walking; to moderate activity, including things like housework, climbing stairs, or light sports like golf or bowling; to heavy activity, including heavy household work or more intensive exercise such as jogging.
+ 
+ During a mean follow-up of 9.9 ± 5.5 years, ranging from 0 to 21 years, 242 participants developed dementia. Of these, 193 cases were Alzheimer's disease, defined according to Diagnostic and Statistical Manual of Mental Disorders, 4th Edition/National Institute of Neurological and Communicative Diseases and Stroke/Alzheimer's Disease and Related Disorders Association criteria.
+ 
+ "What we found is that participants who spent at least 1 hour per day of moderate or heavy physical activity had a 45% lower risk of developing dementia," Dr. Tan said.
+
+
+ Neurobics:
+Neurobics is a unique system of brain exercises using your five physical senses and your emotional sense in unexpected ways that encourage you to shake up your everyday routines.
+ What makes an exercise Neurobic? Throughout the course of every day, your brain is activated by your senses, and you encounter new stimuli all the time. Why aren't these Neurobic activities? What is it about the specific things we suggest that makes them neurobic?Eg. deciding one day to change the hand you normally write with. Changing to writing with your left hand for example means the large network of connections, circuits, and brain areas involved in writing with your left hand--which are normally rarely used-- are now activated on the right side of your brain. Suddenly your brain is confronted with an engaging task that's interesting, challenging , fun and potentially frustrating.
+To be neurobic, an exercise should do one or more of the following:
+
+ 
+ Involve one or more of your senses in a novel context. For instance: Get dressed for work or take a shower with your eyes closed.
+ 
+ Eat a meal with your family in silence. Use only visual cues, or combine two or more senses in unexpected ways: Listening to a specific piece of music while smelling a particular aroma.
+ 
+ Engage your attention. To stand out from the background of everyday activities something has to be unusual, fun, surprising or evoke one of your basic emotions like happiness, love or anger: Go camping for the weekend. Take your child, spouse or parent to your work for the day.
+ 
+ Break a routine activity in an unexpected, novel way. Take a completely new route to work. Shop at a farmer's market instead of a supermarket. Completely rearrange your office and desktop
+
+7 tips to improve memory
+
+ 
+ No. 1: Stay mentally active: Just as physical activity helps keep your body in shape, mentally stimulating activities help keep your brain in shape — and memory loss at bay. Do crossword puzzles. Read a section of the newspaper that you normally skip. Take alternate routes when driving. Learn to play a musical instrument. Volunteer at a local school or community organization.
+ 
+ No. 2: Socialize regularly: Social interaction helps ward off depression and stress, both of which can contribute to memory loss. Look for opportunities to get together with loved ones, friends and others — especially if you live alone. When you're invited to share a meal or attend an event, go!
+ 
+ No. 3: Get organized: You're more likely to forget things if your home is cluttered and your notes are in disarray. Jot down tasks, appointments and other events in a special notebook or calendar.
+ 
+ No. 4: Focus: Limit distractions, and don't try to do too many things at once. If you focus on the information that you're trying to remember, you'll be more likely to recall it later. It might also help to connect what you're trying to remember to a favorite song or another familiar concept.
+ 
+ No. 5: Eat a healthy diet: A heart-healthy diet is as good for your brain as it is for your heart. Focus on fruits, vegetables and whole grains. Choose low-fat protein sources, such as lean meat, skinless poultry and fish. What you drink counts, too. Not enough water or too much alcohol can lead to confusion and memory loss.
+ 
+ No. 6: Include physical activity in your daily routine:
+ 
+ Physical activity increases blood flow to your whole body, including your brain — which may help keep your memory sharp. Aim for at least 30 minutes of aerobic activity a day. If you don't have time for a full workout, squeeze in a few 10-minute walks throughout the day.
+ 
+ No. 7: Manage chronic conditions: Follow your doctor's treatment recommendations for any chronic conditions, such as thyroid problems, high blood pressure and depression. The better you take care of yourself, the better your memory is likely to be.
+
+
+ Store memories externally:
+Memories can be preserved in many ways. You can:
+
+ 
+ Write stories in a journal
+ 
+ Create a scrapbook with photos or other mementos, such as newspaper clippings, letters and postcards, greeting cards, sketches, poetry and musical verses
+ 
+ Store mementos in a special box or chest
+ 
+ Make a video or audio recording of personal stories
+
+
+ Understand and control wandering:
+People with Alzheimer's sometimes wander away from their homes or care centers and turn up — lost, frightened and disoriented — far from where they started, often long after they disappeared.
+ Three out of four people with Alzheimer's will wander at some point during the course of the disease. Wanderers who get lost outdoors may become injured or even die of exposure. This risk increases dramatically if the weather is very cold or very hot.
+ Although it may be impossible to completely prevent wandering, changes in the environment can be helpful. For example
+
+ 
+ A woman who was a busy house-wife throughout her life may be less likely to become bored and wander if a basket of towels is available for her to fold.
+ 
+ Posting descriptive photographs on the doors to various rooms, including a photo of the individual on the door to his or her own room, can help with navigation inside the home.
+ 
+ Offering a snack, a glass of water or use of the bathroom may help identify a need being expressed by wandering.
+ 
+ Sometimes the wandering person is looking for family members or something familiar. In such cases, providing a family photo album and sharing reminiscences may help.
+ 
+ Techniques for keeping your loved one safe may range from providing a safe place to wander — either indoors or out — to rigging your doors with alarms and hidden locks.
+ 
+ Reduce hazards. Remove tripping hazards such as throw rugs and extension cords. Install night lights to aid nighttime wanderers and put gates at stairwells to prevent falls.
+ 
+ A place to wander safely. This could be a path through the rooms of your house or a trail through a fenced back garden like a figure of 8 path. Some nursing homes have circular routes where wanderers can travel to their hearts' content.
+ 
+ Alarms and locks. A variety of devices can alert you that your loved one is on the move. Pressure-sensitive alarm mats can be placed at the door or at your loved one's bedside. Warning bells can be used on doors. Childproof covers on doorknobs also are helpful. Many&nbsp;people also install sliding bolt locks up high on doors, out of the average person's line of sight.
+ 
+ Angel device for tracking. This is a device attached to the patient which can track them when they wander
+
+
+ When to stop driving:
+Alzheimer's robs people of their short-term memory, so they get lost easily, sometimes even in familiar territory. Losing your way, however, doesn't necessarily make you a hazard on the road. A decline in vision, which helps drivers judge distances and predict upcoming traffic problems, plays a large role in making people with Alzheimer's unsafe drivers.
+ Drivers with Alzheimer's may also have trouble prioritizing visual cues i.e an irrelevant sight, such as a dog jumping behind a fence, may distract them, so they fail to notice important cues, such as brake lights or traffic signs.
+Because Alzheimer's diminishes reasoning skills, it often is up to caregivers to determine when their loved ones become unsafe behind the wheel. Warning signs of unsafe driving include:
+
+ 
+ + Forgetting how to locate familiar places
+ 
+ + Failing to observe traffic signals
+ 
+ + Making slow or poor decisions
+ 
+ + Problems with changing lanes or making turns + Hitting the curb while driving
+ 
+ + Driving at an inappropriate speed
+ 
+ + Becoming angry and confused while driving + Confusing the brake and accelerator
+
+Most specialists feel it's important to help the person with dementia stop driving as soon as possible. A rule of thumb is to ask yourself whether you feel safe riding in a car or having your family members, including children, riding in a car that the person with dementia is driving. If the answer is no, then you know it's time for him or her to retire from driving, before they are in an accident.
+
+ DEALING WITH COMMON PROBLEMS
+People with dementia may not be able to carry out everyday tasks on their own. For example, they may lose their ability to cook or wash themselves, and may not recognise the need to go to the toilet. This article highlights common problems and suggests practical solutions on how to deal with them.
+DRESSING
+
+ 
+ People with dementia sometimes don’t remember which clothes should be put on, in which order, nor how to put them on. They may end up wearing several skirts and no underwear, or with things on back-to-front or done up incorrectly. They can have difficulty doing up buckles, laces, bras and so on. They may not recognise the need to change their clothes, for example, when they are dirty or if they are going to bed. They may choose to wear inappropriate clothing – for example, going out in the daytime in their nightwear.
+
+Possible solutions
+
+ 
+ Try laying out clothes in the order they have to be put on. Avoid clothes with complicated openings and fastenings. Replace buttons with zips and Velcro (but show them how to use them), buckles and belts with elastic, lace-up shoes with slip-ons and men’s ‘Y’-front pants with boxer shorts. Choose women’s bras with a front opening.
+ 
+ You may need more persuasive tactics to overcome the last two problems. They may resent interference. Don’t argue, try to encourage instead. Set out the clean clothes saying, ‘These are the clothes you chose to put on’, or ‘That dress really suits you’. You may have to become tolerant of their preferences.
+
+WASHING AND BATHING
+
+ 
+ Forgetting to wash and no longer recognising the need may be problems for people with dementia. They may have forgotten what to do, or be unable to wash certain parts of their body because of physical impairment. Some will be unable to climb in or out of the bath safely or manipulate taps. They may be embarrassed by helpers seeing parts of their body usually kept private, and may refuse to wash at all. These problems are increased if they are incontinent and need to wash frequently.
+
+Possible solutions
+
+ 
+ Try to establish and maintain a routine for washing. You will need much tact. You cannot tell them to wash but perhaps you can emphasise the more pleasant aspects, the comfort of warm water, perfumed soaps and so on. You may have to tell them step by step what to do, wash with them, or clean your own teeth to demonstrate. You may have to help or supervise them because of physical difficulty and risk of accident or injury. There will be difficulties for the carer too if the person they care for is large or heavy and needs to be lifted. Incontinence can be a real problem, especially if embarrassment leads to concealment. It can also be a problem for the carer who may be just as uncomfortable. Try to be matter-of-fact: ‘You know and I know that you’re wet, and you’ll get sore if you don’t wash’. Telling them off or showing that you are upset won’t help.
+
+GOING TO THE TOILET
+
+ 
+ People with dementia may forget to go, leading to incontinence and constipation. They may forget where the toilet is, even in their own home. There may be problems undoing their clothing in time. At night they may lose their way in the dark or mistake some other object, such as a waste-bin, for the lavatory.
+
+Possible solutions
+
+ 
+ At regular intervals either remind them or take them. Label the door, or paint it brightly. Make sure clothing can be easily removed. Take them before they go to bed. Leave a lamp with a low wattage bulb on, use night-light plugs or stick luminous tape on the wall as a guide. A pot by the side of the bed may help – this used to be common practice for most people when lavatories were outdoors.
+
+COOKING
+
+ 
+ The problems are most severe if the person with dementia lives alone. The ability to cook even simple meals may be lost. Just buying food and keeping it fresh may be beyond their capacity. They may eat food that has gone bad or, in some cases, even pet food. The gas cooker may be switched on and left unlit, pots may be left to burn. Poor physical co-ordination can lead to burns and scalds or cuts from utensils. The combination of these problems leads to malnutrition in many people with dementia who live alone.
+ 
+ For those living with others, the problems are diminished if the carer cooks for them – the problem then may be for the carer who is unused to buying or cooking food.
+
+Possible solutions
+
+ 
+ There are a few safety devices that can be fitted to cookers to prevent some of these problems. Invest in an electric kettle that switches itself off. Remove sharp knives and other potentially dangerous utensils. You may need to visit daily to help or supervise – or arrange for someone else to be there. Try to get the meals-on-wheels service to call, but check to see that the person knows how to open the container. You may need to put the food out on a plate for them if they don’t understand what the carton is for.
+ 
+ Most libraries stock books about cooking on a range of themes – ‘for beginners’, ‘for small households’, ‘for those on a budget’ and so on.
+
+EATING
+
+ 
+ Many people with dementia forget whether or not they have eaten. Some don’t want to eat and claim they have just done so; others want to start on the next meal as soon as they have finished the previous one. They may develop strong dislikes of certain foods and cravings for others. Some don’t know how to eat. They may forget how to use cutlery and generally be very messy. They may play with their food, not realising it is to go in their mouth. They may be confused by different foods on one plate. Others have physical problems; they can’t chew properly and have difficulty swallowing, which could lead to choking. Some forget to drink and may become dehydrated.
+
+Possible solutions
+
+ 
+ Have regular times for eating, and eat with the person with dementia. If they often want to start another meal soon after the last one, keep some washing up in the sink to show the remains of the last meal. If they will eat only certain foods you can enquire about diet and vitamin supplements.
+ 
+ Don’t worry about table manners – spoons are easier than knives and forks, and fingers came first of all! Use plastic tablecloths and place mats so mess can be cleaned up easily.
+ 
+ You may have to remind them how to eat by talking them through each stage, or show them by eating something yourself. Sometimes spoon-feeding may be necessary. Try to keep food simple. Cut it up or keep it to one texture – soft, thick foods are best. A mixture of liquid and solid may lead them to swallow instead of chewing and could result in choking. Check that dentures fit and are left clean.
+ 
+ You may find it helpful to provide ‘finger foods’, which are intended to be eaten without cutlery and can help people with dementia to be independent in eating.
+ 
+ Make sure that the person has several drinks a day (at least eight cups/1500 ml), and more in hot weather. It is important to make sure the drinks are not too hot – they may have lost their judgement and hurt themself. You may need to use a spill-proof cup like the ones sold for children.
+
+GOING OUT ALONE AND SHOPPING
+
+ 
+ The most worrying problem for many carers is the safety of the person they care for. Traffic presents a threat on even the quietest roads and crowded, busy streets or shopping centres can confuse and alarm. A person with dementia may not recognise even familiar places, and become lost and frightened. Other people are not always helpful and may interpret confused behaviour as drunkenness.
+ 
+ If a person with dementia is shopping alone there are additional problems of remembering what they went out to buy and of handling money.
+
+Possible solutions
+
+ 
+ Many carers are rightly reluctant to prevent the person with dementia going out alone as it is often the last thing they can do on their own. Encourage the person to walk in the park or other area safe from traffic and crowds. If this is not possible you may have to accompany them – perhaps take them part of the way to a point where they cannot go wrong, or meet them on the return journey. One carer relied on a well-trained and trusted dog to help her husband cross the road and bring him home.
+ 
+ Persuade them to carry identification – a bracelet or card explaining that they might become confused and showing where you can be contacted. Or sew a nametape into a pocket.
+ 
+ If they are shopping give them a clear note and only the amount of money they will need. They will be able to buy only one or two straightforward items. If they need clothes you will have to go with them. Do not be embarrassed to explain the problem to shop assistants who are usually most helpful once they understand.
+
+DRIVING
+
+ 
+ People with dementia are able to continue driving in the early stages of the disease.
+
+Possible solutions
+
+ 
+ Once you feel that someone should stop driving, broach the subject with them gently. Some may be pleased to be&nbsp;rid of the responsibility driving brings. Others, who resent their loss of independence, may find giving up driving particularly hard. If gentle persuasion doesn’t dissuade them from driving, you will have to take firmer action. In the first instance, offer to do the driving (if you can), or suggest using public transport. If need be, hide the car keys or immobilise the car (go to a garage for advice about the easiest way to do this). You can also talk with your GP if you are worried about the fitness to drive of the person you care for. Remember, many insurance companies require a medical certificate of fitness before insuring older drivers.
+
+ALCOHOL AND CIGARETTES
+
+ 
+ If the person is in the habit of drinking alcohol in moderation, there is no reason why it should be stopped. Having a drink may be one of their remaining pleasures, and something you can enjoy together. You should take care, however, that alcohol is not left out where they can help themselves. If they are on medication, remember to check with the GP or pharmacist that the drugs mix safely with alcohol.
+ 
+ The use of cigarettes represents a greater danger. People with dementia may not be safe with matches, and they may smoke in bed, leave lighted cigarettes on the edge of armchairs, or throw them away in waste- paper baskets.
+
+Possible solutions
+
+ 
+ Give them a cigarette lighter that cuts off when their finger is removed from the ignition button. If they really need to smoke, it should be only under strict supervision. It is far better to dissuade them from smoking. If persuasion fails, choose a moment when they are otherwise occupied to remove their cigarettes. It may be reassuring to know that many people with dementia forget to smoke so don’t miss the habit once it is broken.
+
+WANDERING
+
+ 
+ ‘Wandering’ is a common and difficult problem to deal with. People with dementia may appear to others to be walking aimlessly or anxiously around the home, or wander around the neighbourhood having slipped secretly out of the house. In fact most people with dementia are walking about with a purpose but find it difficult to express what it is. They may walk long distances to old haunts and get lost. You will be worried about their safety and their own bewilderment or fear.
+
+Possible solutions
+
+ 
+ If you can work out a reason for the ‘wandering’ you may find a solution. Sometimes it results from general&nbsp;restlessness and boredom and is a sign that the person needs more stimulation or physical activity. They may be searching for things they think are lost. Keeping personal possessions on view may help here. Often they feel insecure and may need both the emotional reassurance that you care and the concrete reassurance of things being kept in the same places and routines maintained. ‘Wandering’ frequently starts after a visit to a strange place – for example, after a holiday – or after a change of habit – such as starting at a day centre, in which case it may help if you go with them a few times until the change becomes familiar. Moving home can be very distressing for people with dementia and should be avoided if at all possible.
+ 
+ If you can find no apparent reason for the ‘wandering’, then you have to prevent them finding their way to places where they will be at risk. You may have to lock some rooms at home and will need to install unfamiliar or difficult locks on street doors. Put the locks on the bottom of the door where they are less likely to find them. An identity bracelet worn by the person with dementia, giving details of how you can be contacted, is an additional safety measure. If they do still manage to leave the house or walk away from you while you are out, contact the local police who are often able to provide help.
+
+NIGHT DISTURBANCE
+
+ 
+ Many people with dementia are restless at night and disturb the whole household by wandering and making a noise. This can be one of the most wearing problems for carers.
+
+Possible solutions
+Again, if you can find a reason, you might be able to alleviate the problem. Some of the more obvious reasons may be that the person:
+ + Is looking for the toilet.
+ + Sleeps too much in the daytime.
+ + Goes to bed too early.
+ + Needs less sleep.
+ + Is not comfortable.
+ + Wakes up and is confused or frightened. + Thinks it is daytime.
+Make sure they have been to the toilet before going to bed . Try to discourage long sleeps during the day, perhaps by increasing physical activity. Try to make them as comfortable as possible. A bedside lamp with a low- wattage bulb left on may help if the person wakes up&nbsp;frightened. Sometimes talking gently to the person will reassure them too and send them back to sleep. If they think it’s daytime or they think they need to get up for some reason you might have to play along with them as arguing could lead to upset. One carer spoke of her husband who regularly woke at night wanting to go to the shops. She always said, ‘All right then, let’s go,‘ walked him round the room and back to bed by which time he’d forgotten where he was going.&nbsp;If nothing seems to work and the disruption to your own sleep makes you unable to cope, you will have to ask your GP about medication.
+REPETITIVE QUESTIONING AND ACTIONS
+
+ 
+ This can be extremely irritating for carers! Usually the person with dementia is unaware of what they’re doing, although their behaviour may reflect underlying anxiety or insecurity.
+
+Possible solutions
+
+ 
+ There is no point getting angry or saying, ‘I’ve just told you 10 times’. Try to distract them by talking about something else or giving them a different activity. Sometimes writing down the answer helps. Reassuring them of your concern may reduce insecurity. You may also have to develop your skills at turning a deaf ear.
+ 
+ Sometimes it will help to give the person the things they ask for rather than explaining/arguing that perhaps you may have made them a cup of tea five minutes ago. The time spent explaining/arguing can cause more distress or frustration for both parties.
+
+CLINGING
+
+ 
+ Some people with dementia become reluctant to let their carer out of their sight and follow them from room to room. This can be very distressing for you, as it means you’re allowed no privacy, often even to go to the lavatory.
+ 
+ They probably behave like this because they’re feeling insecure, and the caregiver represents security. When they see you leave the room, they forget that you will come back, and get frightened.
+
+Possible solutions
+
+ 
+ While you’re gone, give them some simple task to do or use the clock to point out when you’ll return. Reassure them that you’ll be back when the task is finished or when the clock reads a certain time.
+ 
+ If this happens to you, it is important that you use sitters or find some other way of getting a break.
+
+LOSING THINGS AND ACCUSATIONS OF THEFT
+
+ 
+ Many people with dementia really do forget where they have put things; others deliberately hide things and then forget. In either case they may accuse you or someone else of stealing the missing items.
+
+Possible solutions
+
+ 
+ Try not to take their accusations too seriously. Don’t deny the charge and get into an argument – it won’t be possible to reason with them and they will become more upset. Try to find out if they have a regular hiding place, such as under the mattress or in an old shoe. Keep replacements of essential items, such as keys or glasses. Put away or lock up valuables, money or dangerous things. Get into the habit of checking rubbish bins before emptying them. Make sure that other people who help care for the person are aware of the problem.
+
+INCONTINENCE
+Many people with dementia may be incontinent occasionally and wet the bed. Regular bladder incontinence and bowel incontinence is less usual. But even the occasional accident can be difficult to deal with. It is embarrassing and degrading for them and distasteful for the carer who has to clean up.
+ However, incontinence is a condition that can be greatly improved by medical treatment, so ask your GP or health visitor for help.
+ If incontinence becomes frequent or develops suddenly always check with your GP, as there could be a medical reason.
+There could be several reasons for occasional incontinence:
+
+ 
+ They forget to go to the toilet.
+ 
+ They can’t get to the toilet in time.
+ 
+ They can’t undo their clothing easily.
+ 
+ They can’t find their way at night.
+ 
+ They have an attack of diarrhoea.
+
+Possible solutions
+
+ 
+ Take the person to the toilet regularly.
+ 
+ If the toilet is upstairs or some distance from where they spend most of their time try to get a commode
+ 
+ Clothing can be adapted by using Velcro instead of buttons or zips. Men’s ‘Y’-front pants can be replaced by boxer shorts.
+ 
+ Provide a pot for night-time use. Use luminous tapes to mark the route to the toilet. Always take them before they go to bed and, if it prevents a wet bed, take them during the night.
+ 
+ Keep a check on their diet.If they are not eating enough roughage they may develop constipation, which can lead to a blocked bowel and leaking diarrhoea. Increase vegetables, fruits and wholegrain cereals.
+ 
+ Try to reduce embarrassment by adopting a matter-of- fact approach, directing their attention to the task of cleaning and washing and avoiding any recriminations.
+ 
+ To protect your furniture use washable covers over dustbin liners. Beds can be protected by using a plastic sheet between a draw sheet (a sheet folded in half and tucked in across the bed).
+ 
+ Special pads and pants are available from chemist shops.
+
+DELUSIONS AND HALLUCINATIONS
+
+ 
+ Delusions are ideas that are imaginary, but seem very real to the person experiencing them. Someone experiencing delusions may believe that there are some people who want to kill or harm them, or that objects that are simply mislaid or hidden have been stolen, even by members of the family. Someone experiencing hallucinations sees or hears things that aren’t actually there. They may wake to see figures at the foot of the bed, or hear dead relatives talking to them.
+
+Possible solutions
+
+ 
+ Both delusions and hallucinations are imaginary, but they can give rise to genuine feelings of anxiety or panic, and should be taken seriously. It is important to realise that not everyone finds hallucinations unpleasant or distressing, but it’s wise to be prepared in case they do.
+ 
+ When the person with dementia is experiencing a delusion or hallucination, don’t argue with them or tell them they are mistaken. Remember they are outside the person’s control so becoming angry or impatient with them will not help. If the delusion concerns a missing object, for example, try to find it, rather than deny it has been stolen. If the person is distressed by a hallucination explain that you understand what they are feeling, but also that other people cannot see or hear what frightens them. Try to comfort them, perhaps by putting an arm round them or holding their hand, and try to distract their attention on to something real around them.
+ 
+ If the person you are caring for begins to suffer from distressing delusions or hallucinations, you should see&nbsp;your GP. It could be that medication is causing the problem, or the problem itself might respond to drugs.
+
+SEXUAL RELATIONSHIPS
+
+ 
+ The sexual relationship in any relationship is very private and personal and not something that many carers can talk about easily. While dementia does not necessarily affect sexual relationships, the person’s attitude to lovemaking may alter. They may not respond to affectionate gestures that you make or they may lose interest altogether. They may simply forget about it.
+ 
+ You may find that you lose interest yourself because of the stresses and tiredness brought on by caring for your loved-one. You may find it difficult to make love with a person whose personality has changed so much.
+ 
+ Occasionally, a person with dementia may become more demanding.
+
+Possible solutions
+
+ 
+ There is no simple solution to a complex and sensitive issue such as this. If you find that your sexual relationship is becoming a problem, you should try and talk to an understanding person about it. There are counsellors trained to talk to people about such problems. Your GP should be able to put you in touch with someone.
+
+INAPPROPRIATE SEXUAL BEHAVIOUR
+
+ 
+ In some cases a person with dementia may exhibit inappropriate sexual behaviour, such as undressing in public, exposing themselves, or aimlessly fondling their genitals. In fact, such behaviour is unlikely to be sexual at all. Appearing naked in the sitting room may simply be the result of forgetting they should get dressed, or of losing their way to the bathroom. A man found ‘exposing’ himself, may only be trying to urinate in an unsuitable place. One carer’s mother seen ‘exposing’ herself in the street had wandered out in the cold in her nightdress and pulled it up around her shoulders to try and keep warm.
+
+Possible solutions
+
+ 
+ Behaviours such as these can cause severe embarrassment to carers, but your understanding of the problem – and explaining it to others – should lessen your embarrassment. If the person touches their genitals in public, don’t make a scene, but try to discourage them gently. If they appear naked, or start undressing themselves, remove them calmly to another room. It may be worth checking that clothing is not uncomfortably tight, or fastenings broken. In those rare cases where people complain and police or other officials become involved a&nbsp;truthful explanation usually receives a sympathetic response. Whatever happens, do not worry that this kind of sexual action will lead to harmful sexual behaviour – it won’t.
+
+VIOLENCE AND AGGRESSION
+
+ 
+ The person with dementia’s frustration or over-reaction to a difficult situation may occasionally erupt into aggression and violence. When it is directed at the carer it is especially distressing.
+ 
+ The person may also show anger or aggression towards other family members. Several carers mentioned a particular problem with teenage children, whom people with dementia often seem to resent, perhaps because they represent youthfulness and hope that they know is over for them.
+
+Possible solutions
+
+ 
+ Whatever you do, do not respond to aggression with aggression. It will only make matters worse. Instead, stay calm yourself – count to 100 if need be – and try to distract their attention. Find out what brings on the reaction – frustration at a difficult task, a certain person’s presence, rushing to be ready on time – and try to avoid it in future.
+ 
+ If episodes of violence and aggression become frequent, you should talk to your GP about medication that may help.
+
+FAILURE TO RECOGNISE PEOPLE
+
+ 
+ A person with dementia often lives in the past. If a man thinks of himself as still in his forties, it is not surprising that he denies he is married to someone in her sixties or seventies or that he thinks his 40-year-old daughter is his wife.
+
+Possible solutions
+
+ 
+ Keeping out large photographs of family occasions through the years, so that the person with dementia sees that he (or she) has also grown older has helped some families. Understanding what is happening can relieve the distress carers feel at rejection.
+
+
+ Communicating effectively with a person who has Alzheimer's
+Alzheimer's gradually strips the meaning from words, causing frustration, anger and frayed nerves. Follow these tips for more successful give and take.
+ When you try to communicate with someone who has Alzheimer's, you may feel like you've dropped through the rabbit hole into Alice's wonderland. Because Alzheimer's disease slowly erodes communication skills, an affected person's words and behavior may make little or no sense to you.
+ Your loved one may have just as much trouble deciphering your words. The resulting misunderstandings can fray the tempers of everyone involved, making communication even more difficult. It's incredibly frustrating — for both of you.
+The problem progresses
+
+ 
+ Alzheimer's damage to pathways in the brain may make it more difficult to recall and to understand words. The frustration of having a precise word "on the tip of your tongue" becomes increasingly common for people with Alzheimer's.
+ 
+ Sometimes, one word is incorrectly substituted for another. Or your loved one may just invent an entirely new word to describe a familiar object. He or she may get stuck in a groove, like a skipping record, and repeat the same word or question over and over.
+
+People with Alzheimer's may also:
+
+ 
+ Lose their train of thought
+ 
+ Struggle to organize words logically
+ 
+ Need more time to understand what you're saying
+ 
+ Curse or use offensive language
+
+What can you do to help?
+
+ 
+ Make allowances.&nbsp;Try to remember that your loved one is not acting this way on purpose. Don't take it personally. It's the disease talking, not your loved one.
+ 
+ Show interest.&nbsp;Maintain eye contact and stay near your loved one so that he or she will know you're listening and trying to understand.
+ 
+ Avoid distractions and noise.&nbsp;Communication is difficult, if not impossible, against a background of competing sights and sounds.
+ 
+ Keep things simple.&nbsp;Use short sentences and plain words. Avoid complicated questions or directions. When communicating a task or request, break it down into single steps. Following a multistep command will be a setup for failure in someone with Alzheimer's disease.
+ 
+ Don't interrupt.&nbsp;It may take several minutes for your loved one to respond. Avoid criticizing, hurrying, correcting and arguing.
+
+Use props and visual cues to increase recognition.
+ For example, take the person to where the toilet is visible, and point to it before asking if he or she needs to go to the bathroom.
+ Don't argue.&nbsp;In this disease, reasoning and judgment capabilities decline over time. Avoid trying to convince them that they are wrong and you are right, in which case the most likely outcome will be increased anger and agitation.
+ Remain calm and relaxed.&nbsp;Even if you get frustrated, try to keep your voice calm and relaxed. If your words and the way you say them don't match, it may be confusing. Your nonverbal cues, including the tone of your voice, often send a clearer message than what you actually say.
+
+ YOUR EMOTIONS AS A CARER
+People find themselves looking after a confused person at home for many different reasons – out of love, from a sense of duty, perhaps because they feel they have no choice. Some find assuming the responsibility relatively easy. Others come increasingly to resent it. This article suggests ways of coping and coming to terms with your emotions.
+Caring for people with dementia
+
+ 
+ However you approach your caring responsibilities they will certainly arouse a great many conflicting emotions in you, and in your family. In part, your response will be affected by your relationship with the person with dementia. Those caring for partners will almost certainly experience different feelings from sons or daughters caring for parents, or a sister for a brother. Also, whether the previous relationship between the person with dementia and carer has been close or distant, whether there has been love and companionship or indifference and dislike, will affect the strength and range of your emotions.
+ 
+ So many of these emotions are negative that it is easy to become overwhelmed by them, and to feel that you are alone in trying to cope with them. But you are not alone. All these emotions – and no doubt others besides – have been experienced by carers other than you and are a common part of the caring process. Finding other carers to talk to as soon as you can may help you to come to terms with your feelings and provide much needed support.
+ 
+ While you may feel any or all of these emotions at any time, certain feelings may occur at different stages, usually linked to the progress of the disease or to your understanding of it.
+
+IN THE BEGINNING
+
+ 
+ You will have noticed some of the symptoms before you know the person is ill, probably before you have had any professional advice or outside help from any source. You are likely to be puzzled, bewildered, even alarmed. What accounts for the odd and upsetting changes in behaviour and personality? You will probably be trying to find an explanation on the one hand – ‘He’s working too hard’ – and denying that there is a problem on the other – ‘After all, she’s always been a bit absent-minded’. But inside, you may be afraid because you sense an almost indescribable change that you don’t understand. Other
+ 
+ people may not have noticed anything amiss. For many carers this may be a very difficult time – and the time when least help and support will be available or offered.
+
+WHEN THE ILLNESS IS DIAGNOSED
+
+ 
+ Not that it’s easy once a diagnosis has been made. It may be reassuring to have it confirmed that the person really is ill – and you can begin to prepare for the changes that will have to take place in your lives. But it will take a while for the implications of the disease to sink in. It may be hard, if not impossible, to accept that there is no cure and that the person will not get better. But it is important to remember that many people in the early stages of dementia, even after having a diagnosis, can live a relatively independent life. You will be apprehensive about how you will manage in the future and anxious about what discomfort or anxiety the person with dementia will experience. This may extend to wishing to protect them from knowing the diagnosis. You may be overwhelmed by the prospect of having to care for someone who may become very ill and angry that fate has singled you out.
+ 
+ There are no glib assurances for any of these misgivings and carers differ in their ability to come to terms with the diagnosis.
+ 
+ Carers do not find their task easy. But many agree that there is a process of becoming a carer which can be learned, and which makes caring less of a burden.
+ 
+ Caring can also bring its own rewards – satisfaction when things go well, an opportunity to express your love for the person you care for, or perhaps to return care that you received as a child.
+
+COPING WITH CARING
+
+ 
+ By this stage, the illness may be causing real difficulties in carrying out normal day-to-day activities, and this will be the time when you may have to make major adjustments to your way of life. Ordinary tasks like dressing and eating a meal may take twice or three times as long as they used to. Some very irritating ways of behaving may have developed and the illness may be straining family relationships. Teenage children may find it particularly difficult to adjust. Such problems are likely to make you feel tense and anxious until you find ways of getting round some of them.
+ 
+ You may feel hurt by changes in the personality of the person with dementia and their responses to you. An affectionate gesture may not be returned or even recognised.
+ 
+ Nevertheless, you may feel very protective towards them, and caring for them can bring strong feelings of tenderness and compassion.
+ 
+ The illness may also become more obvious to outsiders, and some of the things the person does may cause you severe embarrassment, especially when strangers, or even friends, don’t understand or are intolerant of ‘odd’ behaviour. Because of such difficulties, you should do your best to avoid becoming isolated from your former social life, and from feeling increasingly lonely. Anyway, you don’t always owe people an explanation, but you may be pleasantly surprised about how well they react once they understand the situation.
+
+FEELINGS OF AGRESSION AND GUILT
+
+ 
+ But, however well you adapt to the new situation, feelings of anger and aggression are certain to surface from time to time. You may feel angry that this has happened to you. You may be frustrated that more is not known about the disease so that effective treatment and a cure can be offered. And at times you will get angry with the person and their irritating behaviour.
+ 
+ Sometimes carers reach a point where they are physically aggressive towards the person they care for. This is a clear signal that the carer needs a break from the situation and more support. This may be obtained through the Alzheimer’s Society,
+ 
+ Losing your temper with a person with dementia is something about which carers often feel guilty, although it may be reassuring to know that most carers admit to it. People also feel guilty about many other things – for example, for the way they treated the person in the past, for resenting having to look after them, for wanting them to go into permanent care, or for wishing them to die. Feeling guilty is a common and understandable reaction when confronted with a trying and often inexplicable disease like dementia, though feeling guilty will probably do neither you nor the person you care for much good. One carer confessed that he sometimes had trouble coping but he saw no reason why he should feel guilty about being less than perfect.
+ 
+ You may also feel frightened if you have to take over making decisions in the family, which were previously made by the person concerned. Remember that specialists have told you that the person you care for can no longer manage their own life. If you don’t accept the responsibility, things will not run smoothly for either of you. When you have to do it, it is reassuring how much you can accomplish, with the right support and help.
+
+IN THE LATER STAGES
+
+ 
+ The person with dementia’s personality may have changed almost beyond recognition, and they may have lost many of their faculties. This is certainly more distressing for the carer, who is keenly aware of what is happening, than it may be for the person themself.
+ 
+ Sometimes, the person with dementia may have some insight that he or she is not the person they were, not in control of the situation and feel sad and frustrated. Having someone there for them is often reassuring even though sometimes this may mean not saying very much. Non- verbal communication can often mean more than what is said.
+ 
+ At this time you may experience a great sense of sadness and begin to mourn the loss of the person you once knew. You may also find that you can no longer cope with the situation and reach a state of despair. You may wonder what all the hard work and emotionally exhausting care are for and ask yourself: ‘What’s the point – wouldn’t she be better off dead?’
+ 
+ If this happens, you should look at alternatives. Caring at home does not necessarily have to last until the death of the person in your care. If the stress becomes too great, you should consider having the person you care for looked after permanently in care homes.
+ 
+ This does not mean, of course, that you will cease to care. Carers emphasise the benefits of visiting the person they have cared for in their new home and say that it can restore a relationship that has been soured by the stresses of caring.
+ 
+ The transfer to permanent care in a home may induce a sense of grief, almost as if the person had already died: ‘When she first went in, I can only say it was like a bereavement.’ But visiting regularly can be important, even if the person doesn’t recognise you: ‘It’s a form of therapy for you – the figure of the person, although the character’s gone.’
+ 
+ For some, this period of grieving before death will mean that you have begun the mourning process and started saying your goodbyes. This is a natural reaction to the prolonged stresses of caring without receiving a response from the person concerned. You should not let other people’s opinions upset you if they do not understand your reaction. It is quite a usual one.
+ 
+ After the person’s death you may at first feel a great relief that so much distress is over. It could be some while before the normal process of bereavement takes place. You may also have to grieve twice over – once for the person with the dementia and once for the person you knew and loved before their illness.
+
+
+ GENERAL GUIDELINES FOR CARING
+A key to caring for someone with dementia is understanding what it feels like to have dementia and acknowledging that they may be depressed and anxious at times if they realise what’s happening to them.
+Problems may include:
+
+ 
+ Loss of memory, a declining power to think and general confusion. This affects their ability to know what they are doing, why they are doing it and how to do it. As a result, tasks may be carried out incorrectly or dangerously, may be left unfinished or not attempted at all.
+ 
+ Difficulty holding a conversation and expressing themselves. This leads to an inability to explain their difficulties and to ask for appropriate help.
+ 
+ Loss of physical co-ordination. This leads to difficulty and possible risk or danger in carrying out actions.
+ 
+ Embarrassment and frustration about declining abilities, and resentment of having to be helped. This may lead to attempts to conceal their difficulties, resistance to offers of help and a refusal to carry out certain tasks at all.
+
+KEEP THINGS NORMAL
+
+ 
+ A diagnosis of dementia does not necessarily mean someone no longer has mental capacity or that you must suddenly start treating the person like an invalid. In fact, you should try and make a point of keeping things as normal as possible for as long as possible. Carry on any pursuits that you have both found enjoyable, such as going to the pub, theatre or cinema, listening to music, singing or dancing, unless, or until, it stops being a pleasure.
+ 
+ Introduce new activities if they seem appropriate – people with dementia often enjoy the company of small babies or children, and animals.
+
+RETAIN INDEPENDENCE
+
+ 
+ There are two major reasons for retaining the person’s ability to carry on independently for as long as possible. First, it helps them to retain some sense of dignity and self-respect, and may avoid frustration being brought on by feeling helpless. Second, it makes less work for you – the more they can do for themselves, the less you have to do for them.
+ 
+ Encourage them to carry on with things they can manage. When something becomes too difficult, don’t give up on it completely – it could be broken down into smaller or easier bits. But be sure to recognise when something really is beyond them. Don’t show them up or put them in a position where they fail. Praise them when they complete a task successfully or for any help they can give you.
+ 
+ Cut down on what they do on their own slowly, and reluctantly, for as one carer said: ‘Once you stop something, you’ve only to stop it once and that’s it.’
+ 
+ All the same, it is no kindness to the person to expect them to continue making decisions that are beyond their capabilities. Brace yourself and start to decide what has to be done when the doctors confirm that the person with dementia can no longer manage for him- or herself.
+
+AVOID CONFRONTATION
+
+ 
+ There will be many occasions when you and the person with dementia will have disagreements. You might think it’s time they changed their dirty clothes, but they don’t agree. They believe someone’s stolen money from their purse, you know they haven’t. They insist it’s perfectly all right to go out shopping dressed in their pyjamas, you’d rather not be with them when they did!
+ 
+ In fact, arguing usually won’t get you very far. It generally leads only to frustration and aggressive feelings for both of you. It’s far better to avoid confrontation whenever you can. Try not to contradict them if they say strange or silly things. Distract their attention if they want to do something inappropriate by changing the subject, or moving them away from the source of the trouble – the chances are that in a moment or two they’ll have forgotten what it is they wanted to do anyway.
+ 
+ Experienced carers have lots of suggestions about how to persuade a reluctant person to do what the carer wants. Avoiding confrontation can be a spur to your imagination.
+
+AVOID CRISES
+
+ 
+ There will be occasions when the person suddenly seems to get more confused, to behave particularly badly or to cry for no apparent reason and be unable to explain why. These may be caused by crises in their lives – events that seem normal enough to those unaffected by the disease, but alarming to someone who is already confused.
+ 
+ A crisis might be having to hurry to get somewhere on time; meeting too many people at once, even if they are people familiar to them; or going into new and unfamiliar surroundings.
+ 
+ Some of these crises can be avoided. Always try to leave plenty of time to prepare for an outing, or to get a task done. Make sure that only one or two friends or relations visit at once. Accompany the person to new places. If you take them away on holiday, try to go somewhere where both your problems and theirs will be understood. Above all, try and stay calm yourself.
+ 
+ There will be times, though, when crises cannot be avoided, for example, when you are to have a break and a sitter comes in, or the person you care for is to go to a new day centre. On these occasions simply try to reduce the disorientation they are likely to feel by using a family friend or neighbour as a sitter, or by introducing a stranger in slow stages and with you present. The introduction to a day centre or hospital should also be made gradually.
+ 
+ Don’t avoid making any changes at all or stop your social life just to avoid crises for the person with dementia. Sometimes they are inevitable and may be best for them – or for you – in the long run.
+
+ESTABLISH ROUTINES
+
+ 
+ Routines are vital in caring for someone with dementia. Doing the same thing at the same time every day helps them to remember, and so helps you in your task. And if life is predictable and familiar, there is less chance of increasing confusion.
+
+MAINTAIN A SENSE OF HUMOUR
+
+ 
+ There may be times when you can see the lighter side of things, and it is important for your own mental health that you maintain the ability to laugh. The person with dementia may still be able to enjoy a good joke or a funny situation too, and it will do you both good to laugh together.
+ 
+ Of course, laughing WITH someone is quite different from laughing AT them, which no one should ever do.
+
+MAKE THINGS SIMPLER
+
+ 
+ A person who is already confused will find making straightforward decisions, or carrying out relatively simple tasks, over-complicated and difficult. Taking a bath, for example, involves many separate actions, from putting in the plug to turning on the taps and obtaining the right temperature, getting undressed, and so on.
+ 
+ Try to simplify things: don’t offer too many choices (two is probably enough), break tasks down into short, simple
+ 
+ sections; if a task becomes too difficult ask them to do only part of it.
+ 
+ Make things simple for yourself too. Don’t fight lots of battles at once but try and solve problems one at a time. That way you stand a better chance of success.
+
+MAKING THINGS SAFER
+
+ 
+ The dementia patient’s difficulties increase the risk of accidents in the home and you should take great care to make your home as safe as possible.
+ 
+ Loss of physical co-ordination increases the likelihood of falls, so you should check your home for danger zones, such as a loose banister rail, slippery floor mats, awkwardly placed furniture, or carpets that may not have been fixed down securely. You may need to have an extra stair rail fitted, along with handrails in the bath and toilet.
+ 
+ Loss of memory and thinking ability can give rise to risks from a number of everyday activities. A person with dementia may turn on the gas fire but forget to light it; they may drop lighted matches into a waste- paper basket; they may scald themselves on a boiling kettle. Some of the solutions are obvious – switch off the gas at the mains when you go out, don’t leave matches around, hide kettle flexes. The list is a long one, and largely a matter of common sense. You should review your home for all potential accidents and take action to avoid them.
+
+MAINTAIN GENERAL FITNESS AND HEALTH
+
+ 
+ The general state of health of the person with dementia will affect their overall condition. If good general health is maintained it will help to preserve existing physical and mental abilities for as long as possible as well as encouraging independence and sustaining morale.
+
+Keeping a check on the condition of someone with dementia:
+As the main carer you are the best person to monitor any changes in the condition of the person you care for. They will still catch the common colds, coughs and minor complaints that make everyone uncomfortable. However, they are also more prone to certain ailments, such as chest infections, and are more likely to fall. People who are unable to move easily and who spend much time in one position may develop pressure sores or hypothermia in cold weather (a serious drop in body temperature, which can lead to death). All these things need to be carefully looked for, as the person may not be able to explain to you what is wrong and may experience needless discomfort. Sometimes you may be able to give a remedy yourself, but do remember that even everyday&nbsp;drugs such as aspirin may worsen their symptoms unless given in small doses. A check with you doctor is advisable if the symptoms persist, or if you are unsure what to do.
+ A district nurse, social worker, or GP who makes regular home visits can also look out for any changes and reassess the person’s needs. They can refer the person with dementia to specialists or services for particular problems, such as incontinence. A GP can prescribe medicines that may give relief from problems such as sleeplessness and walking at night, depression and delusions, although care needs to be taken when prescribing drugs as they can increase the confusion.
+Diet
+
+ 
+ As the disease progresses there may be problems with the practical side of eating, and tastes for food may alter. If someone is experiencing difficulty with eating or swallowing their food this may lead to problems with getting a balanced diet. Your GP can refer you to a speech therapist who can give advice on these sorts of problems.
+ 
+ It is most important to try to include all the ingredients of a balanced diet, especially as the symptoms of dementia can be worsened by an inadequate diet. Try to provide something they like to eat from each of these food groups every day:
+ 
+ Meat, fish, eggs, pulses (dried peas, beans, etc.). Fruit and vegetables. Cereals and bread. Dairy produce, milk, cheese, etc.
+ 
+ Make sure they drink enough liquid to prevent them becoming dehydrated or constipated. If constipation becomes a problem an increase in high fibre foods, such as wholemeal bread, cereals and fruit and vegetables, will help. For more dietary advice ask your GP or health visitor.
+
+Physical activity
+
+ 
+ Physical activity can be pleasurable as well as helping to preserve existing abilities. The kind of exercise depends on the person’s condition and what they are used to, but the best kind of activity is usually something they like doing such as walking, dancing, gardening, swimming or playing bowls – at least until these things become impractical. As the disease progresses, a gentle stroll in familiar streets or a park may be more suitable.
+
+KEEP CHANNELS OF COMMUNICATION OPEN
+
+ 
+ As the person’s dementia progresses there will be increasing problems of communication between them and others. There will be difficulties for them in expressing themselves and for carers in explaining things and making themselves understood. This will affect daily activities and the expression of thoughts and feelings.
+ 
+ Talking becomes a problem for the person with dementia. They may use the wrong words, forget words completely, endlessly repeat words or phrases and lose the thread of the conversation. This can be distressing for both them and the carer. There are several things that can be done to help maintain open channels of communication. At a practical level it is extremely important to check that the person’s senses are not additionally impaired by, for example, a hearing aid that does not work properly, dentures that are too loose, or glasses that are no longer the correct prescription.
+ 
+ In conversation you should remember to speak clearly, simply and slowly and to talk about only one topic at a time. Allow extra time for the person to reply. You may need to repeat things several times, find a simpler way of saying something, or guess the sense of what they are saying. If the person is confused, remind them of basic information gently, perhaps by using a picture or object. Try not to contradict or embarrass the person by correcting them bluntly.
+ 
+ Of course, speech is not the only or the most important way of communicating. Body language – the way we look at a person, how close we move towards them, how we touch them – can be more important than words alone. In the later stages of dementia, looking and touching may be the main ways of expressing affection and care for the person, and their body language also gives you clues about what they mean and how they are feeling.
+
+USE MEMORY AIDS
+
+ 
+ In the early stages of dementia memory aids may be useful. These are things that may help to jog the memory, clear confusion and disorientation, and keep things as normal as possible.
+
+Here are some things carers have found useful:
+
+ 
+ Frequently remind the person with dementia of the time, day and where they are.
+ 
+ Keep a clock with a large clear dial on view.
+ 
+ Keep a calendar that can be changed by the day,&nbsp;month and year.
+ 
+ Label the doors of rooms, such as the bedroom and lavatory, with words, pictures and colours.
+ 
+ Keep photos of familiar people and the family on view.
+ 
+ Leave the personal possessions of the person with
+ 
+ dementia where they can easily find them.
+ 
+ Keep furniture in the same place.
+ 
+ Keep checklists of things to do that day, or lists of expected visitors, which can be ticked off.
+ 
+ Set things out in the order in which they have to be done.
+ 
+ Leave out only the things required, for example, one day’s drug supply.
+ 
+ Leave a simple, clear note with an address if you are going out.
+ 
+ Don’t forget textures, tastes and smells can also evoke memories.
+
+
+ HELP FOR THE CARER
+Looking after someone with dementia at home can be distressing, and is almost always hard work. But many carers say that they also get satisfaction from helping the person, and they still have some good times together. Certainly many carers want to keep their relatives at home until caring becomes too heavy a burden. But if you are going to care for someone with dementia at home, it is essential that you should seek help.
+WHY SHOULD YOU SEEK HELP?
+
+ 
+ It is important to realise that coping at home can cause you, the carer, severe strain. You may be an older person yourself, not in the best of health, and you may have difficulty with the physical demands of caring. If the person lives alone in their own home, you will have the responsibility of running two households and the worry of wondering what is happening when you’re not there. You may even have to spend a lot of your caring time travelling between your home and theirs. Having the person live with you and your family may cause tension because of the demands they make on the household.
+ 
+ Whatever the arrangement, caring for someone with dementia is likely to have effects on your health, family life, leisure, employment and finances. That is why you should always seek help as soon as you suspect that your relative is ill. Don’t wait until you are desperate before you ask for help. An extra pair of hands, some time off for you to relax, or a bit of extra income may be enough to see you through a crisis.
+ 
+ Even if you don’t think you need help now, find out what is available and how long it takes to arrange – in some cases it may be weeks or even months. Then when you sense you’re going to need help, you can try and start the process in good time.
+ 
+ Always be prepared to ask for help. Services are provided because it is known that people like you need them, and it is your right to ask for them. Also don’t forget, your well- being is as important as that of the person with dementia.
+ 
+ There are four main areas of help about which you should know – medical, personal, practical and financial.
+
+Medical help
+
+ 
+ Your General Practitioner (GP) is the first person you should contact when you suspect that your relative is ill so that you can get a proper diagnosis of their illness.
+ 
+ It is important that as a carer you do not lose sight of the need to look after your own health and well-being. You should ensure that your GP knows that you are a carer and find out what local services are available to support you. These might be general or specific to carers of people with dementia.
+ 
+ You should also make full use of your local social services office, voluntary organisations and carers and support groups.
+
+Treatment
+
+ 
+ No drug treatments can provide a cure for Alzheimer’s disease. However, drug treatments have been developed that can temporarily slow down the progression of symptoms in some people. Aricept, Exelon and Reminyl all work in a similar way and are known as cholinesterase inhibitors. There is also a newer drug, Ebixa, which works in a different way from the other three.
+ 
+ Sometimes, medication to calm someone is useful, but it is important to use the correct dose, as some people can be very sensitive to these drugs. Of course it’s also very important to treat other illnesses, like bronchitis, quickly and you should see your GP if there is a sudden, even if minor, change.
+
+Personal support for the carer
+
+ 
+ A major risk for carers is that you may become socially isolated. Looking after someone with dementia takes more and more of your time. Their odd behaviour may annoy or embarrass friends and neighbours who may stop calling round. You may become afraid to leave them alone at home because they have become a danger to themselves. But struggling to manage on your own increases the stress on you, and reduces your ability to cope. Stopping yourself from becoming isolated is an essential part of coping with caring.
+
+There are three main things you can do:
+First,&nbsp;make sure that you get a break from caring– some time to pursue your own interests or hobbies, to visit friends, or simply to get on with everyday tasks without having to worry about supervising the other person. The break may be for just one evening a week, for one or several days a week, or even time for a proper holiday. However long, the idea is to give you a rest or the opportunity to take part in other activities. Getting a break may also help the person with dementia, offering them a chance to socialise with others and take part in different stimulating activities. Many carers find day-care useful and suggest that you start it as soon as possible so that the day-care staff can learn to adapt to any problems as&nbsp;they worsen. Your GP should be able to help you arrange a break.
+Second,carers can never stress enough the benefits of talking to other people who understand your problems. Those most able to understand are obviously other carers. It is often easier to talk to people from outside the family. Carers’ support groups, where carers meet regularly to share their experiences and to help each other, exist locally in many parts of the country. The Alzheimer’s Society will be able to help and advise you on local contacts and services.
+Third,where at all possible, you should try to share the responsibility for caring with other members of your family, or with friends and neighbours. Women, in particular, often find that they are expected to care for a sick relative, though many carers are, in fact, men. Both women and men carers should encourage others to help them. Family members may not realise how hard a time you’re having unless you tell them. Until you ask for help they may assume you don’t need it. Sharing housework and organising care rotas would spread the load more fairly. Friends and neighbours may be able to help in many ways, particularly if you explain the illness, and its effects on the person with dementia and on you.
+Practical help
+
+ 
+ Health and social services and some voluntary organisations may be able to offer help with a number of practical tasks in the home, like providing regular nursing care and domiciliary services. If you are sure that you have made full use of all possible help available at home but you are starting to find it increasingly difficult to cope, you should find out whether it will be possible to have the person with dementia cared for permanently in a care home. The availability of such care varies throughout the country, and the ways of paying for it are complex. It is very important that you seek good advice about what kind of care may be possible.
+
+Don’t give up
+
+ 
+ The medical, practical and carer support services will vary according to where you live. Some areas are well provided with services, others less so. You should find out now what is available near you, and keep a record of how and where to make contact.
+
+VOLUNTARY ORGANISATIONS
+These are charities and other non-statutory bodies that provide many services to supplement those provided by health services. Examples are:
+
+ 
+ Your nearest Citizens Advice Bureau
+ 
+ Carers’ support groups
+ 
+ Citizens Advice Bureau
+
+
+ Helping children understand the disease
+Alzheimer's affects everyone in the family — including the kids. Reassure your child with simple, honest explanations of the disease
+ Watching a loved one progress through the stages of Alzheimer's disease can be frightening, even for adults. Imagine being a child struggling to understand why grandma is acting so strangely or can't remember who you are. You can help by offering comfort and support when needed.
+Anticipating your child's questions
+When your child asks questions, respond with simple, honest answers.&nbsp;For example:
+
+ 
+ Is grandma crazy? Explain that Alzheimer's is a disease. Just as children get colds and tummy aches, older adults may get an illness that causes them to act differently and to forget things. They may look the same on the outside, but their brains are changing on the inside.
+ 
+ Doesn't grandpa love me anymore? If the person who has Alzheimer's disease no longer recognizes your child, he or she may feel rejected. Remind your child that the disease makes it hard for your loved one to remember things — but your child is still an important part of the person's life.
+ 
+ Is it my fault? If the person who has Alzheimer's accuses your child of some wrongdoing — such as misplacing a purse or keys — your child might feel responsible. Explain to your child that he or she isn't to blame.
+ 
+ Will you get Alzheimer's? Will I? Reassure your child that Alzheimer's disease isn't contagious. Most people don't get Alzheimer's.
+ 
+ What will happen next? If you'll be caring for the person who has Alzheimer's in your home, prepare your child for the changes in routine. Explain to your child that your loved one will have good days and bad days. Reassure your child that he or she is loved — no matter what the future holds.
+
+If your child has trouble talking about the situation or withdraws from your loved one, open the conversation yourself. Ask what changes your child has noticed in the loved one who has Alzheimer's disease. Your child's observations may lead naturally to an exploration of his or&nbsp;her own feelings and worries. Tell your child it's OK to feel nervous, sad or angry.
+Staying involved
+
+ 
+ Most kids are amazingly resilient. Help your child stay connected to the person who has Alzheimer's. Involve them in familiar activities, such as setting the table together. Shared leisure time is important, too. Even young children can stay connected with a loved one who has Alzheimer's by paging through photo albums, listening to music or doing other simple activities together.
+ 
+ If your child becomes impatient with your loved one, remind your child that the behavior isn't intentional — it's a result of the disease. Together, focus on finding ways to show your loved one how much you love him or her. Even if your loved one forgets your child's name, he or she can still feel love and kindness.
+
+
+ Legal Planning
+Legal planning is very important for your family and your loved one with dementia. As the disease progresses, he or she will no longer be able to make sound decisions about finances or health care.
+ You should have legal documents in place that identify those who will make important decisions on behalf of your loved one with dementia. Ideally, these documents are in place long before you need them. If they are prepared during the early stages of Alzheimer’s, the person affected by the disease may be able to participate in the process and share his or her wishes.
+ Legal planning can be confusing and sometimes overwhelming. Your family should seek the advice of a lawyer or financial professional as soon as possible to help you make informed decisions about estate planning and wills.
+As a family caregiver and someone making important decisions, you should look at several items. These include:
+
+ 
+ Joint Bank Accounts
+ 
+ Agency Arrangements for Social Welfare Payments + Making a Will
+ 
+ Enduring Power of Attorney (EPA)
+ 
+ Wards of Court
+ 
+ Trusts
+ 
+ Covenants
+ 
+ Tax Relief.
+ 
+ Joint Bank Accounts
+
+Joint bank accounts are a particularly useful means of dealing with one’s financial affairs when a person has mobility problems, or is unable to take responsibility for maintaining an account on their own. Any person can open a bank account when that person has the necessary mental capacity (which may be the case when a person is diagnosed with early stage dementia). When an account is opened an account holder may authorise the bank to accept cheques if signed by another individual. If one account holder becomes mentally incapacitated, the legal authority to operate the account may be revoked and it may not be possible for the account to be used by the other joint account holder. Check this out with your bank when opening the account.
+Agency Arrangements for Social Welfare Payments
+
+ 
+ The Department of Social, Community and Family Affairs has the power to make payments to a third party acting on behalf of the recipient. The person to whom a social welfare benefit is payable may nominate another person to receive that benefit on their behalf. The person nominated (known as an agent) has no power to deal with other financial matters.
+
+Making a Will
+
+ 
+ If not already done, the person with dementia should be encouraged to make a Will as early as possible, disposing of their estate. It will be necessary for a doctor to certify that the person with dementia is still mentally capable of making and understanding such a document. If they are married, their spouse should also make a Will. A Will is a written document in which a person sets out legally binding wishes in relation to the distribution of an estate after death and any other personal wishes they may have.
+
+Enduring Power of Attorney (EPA)
+
+ 
+ An Enduring Power of Attorney (EPA) is a legal arrangement whereby one person (the donor) gives authority to another or others (called the attorney) to act on their behalf in the event of a donor becoming mentally incapable of managing their own affairs. As long as the donor is well, the EPA cannot be acted upon by the attorney. A person can only grant an EPA if they are capable of understanding what it is and what it is intended to do. It is still possible for someone to grant an EPA after dementia has been diagnosed so long as it is clear that they are fully aware of what is involved. The GP or consultant will be required to provide a statement providing that, in their opinion, the donor had the mental capacity at the time of execution to understand the effect of creating an EPA. If this is in question, it may be necessary to have the document signed by the donor in the presence of both the solicitor and the doctor.
+ 
+ If the dementia has progressed to the point where the person is unable to make an EPA, application may have to be made to have the person with dementia made a Ward of Court. A Ward of Court is a person who is declared to be of unsound mind and incapable of managing his/her person or property and no EPA has been executed previously.
+ 
+ The principle purpose of wardship is to protect the property of the ward and manage it for the ward’s benefit and the ward’s dependants (if there are any). Pending this, the funds are made available by the court to pay expenses, such home care expenses as funeral expenses and probate tax.
+
+Trusts
+
+ 
+ Trusts are another way of handling the financial affairs of another person, whether or not that person is incapable of dealing with their own affairs. A Trust exists where a person (the trustee) holds the property of another (the settlor) for the benefit of named people (the beneficiaries). The beneficiaries may be the settlor or other people. Trustees hold and manage the trust property and normally have powers to purchase assets and services for the use or benefit of the beneficiaries rather than handing over the money. There is no supervision of the conduct of the trustees as long as they carry out the terms of the trust.
+
+Covenants
+
+ 
+ In certain circumstances, an individual may claim relief against an assessment of income tax if that person is making payments by way of a covenant to another person. A Deed of Covenant is a legal document under which one person agrees to pay a certain sum of money each year to another person. The advantage is that the person paying the money can effectively not pay tax on it. The money is transferred to someone who does not have a taxable income or pays a lower rate of tax than the person giving the money. In order to qualify for relief, there must be a legal obligation to covenant a sum of money for a period which is in excess of six years. The circumstances in which an older person can receive sums which are deductible from the covenanter’s income are: if the older person is permanently incapacitated (mentally or physically) if that individual is over 65 years of age through payments which are part of a maintenance agreement between separated spouses.
+
+Tax Relief on Home Care Fees
+
+ 
+ A tax allowance may be claimed if you, your spouse or a relative are incapacitated for a tax year by reason of physical or mental infirmity and you employ home care to care for the incapacitated person. A relative includes a relation by marriage and a person in respect of whom the claimant is or was the legal guardian.
+
+
+ Maintain your support network
+
+ 
+ Alzheimer's caregiving can be too big a job for one person. Friends and family can help share the burden. Here's how to ask for help.
+ 
+ Alzheimer's caregiving is a tough, tough job. The physical and emotional demands and strains are exhausting. Before you know it, you may have drifted away from your family and friends — at a time when you need them the most.
+ 
+ Not only can this be harmful to your physical and mental health, but also it can diminish the quality of the care you provide. Caregiver burnout is one of the main reasons people with Alzheimer's are placed in nursing homes.
+
+Many types of stress
+
+ 
+ Being the primary caregiver for a person with any chronic illness is stressful. But Alzheimer's is one of the most stressful illnesses a caregiver can face.
+ 
+ The physical demands increase as the disease progresses. Your loved one needs more and more help with everyday tasks such as eating, bathing and toileting. The emotional toll increases steadily as you watch his or her personality slip away. And dementia-related behaviors can strain the coping skills of even the most patient and understanding of caregivers.
+ 
+ Many caregivers try to do everything themselves, which may be possible for several months depending on the rate of progression of the disease. But Alzheimer's is a path that leads only downward. And the journey can take years to complete.
+
+Stress hurts your health
+
+ 
+ The sustained stress of caring for a person with Alzheimer's can affect your health dramatically. Your immune system becomes less strong, so you are more likely to get sick and stay sick longer. Depression is the most common health problem in caregivers.
+ 
+ Despite these risks, family caregivers typically take care of everyone else's health better than their own. They usually sleep poorly, exercise rarely and eat less nourishing foods. They won't stay in bed when they're ill, and they won't go to the doctor.
+ 
+ Sharing the load
+ 
+ One way to reduce individual caregiver stress is to spread it out over more people. Some caregivers may be resistant to this idea, worrying that they may be seen as&nbsp;inadequate or selfish if they ask for help. Others may fear their requests will be rejected.
+ 
+ While it's true that some people may not be able to assist you, remember that most of your friends and family do want to help but simply don't know how.
+
+Suggest specific tasks
+The next time someone says, "Let me know what I can do to help," offer a couple of concrete suggestions. Perhaps a neighbor could do some yardwork or pick up your groceries. A relative could sort bills or fill out insurance papers. Friends might read a book to your loved one or take him or her for a short walk.
+If you feel awkward asking for help, these tips might help:
+
+ 
+ Consider abilities and interests. If a friend enjoys cooking, ask him or her to help with meal preparation. A friend who likes to drive might be able to serve as transportation to doctor appointments.
+ 
+ Prepare a list. Let the helper choose from a variety of things that need to be done. That way, the task may be more suited to his or her interests and time constraints.
+ 
+ Timing is important. A person who is tired or stressed might automatically refuse a request for help. That doesn't mean he or she wouldn't say yes at another time.
+
+Help from agencies
+
+ 
+ If you can't get enough help from your friends and relatives, there are agencies that provide personnel to watch your loved one for several hours at a time, either in your home or at a senior center. Counseling services and support groups also can help you cope with your caregiving duties.
+
+Pace yourself
+
+ 
+ You may have to be your loved one's primary caregiver for more than a decade. Think of the process as more of a marathon than a sprint. Marshal your resources and find every bit of assistance available so that you can conserve your strength for this exhausting journey. In the long run, you'll be helping your loved one as well as yourself.
+
+
+ Making mealtimes easier
+As Alzheimer's disease progresses, eating problems become common. Understand what causes eating problems and consider tips for ensuring good nutrition.
+ Alzheimer's disease can impact a person's quality of life. As Alzheimer's progresses, eating problems become common — which can make the situation worse. Poor nutrition can lead to physical weakness, an increased risk of falls, a weak immune system, and increased confusion and stress. If you're caring for a loved one who has Alzheimer's, understand what causes eating problems and take steps to ensure good nutrition.
+Consider underlying conditions
+If your loved one is having trouble eating, consider whether any underlying conditions may be contributing to the problem. For example:
+
+ 
+ Ill-fitting dentures may make eating painful. If your loved one wears dentures, make sure they fit properly. Regularly check your loved one's mouth for sores or other oral or dental issues.
+ 
+ Medications may affect appetite. Many medications decrease appetite, including some drugs used to treat Alzheimer's. If you think medications are contributing to your loved one's eating problems, ask your loved one's doctor about substitutions.
+ 
+ Chronic conditions may affect appetite. Diabetes, heart disease, digestive problems and depression may dampen your loved one's interest in eating. Constipation can have the same effect. Treating these or other underlying conditions may improve your loved one's appetite.
+
+Acknowledge fading skills and senses
+
+ 
+ The senses of taste and smell tend to diminish with age. Even healthy older adults often eat less because food doesn't smell or taste as good as it once did. Alzheimer's disease seems to inhibit these senses even further.
+ 
+ In the early stages of Alzheimer's, your loved one may simply forget to eat or lose the skills needed to prepare proper meals. You might call your loved one to remind him or her to eat, or prepare food in advance and then talk your loved one through the steps of unwrapping, reheating and serving.
+ 
+ As Alzheimer's progresses, your loved one may forget table manners and eat from others' plates or out of serving bowls. He or she may lose impulse control and judgment and, in turn, eat anything in sight — including&nbsp;items not intended as food. During the later stages of the disease, difficulty swallowing is common.
+
+Expect agitation and distraction
+
+ 
+ Agitation, one of the most common symptoms of Alzheimer's, may make it difficult for your loved one to sit still long enough to eat a meal. Distractions at mealtime may make this even worse. To reduce distractions, turn off the television, radio and telephone ringer. You might also clear the table of any unnecessary items and use plates and bowls without patterns.
+
+Try colorful plates and large-handled utensils
+
+ 
+ Your loved one might eat more when his or her food is served on a brightly colored plate. Try bright red or bright blue, rather than pastels. The visual contrast may make it easier for your loved one to distinguish between the plate and the food.
+ 
+ To keep plates from slipping, use place mats that have traction on both sides — or make your own from a roll of the rubbery mesh typically used to line shelves. Sometimes bowls are easier to use than are plates. Likewise, spoons may be easier to handle than forks. The larger the spoon's handle, the better. Try bendable straws or lidded cups for liquids.
+
+Offer foods one at a time
+
+ 
+ If your loved one is overwhelmed by an entire plateful of food, place just one type of food at a time on the plate. You could also offer several small meals throughout the day, rather than three larger ones. Cut food into bite-sized portions. Finger foods are even easier — but avoid nuts, popcorn and raw carrots, which can be hard to chew and swallow.
+
+Sneak in extra nutrition
+
+ 
+ If you're having a hard time getting your loved one to eat enough, you might take advantage of the fact that many people who have Alzheimer's disease are most alert and hungry in the morning. You could serve a filling breakfast, or several light breakfasts in a row. You might also offer high-calorie snacks — such as protein milkshakes. Consult the doctor if your loved one loses weight suddenly.
+ 
+ Ensuring good nutrition in Alzheimer's can be a challenge, but it's worthwhile. Good nutrition can help your loved one better cope — both physically and emotionally — with this difficult disease.
+
+
+ Planning for the holidays
+Holidays can be bittersweet for families affected by Alzheimer's. Consider simple tips to make the holidays enjoyable for everyone.
+ Alzheimer's disease affects both family and community life. Holiday observances are no exception. Holiday memories from before your loved one developed Alzheimer's may darken an otherwise joyful season — and worries about how your loved one's condition may disrupt your family's plans can overshadow the simple pleasure of being together. Rather than dwell on how much things have changed or worry about what might go wrong, focus on making the holidays as enjoyable as possible.
+Keep it simple at home:&nbsp;If you're caring for a loved one who has Alzheimer's at home:
+
+ 
+ Make preparations together. If you bake, your loved one may be able to participate by measuring flour, stirring batter or rolling dough. You may find it meaningful to open holiday cards or wrap gifts together. Remember to concentrate on the process, rather than the result.
+ 
+ Tone down your decorations. Blinking lights and large decorative displays can cause disorientation. Avoid lighted candles and other safety hazards, as well as decorations that could be mistaken for edible treats — such as artificial fruits.
+ 
+ Host quiet, slow-paced gatherings. Music, conversation and meal preparation all add to the noise and stimulation of an event. Yet for a person who has Alzheimer's, a calm, quiet environment usually is best. Keep daily routines in place as much as possible and, as needed, provide your loved one a place to rest during family get-togethers.
+
+Be practical away from home:&nbsp;If your loved one lives in a nursing home or other facility:
+
+ 
+ Celebrate in the most familiar setting. For many people who have Alzheimer's, a change of environment — even a visit home — causes anxiety. Instead of creating that disruption, consider holding a small family celebration at the facility. You might also participate in holiday activities planned for the residents.
+ 
+ Minimize visitor traffic. Arrange for a few family members to drop in on different days. Even if your loved one isn't sure who's who, two or three familiar
+ 
+ faces are likely to be welcome, while nine or 10 may be overwhelming.
+ 
+ Schedule visits at your loved one's best time of day. People who have Alzheimer's tire easily, especially as the disease progresses. Your loved one may appreciate morning and lunchtime visitors more than those in the afternoon or evening.
+
+Care for yourself:&nbsp;Consider your needs, as well as those of your loved one. To manage your expectations of yourself:
+
+ 
+ Pick and choose. Decide which holiday activities and traditions are most important, then focus on what you enjoy. Remember that you can't do it all.
+ 
+ Simplify. Bake fewer cakes. Buy fewer gifts. Don't feel pressured to display all of your holiday decorations or include a handwritten note with each holiday card. Ask others to provide portions of holiday meals.
+ 
+ Delegate. Remember family members and friends who've offered their assistance. Let them help with cleaning, addressing cards and shopping for gifts. Ask if one of your children or a close friend could stay with your loved one while you go to a holiday party.
+ 
+ Trust your instincts
+
+As a caregiver, you know your loved one's abilities best. You also know what's most likely to agitate or upset your loved one. Resist pressure to celebrate the way others may expect you to. Remember, you can't control the progress of Alzheimer's or protect your loved one from all distress — but by planning and setting firm boundaries, you can avoid needless holiday stress and enjoy the warmth of the season.
+
+ References
+Dementia- http://en.wikipedia.org/wiki/Dementia
+http://www.cks.nhs.uk/patient_information_leaflet/dementia
+Read More &gt; 
+
+ Print This Page
+
+ 
+
+ 
+
+ 
+ 
+ 
+ More Videos...
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ What is Dementia? 
+ 
+ 
+ 
+ Reminyl (Galantamine) Tablets 
+ 
+ 
+ 
+ Exelon Tablets 
+ 
+ 
+ 
+ Aricept (Donepezil) Tablets 
+ 
+ 
+ 
+ 
+ 
+ What is Alzheimer&#039;s Disease 
+ 
+ 
+ 
+ Ebixa Tablets (Memantine) 
+ 
+ 
+ 
+ Constipation Treatment 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Medicine Reference
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Aricept
+Ebixa (Memantine) Tablets
+Exelon (Rivastigmine)
+Reminyl
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+Order Your Prescription
+Pre-order your prescription online nowWe'll text you when it's ready to collect at our Pharmacy!
+Order Your Prescription
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ Search
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+BLOG
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 12 Dec
+
+
+ Advice on Pfizer&#039;s COVID 19 Vaccine
+
+
+ Dec 12, 20
+ 
+So first: what is a vaccine? a vaccine teaches our immune system how to create antibodies, and it is these antibodies that protect people from disease. It is much safer for our... Read more
+
+ 
+ 
+ 17 Oct
+
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+
+ Oct 17, 20
+ 
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+This article is originally posted on Proven Skincare.
+When you’re a teenager, self-conscious and unsure, acne can weigh on your self-... Read more
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+
+CONTACT US
+
+ 
+Opening Hours:Monday - Friday: 9 am - 6 pm Saturday: 10am - 12noonPhone: 021 4366923Email: garvanjames@gmail.comAddress:Lynch's PharmacyBroadale, Maryborough Hill,Douglas, CorkIrelandT12CX72
+ 
+FOLLOW US
+
+
+
+
+
+
+WHO WE ARE
+Lynch’s Pharmacy is one of the last remaining, truly independent pharmacies in Cork. Based in Broadale, Douglas, we have over 20 years experience working in the community pharmacy sector.
+Read More
+
+HEALTH LITERACY FRIENDLY POLICY
+Nearly half of all Irish people have inadequate and problematic health literacy skills. Limited health literacy is very common. Read about our Health Literacy Policy here...
+Read More
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+&nbsp;© 2023 Lynch’s Pharmacy. All rights reserved. | Privacy Notice || Admin
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+
+ 
+ 
+
+
+
+
+<!--
+(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","//www.google-analytics.com/analytics.js","ga");ga("create", "UA-19666557-1", {"Domain":"auto"});ga("set", "anonymizeIp", true);ga("send", "pageview");
+//-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"aurum_sub","theme_token":"EXSyyWIOVAIQMT6L-w8vzIqQ0eSaTXbrOP7yBmltapI","js":{"sites\/all\/modules\/jquery_update\/replace\/jquery\/1.10\/jquery.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/google_analytics\/googleanalytics.js":1,"0":1,"sites\/all\/modules\/expanding_formatter\/js\/expanding_formatter.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.scrollTo.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.easing.1.3.js":1,"sites\/all\/themes\/aurum\/3dParty\/FitVids.js\/jquery.fitvids.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.touchSwipe.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/jquery.colorbox-min.js":1,"sites\/all\/themes\/aurum\/3dParty\/isotope\/isotope.js":1,"sites\/all\/themes\/aurum\/3dParty\/inview.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.gmap.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/bootstrap\/js\/bootstrap.min.js":1,"sites\/all\/themes\/aurum\/js\/pi.googleMapStyles.js":1,"sites\/all\/themes\/aurum\/js\/pi.accordion.js":1,"sites\/all\/themes\/aurum\/js\/pi.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.isotope.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.fitvids.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.map.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.animations.js":1,"sites\/all\/themes\/aurum\/js\/pi.global.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.messages.css":1,"sites\/all\/modules\/date\/date_api\/date.css":1,"sites\/all\/modules\/date\/date_popup\/themes\/datepicker.1.7.css":1,"modules\/field\/theme\/field.css":1,"modules\/node\/node.css":1,"modules\/user\/user.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ckeditor\/css\/ckeditor.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/modules\/print\/print_ui\/css\/print_ui.theme.css":1,"sites\/all\/modules\/expanding_formatter\/css\/expanding_formatter.css":1,"sites\/all\/themes\/aurum\/css\/blue\/global.css":1,"sites\/all\/themes\/aurum\/css\/blue\/portfolio.css":1,"sites\/all\/themes\/aurum\/css\/blue\/social.css":1,"sites\/all\/themes\/aurum\/css\/blue\/typo.css":1,"sites\/all\/themes\/aurum\/css\/blue\/page-nav.css":1,"sites\/all\/themes\/aurum\/css\/blue\/boxes.css":1,"sites\/all\/themes\/aurum\/css\/blue\/comments.css":1,"sites\/all\/themes\/aurum\/css\/blue\/testimonials.css":1,"sites\/all\/themes\/aurum\/css\/blue\/accordion.css":1,"sites\/all\/themes\/aurum\/css\/blue\/counters.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tabs.css":1,"sites\/all\/themes\/aurum\/css\/blue\/shadows.css":1,"sites\/all\/themes\/aurum\/css\/blue\/pricing-tables.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tooltips.css":1,"sites\/all\/themes\/aurum\/css\/blue\/slider.css":1,"sites\/all\/themes\/aurum\/css\/blue\/animations.css":1,"sites\/all\/themes\/aurum\/css\/blue\/timeline.css":1,"sites\/all\/themes\/aurum\/3dParty\/fontello\/css\/fontello.css":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/colorbox.css":1,"sites\/all\/themes\/aurum\/css\/bootstrap.min.css":1,"sites\/all\/themes\/aurum\/css\/drupal.css":1,"sites\/all\/themes\/aurum\/aurum_sub\/css\/custom.css":1}},"urlIsAjaxTrusted":{"\/health\/alzheimers-resource-centre":true},"googleanalytics":{"trackOutbound":1,"trackMailto":1,"trackDownload":1,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"aurum":{"sticky":1}});
+//-->
+
+ 
+ 

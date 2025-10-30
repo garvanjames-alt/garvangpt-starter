@@ -1,158 +1,115 @@
-// backend/server.mjs
+// backend/server.mjs — health, memory list, respond (Composer v2 w/ summary)
+// Node >= 18, ESM
+
 import express from "express";
-import cors from "cors";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { formatComposerV2 } from "../helpers/compose.js";
+
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const ROOT = path.resolve(__dirname, "..");
+const MEMFILE = path.resolve(ROOT, "memory.jsonl");
 
 const app = express();
+const PORT = Number(process.env.PORT || 3001);
+app.use(express.json({ limit: "2mb" }));
 
-// ----- Config -----
-const PORT = process.env.PORT || 3000;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || "";
-const ELEVENLABS_API_KEY = process.env.ELEVENLABS_API_KEY || "";
-const ELEVENLABS_MODEL = process.env.ELEVENLABS_MODEL || "eleven_turbo_v2_5";
-const ELEVENLABS_VOICE_ID = process.env.ELEVENLABS_VOICE_ID || "pNInz6obpgDQGcFmaJgB"; // any default is fine
-const CORS_ORIGINS = (process.env.CORS_ORIGINS || "")
-  .split(",")
-  .map(s => s.trim())
-  .filter(Boolean);
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
-// ----- Middleware -----
-app.use(express.json());
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin || CORS_ORIGINS.length === 0) return cb(null, true);
-      cb(null, CORS_ORIGINS.includes(origin));
-    },
-    credentials: true,
-  })
-);
+function readMemoryItems(max = 200) {
+  if (!fs.existsSync(MEMFILE)) return [];
+  const lines = fs.readFileSync(MEMFILE, "utf8").split("\n").filter(Boolean).slice(-max);
+  const out = [];
+  for (const l of lines) { try { out.push(JSON.parse(l)); } catch {} }
+  return out;
+}
 
-// ----- Health -----
-app.get("/health", (_req, res) => {
+let handleRespond = null;
+try {
+  const mod = await import(path.resolve(ROOT, "respondHandler.cjs"));
+  handleRespond = mod.handleRespond || mod.default || mod.respond || mod.handler || null;
+} catch {
+  console.warn("respondHandler.cjs not loaded; using echo shim");
+}
+
+app.get(["/health", "/api/health"], (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// ----- Demo “memory” endpoints (in-memory only) -----
-const MEM = [];
-app.get("/memory/list", (_req, res) => {
-  res.json({ ok: true, items: [...MEM] });
-});
-app.post("/memory/save", (req, res) => {
-  const text = (req.body?.text || "").toString().trim();
-  if (!text) return res.status(400).json({ ok: false, error: "Missing text" });
-  MEM.push({ ts: Date.now(), text });
-  res.json({ ok: true });
-});
-app.delete("/memory/clear", (_req, res) => {
-  MEM.length = 0;
-  res.json({ ok: true });
-});
-
-// Legacy alias
-app.get("/memory", (_req, res) => res.json({ ok: true, items: [...MEM] }));
-app.post("/memory", (req, res) => {
-  const text = (req.body?.text || "").toString().trim();
-  if (!text) return res.status(400).json({ ok: false, error: "Missing text" });
-  MEM.push({ ts: Date.now(), text });
-  res.json({ ok: true });
-});
-app.delete("/memory", (_req, res) => {
-  MEM.length = 0;
-  res.json({ ok: true });
-});
-
-// ----- /chat: now calls OpenAI for a real reply -----
-app.post("/chat", async (req, res) => {
+app.get(["/memory/list", "/api/memory/list"], (req, res) => {
   try {
-    const text = (req.body?.text || "").toString().trim();
-    if (!text) return res.status(400).json({ ok: false, error: "Missing text" });
-    if (!OPENAI_API_KEY) {
-      return res.status(401).json({ ok: false, error: "Missing OPENAI_API_KEY" });
-    }
-
-    // Light-touch “memories” context to ground the reply a bit
-    const memoryContext = MEM.slice(-5).map(m => `- ${m.text}`).join("\n");
-
-    const body = {
-      model: "gpt-4o-mini",
-      temperature: 0.6,
-      messages: [
-        {
-          role: "system",
-          content:
-            "You are Almost Human, a concise, friendly voice companion. Keep replies short and conversational. If appropriate, reference known preferences.",
-        },
-        memoryContext
-          ? { role: "system", content: `Known preferences/memories:\n${memoryContext}` }
-          : undefined,
-        { role: "user", content: text },
-      ].filter(Boolean),
-    };
-
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
-      method: "POST",
-      headers: {
-        "Authorization": `Bearer ${OPENAI_API_KEY}`,
-        "Content-Type": "application/json",
-      },
-      body: JSON.stringify(body),
-    });
-
-    if (!r.ok) {
-      const msg = await r.text().catch(() => "");
-      return res.status(r.status).json({ ok: false, error: msg || r.statusText });
-    }
-
-    const data = await r.json();
-    const reply = data?.choices?.[0]?.message?.content?.trim() || "Okay.";
-
-    res.json({ ok: true, reply });
-  } catch (err) {
-    console.error("/chat error:", err);
-    res.status(500).json({ ok: false, error: "Server error" });
+    res.json({ items: readMemoryItems(200) });
+  } catch (e) {
+    console.error("memory/list error", e);
+    res.status(500).json({ ok: false, error: "memory_list_failed" });
   }
 });
 
-// ----- TTS proxy to ElevenLabs -----
-app.post("/tts", async (req, res) => {
+app.post(["/respond", "/api/respond"], async (req, res) => {
   try {
-    const text = (req.body?.text || "").toString().trim();
-    if (!text) return res.status(400).json({ ok: false, error: "Missing text" });
-    if (!ELEVENLABS_API_KEY) return res.status(401).json({ ok: false, error: "Missing ELEVENLABS_API_KEY" });
+    const text = typeof req.body?.text === "string" ? req.body.text : "";
+    if (!text) return res.status(400).json({ ok: false, error: "missing_text" });
 
-    const ttsUrl = `https://api.elevenlabs.io/v1/text-to-speech/${ELEVENLABS_VOICE_ID}/stream`;
-
-    const r = await fetch(ttsUrl, {
-      method: "POST",
-      headers: {
-        "xi-api-key": ELEVENLABS_API_KEY,
-        "Content-Type": "application/json",
-        Accept: "audio/mpeg",
-      },
-      body: JSON.stringify({
-        model_id: ELEVENLABS_MODEL,
-        text,
-        voice_settings: { stability: 0.5, similarity_boost: 0.5 },
-        output_format: "mp3_44100_128",
-      }),
-    });
-
-    if (!r.ok) {
-      const msg = await r.text().catch(() => "");
-      return res.status(r.status).json({ ok: false, error: msg || r.statusText });
+    // 1) Main answer (your handler or echo shim)
+    let modelAnswer;
+    if (typeof handleRespond === "function") {
+      modelAnswer = await handleRespond(text);
+    } else {
+      modelAnswer = `Echo (dev shim): ${text}`;
     }
 
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Cache-Control", "no-store");
-    const buf = Buffer.from(await r.arrayBuffer());
-    res.end(buf);
-  } catch (err) {
-    console.error("/tts error:", err);
-    res.status(500).json({ ok: false, error: "TTS error" });
+    // 2) Optional short summary from your handler
+    let summaryText = "";
+    if (typeof handleRespond === "function") {
+      const prompt = [
+        "Given the following assistant draft, produce a brief, plain-English summary for a patient.",
+        "- 1–3 short bullets or 2–3 concise sentences.",
+        "- strictly non-diagnostic, helpful, neutral tone.",
+        "- no hallucinated sources—base only on the draft.",
+        "",
+        "Assistant draft:",
+        "```",
+        String(modelAnswer || "").slice(0, 4000),
+        "```",
+      ].join("\n");
+      try {
+        summaryText = String(await handleRespond(prompt));
+      } catch {}
+    }
+
+    // 3) Sources/Memories from recent items
+    const recent = readMemoryItems(10);
+    const sources = recent
+      .filter((r) => r?.source)
+      .map((r, i) => `${i + 1}. ${r.path || r.source || "memory"}`);
+    const memories = recent.slice(0, 5).map((r, i) => {
+      const prev = String(r?.text || "").slice(0, 80).replace(/\s+/g, " ");
+      return `${r.id || `m${i + 1}`}: ${prev}…`;
+    });
+
+    // 4) Compose v2
+    const content = formatComposerV2({
+      findingsText: String(modelAnswer || "").trim(),
+      summaryText,
+      sources,
+      memories,
+    });
+
+    res.json({ ok: true, content });
+  } catch (e) {
+    console.error("respond error", e);
+    res.status(500).json({ ok: false, error: "respond_failed" });
   }
 });
 
-// ----- Start -----
 app.listen(PORT, () => {
-  console.log(`backend listening on :${PORT}`);
+  console.log(`GarvanGPT backend listening on http://localhost:${PORT}`);
 });

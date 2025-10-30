@@ -1,92 +1,101 @@
-| #  | Step / Milestone   | Brief note          | Status     |
-| -- | ------------------ | ------------------- | ---------- |
-| 1  | Vision & scope     | Who/what/why        | ✅ Done     |
-| 2  | Name & domain      | Brand + URL         | ✅ Done     |
-| 3  | Repo setup         | GitHub, main        | ✅ Done     |
-| 4  | Local dev ready    | Node/Vite scripts   | ✅ Done     |
-| 5  | Frontend scaffold  | Hero/CTAs/layout    | ✅ Done     |
-| 6  | Backend scaffold   | Express routes      | ✅ Done     |
-| 7  | Healthcheck        | `/health` ok        | ✅ Done     |
-| 8  | Deploy backend     | Render web svc      | ✅ Done     |
-| 9  | Deploy frontend    | Render static       | ✅ Done     |
-| 10 | Env variables      | Keys/models         | ✅ Done     |
-| 11 | CORS config        | Allow frontend      | ✅ Done     |
-| 12 | Memory API         | GET/POST/DELETE     | ✅ Done     |
-| 13 | Memory UI          | Add/list/clear      | ✅ Done     |
-| 14 | Fix builds         | Imports/paths       | ✅ Done     |
-| 15 | Prototype chat     | `/chat` echo→AI     | ✅ Done     |
-| 16 | Transcript UI      | Text + send         | ✅ Done     |
-| 17 | Mic (STT)          | Start/stop          | ✅ Done     |
-| 18 | TTS proxy          | ElevenLabs `/tts`   | ✅ Done     |
-| 19 | Auto speak reply   | Voice answer        | ✅ Done     |
-| 20 | Voice UX checks    | Buttons flow        | ✅ Done     |
-| 21 | Source inventory   | List all corpora    | 📝 Planned |
-| 22 | Prioritize sets    | Highest value first | 📝 Planned |
-| 23 | Format policy      | PDF/DOC/MD rules    | 📝 Planned |
-| 24 | Rights & licenses  | Usage verified      | 📝 Planned |
-| 25 | PII policy         | What to redact      | 📝 Planned |
-| 26 | Staging folders    | `/ingest` structure | 📝 Planned |
-| 27 | Bulk import plan   | Batches strategy    | 📝 Planned |
-| 28 | OCR pass           | Scanned PDFs        | 📝 Planned |
-| 29 | Text normalization | UTF-8/whitespace    | 📝 Planned |
-| 30 | Page extraction    | Per-page text       | 📝 Planned |
-| 31 | Metadata capture   | Title/date/slug     | 📝 Planned |
-| 32 | File hashing       | Deduplicate         | 📝 Planned |
-| 33 | Versioning scheme  | Doc revisions       | 📝 Planned |
-| 34 | Chunking strategy  | Size/overlap        | 📝 Planned |
-| 35 | Section heuristics | Headings-aware      | 📝 Planned |
-| 36 | Table handling     | Markdown/CSV        | 📝 Planned |
-| 37 | Image text (OCR)   | Captions/figures    | 📝 Planned |
-| 38 | Citation anchors   | Page/section ids    | 📝 Planned |
-| 39 | Redaction rules    | PII/PHI removal     | 📝 Planned |
-| 40 | Safety filters     | Toxicity screen     | 📝 Planned |
-| 41 | Embedding model    | Pick + pin          | 📝 Planned |
-| 42 | Embed pipeline     | Batch + retries     | 📝 Planned |
-| 43 | Vector store       | Create index        | 📝 Planned |
-| 44 | Metadata index     | Fast filters        | 📝 Planned |
-| 45 | Backfill job       | Historical load     | 📝 Planned |
-| 46 | Incremental ingest | Watch updates       | 📝 Planned |
-| 47 | Idempotent runs    | Safe re-runs        | 📝 Planned |
-| 48 | Observability      | Counts/latency      | 📝 Planned |
-| 49 | Ingest CLI         | One-shot cmds       | 📝 Planned |
-| 50 | Ingest scheduler   | Nightly batches     | 📝 Planned |
-| 51 | Audit trail        | Who/when/what       | 📝 Planned |
-| 52 | Grounded eval set  | Q/A from docs       | 📝 Planned |
-| 53 | Retrieval eval     | Recall/precision    | 📝 Planned |
-| 54 | Answer eval        | Factuality/cites    | 📝 Planned |
-| 55 | Guardrails eval    | Safety tests        | 📝 Planned |
-| 56 | Rollback plan      | Bad data fix        | 📝 Planned |
-| 57 | Cold-start cache   | Top queries         | 📝 Planned |
-| 58 | Doc deletion       | Right to delete     | 📝 Planned |
-| 59 | Legal archive      | Immutable copy      | 📝 Planned |
-| 60 | Cost tracking      | Tokens/storage      | 📝 Planned |
-| 61 | Retriever API      | Top-k + filters     | 📝 Planned |
-| 62 | Reranker           | Cross-encoder pass  | 📝 Planned |
-| 63 | Prompt wiring      | Context + ask       | 📝 Planned |
-| 64 | Citations UI       | Show sources        | 📝 Planned |
-| 65 | Follow-ups         | Ask clarifiers      | 📝 Planned |
-| 66 | Long answers       | Summaries           | 📝 Planned |
-| 67 | Snippet highlights | Matched spans       | 📝 Planned |
-| 68 | Context memory     | User prefs          | 📝 Planned |
-| 69 | Hands-free loop    | Auto-send           | 📝 Planned |
-| 70 | Voice personas     | Voice choices       | 📝 Planned |
-| 71 | DB persistence     | Supabase/Postgres   | 📝 Planned |
-| 72 | Auth               | Magic link/OAuth    | 📝 Planned |
-| 73 | Roles & orgs       | Seats/teams         | 📝 Planned |
-| 74 | Rate limits        | Per user/IP         | 📝 Planned |
-| 75 | Error tracking     | Sentry setup        | 📝 Planned |
-| 76 | Structured logs    | Request ids         | 📝 Planned |
-| 77 | Metrics dashboards | Latency/errors      | 📝 Planned |
-| 78 | Feature flags      | Gradual rollouts    | 📝 Planned |
-| 79 | Config by env      | Dev/stage/prod      | 📝 Planned |
-| 80 | Backups & restore  | Tested drills       | 📝 Planned |
-| 81 | Privacy & terms    | Legal pages         | 📝 Planned |
-| 82 | Data retention     | Policy tooling      | 📝 Planned |
-| 83 | Security headers   | CSP/HSTS/CORS       | 📝 Planned |
-| 84 | Abuse defenses     | Filters/warnings    | 📝 Planned |
-| 85 | Early-access form  | Email capture       | 📝 Planned |
-| 86 | Analytics          | Events/CTAs         | 📝 Planned |
-| 87 | Beta cohort        | 50–100 testers      | 📝 Planned |
-| 88 | Support inbox      | Triage workflow     | 📝 Planned |
-| 89 | Status page        | Uptime/incidents    | 📝 Planned |
-| 90 | Launch plan        | Copy/assets/checks  | 📝 Planned |
+| #  | Step / Milestone        | Brief note                       | Status              |
+| -- | ----------------------- | -------------------------------- | ------------------- |
+| 1  | Vision & scope          | Who/what/why                     | ✅ Done              |
+| 2  | Name & domain           | Brand + URL                      | ✅ Done              |
+| 3  | Repo setup              | GitHub, main                     | ✅ Done              |
+| 4  | Local dev ready         | Node/Vite scripts                | ✅ Done              |
+| 5  | Frontend scaffold       | Hero/CTAs/layout                 | ✅ Done              |
+| 6  | Backend scaffold        | Express routes                   | ✅ Done              |
+| 7  | Healthcheck             | `/health` ok                     | ✅ Done              |
+| 8  | Deploy backend (dev)    | Render web svc                   | ✅ Done              |
+| 9  | Deploy frontend (dev)   | Render static                    | ✅ Done              |
+| 10 | Env variables           | Keys/models                      | ✅ Done              |
+| 11 | CORS config             | Allow frontend                   | ✅ Done              |
+| 12 | Memory API              | GET/POST/DELETE                  | ✅ Done              |
+| 13 | Memory UI               | Add/list/clear                   | ✅ Done              |
+| 14 | Fix builds              | Imports/paths                    | ✅ Done              |
+| 15 | Prototype chat          | `/respond` loop                  | ✅ Done              |
+| 16 | Transcript UI           | Text + send                      | ✅ Done              |
+| 17 | Mic (STT)               | Start/stop                       | ✅ Done              |
+| 18 | TTS proxy               | ElevenLabs `/tts`                | ✅ Done              |
+| 19 | Auto speak reply        | Voice answer                     | ✅ Done              |
+| 20 | Voice UX checks         | Buttons flow                     | ✅ Done              |
+| 21 | Source inventory        | List all corpora                 | ✅ Done              |
+| 22 | Prioritize sets         | S-01, S-02, S-03                 | ✅ Done              |
+| 23 | Format policy           | PDF/DOC/MD rules                 | ✅ Done              |
+| 24 | Rights & licenses       | Usage verified                   | ✅ **Done**          |
+| 25 | PII policy              | Redaction rules                  | ✅ Done              |
+| 26 | Staging folders         | `/ingest` structure              | ✅ Done              |
+| 27 | Bulk import plan        | Batches strategy                 | ✅ Done              |
+| 28 | OCR pass                | Run OCR on scanned PDFs          | ⏳ **Planned**       |
+| 29 | Text normalization      | UTF-8/whitespace                 | ✅ Done (sample run) |
+| 30 | Page extraction         | Per-page text (PDFs)             | ⏳ Planned           |
+| 31 | Normalized HTML batch   | Convert site pages → `.txt`      | ✅ Done              |
+| 32 | Load normalized content | Batch load to `data/memory.json` | ✅ Done              |
+| 33 | RAG stub                | Simple findTop over memory       | ✅ Done              |
+| 34 | Answer composer v1      | Deterministic template           | ✅ Done              |
+| 35 | Debug endpoint logs     | Prompt/candidates/sources        | ✅ Done              |
+| 36 | Frontend “sources used” | Pills/Chips list                 | ✅ Done              |
+| 37 | “Memories referenced”   | Footer text                      | ✅ Done              |
+| 38 | Backend guardrails      | Safe prompt shaping              | ✅ Done              |
+| 39 | Dev smoke tests (curl)  | `/api/memory` & `/respond`       | ✅ Done              |
+| 40 | Tag release MVP         | `mvp-rag-OK`                     | ✅ Done              |
+| 41 | Error handling pass     | 4xx/5xx UX                       | ⏳ Planned           |
+| 42 | Loading states          | Buttons/spinners                 | ⏳ Planned           |
+| 43 | Rate-limit (basic)      | Per-IP dev guard                 | ⏳ Planned           |
+| 44 | API key handling        | No keys in client                | ✅ Done              |
+| 45 | Content gaps list       | Prioritize missing topics        | ⏳ Planned           |
+| 46 | Normalize batch #2      | Next 50–100 pages                | ⏳ Planned           |
+| 47 | Memory growth test      | Size/latency baseline            | ⏳ Planned           |
+| 48 | Compose v2              | Sectioned, bulletized            | ⏳ Planned           |
+| 49 | Source scoring          | Tie-break/boost recency          | ⏳ Planned           |
+| 50 | Frontend polish         | Typography & spacing             | ✅ Done (MVP)        |
+| 51 | “Show debug” toggle     | Reveal sources & JSON            | ✅ Done              |
+| 52 | Accessibility pass      | Labels/contrast                  | ⏳ Planned           |
+| 53 | Mobile layout           | Responsive checks                | ⏳ Planned           |
+| 54 | Unit tests (server)     | Core utilities                   | ⏳ Planned           |
+| 55 | E2E test script         | Happy path smoke                 | ⏳ Planned           |
+| 56 | Logging & tracing       | Req/resp timing                  | ⏳ Planned           |
+| 57 | Metrics skeleton        | RPS, p95, failures               | ⏳ Planned           |
+| 58 | Content policy UI       | Disclaimer & scope               | ⏳ Planned           |
+| 59 | Safety prompts          | Avoid diagnosis                  | ✅ Done (MVP)        |
+| 60 | Audit trail MVP         | Store Q, sources, ts             | ⏳ Planned           |
+| 61 | Clinic PDFs staging     | Upload & catalog                 | ⏳ Planned           |
+| 62 | OCR run #1              | PDFs → text                      | ⏳ Planned           |
+| 63 | Normalize PDFs          | Apply policy                     | ⏳ Planned           |
+| 64 | Load clinic PDFs        | Into memory                      | ⏳ Planned           |
+| 65 | Snapshot public site    | Crawl sitemap                    | ✅ Done (seed)       |
+| 66 | Content freshness plan  | Weekly diff ingest               | ⏳ Planned           |
+| 67 | Admin page (internal)   | Ingest status                    | ⏳ Planned           |
+| 68 | Secrets mgmt            | Render/Env                       | ✅ Done              |
+| 69 | 404/health pages        | Frontend routes                  | ✅ Done              |
+| 70 | Caching layer (light)   | In-proc memoization              | ⏳ Planned           |
+| 71 | Prompt library          | Reusable templates               | ⏳ Planned           |
+| 72 | Response eval sheet     | Manual rubric                    | ⏳ Planned           |
+| 73 | Hallucination checks    | Source-anchored only             | ✅ In place (MVP)    |
+| 74 | Tone/style guide        | Pharmacist voice                 | ✅ Done              |
+| 75 | Persona tuning          | Non-diagnostic framing           | ✅ Done              |
+| 76 | UI copy pass            | Microcopy clarity                | ✅ Done              |
+| 77 | Browser tests           | Chrome/Safari                    | ⏳ Planned           |
+| 78 | Deploy preview env      | PR previews                      | ⏳ Planned           |
+| 79 | CDN headers             | Cache/static                     | ⏳ Planned           |
+| 80 | Prod infra sketch       | Scale path                       | ⏳ Planned           |
+| 81 | Data retention policy   | Delete windows                   | ⏳ Planned           |
+| 82 | Consent & privacy copy  | Links and notices                | ⏳ Planned           |
+| 83 | Incident playbook       | Rollback/keys                    | ⏳ Planned           |
+| 84 | SLA/SLO draft           | Internal targets                 | ⏳ Planned           |
+| 85 | Metrics dashboard       | Simple charts                    | ⏳ Planned           |
+| 86 | User feedback loop      | “Was this helpful?”              | ⏳ Planned           |
+| 87 | Search box UX           | Enter to send                    | ✅ Done              |
+| 88 | Keyboard a11y           | Focus & tabs                     | ⏳ Planned           |
+| 89 | Readme update           | Dev quickstart                   | ✅ Done              |
+| 90 | Launch checklist        | Final pass & tag                 | ⏳ Planned           |
+| #      | Step / Milestone                | Brief note                                                            | Status                                   |
+| ------ | ------------------------------- | --------------------------------------------------------------------- | ---------------------------------------- |
+| **91** | Avatar design (visual identity) | Generate realistic pharmacist avatar of you (“Almost Human” brand)    | ✅ *Prototype ready (image design stage)* |
+| **92** | Personality scripting           | Define tone/persona file (empathetic, medically factual, “GarvanGPT”) | ✅ Done (seeded in app prompt templates)  |
+| **93** | Voice configuration             | Connect ElevenLabs API for TTS with your chosen voice                 | ✅ MVP working (`/tts` proxy confirmed)   |
+| **94** | Avatar + voice integration      | Combine real-time ElevenLabs output with avatar animation (frontend)  | 🔜 Next phase after MVP polish           |
+| **95** | Personality tuning v2           | Fine-tune answers + emotional tone (AI educator style)                | 🔜 Planned                               |
+| **96** | Conversational flow             | Add idle/typing animations + reactivity                               | 🔜 Planned                               |
+| **97** | Feedback loop                   | Let users rate tone accuracy                                          | 🔜 Planned                               |

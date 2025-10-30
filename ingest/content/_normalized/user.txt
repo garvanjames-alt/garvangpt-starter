@@ -1,0 +1,592 @@
+# Normalized
+# Encoding: UTF-8
+# Format: plain-text
+# Source-Stem: user
+---
+
+
+
+ 
+
+
+
+
+
+ 
+ 
+ (adsbygoogle = window.adsbygoogle || []).push({ 
+ google_ad_client: "ca-pub-6744151061288343", 
+ enable_page_level_ads: true 
+ }); 
+
+
+ User account | Lynch's Pharmacy | Promoting health literacy, Increasing patient compliance, Enhancing well-being
+ 
+ 
+
+ 
+@import url("http://lynchspharmacy.com/modules/system/system.base.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/system/system.messages.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_api/date.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_popup/themes/datepicker.1.7.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/field/theme/field.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/node/node.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/user/user.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/views/css/views.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/ckeditor/css/ckeditor.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/ctools/css/ctools.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/global.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/portfolio.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/social.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/typo.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/page-nav.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/boxes.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/comments.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/testimonials.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/accordion.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/counters.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tabs.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/shadows.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/pricing-tables.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tooltips.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/slider.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/animations.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/timeline.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/fontello/css/fontello.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/colorbox/colorbox.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/bootstrap.min.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/drupal.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/aurum_sub/css/custom.css?rveunr");
+
+ 
+ 
+
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ Home
+ 
+ 
+
+
+ 
+ 
+ Medicine A-Z
+ 
+ 
+
+
+ 
+ 
+ Health A-Z
+ 
+ 
+
+
+ 
+ 
+ Video Series
+ 
+ 
+
+
+ 
+ 
+ Asthma
+ 
+ 
+
+
+ 
+ 
+ Diabetes
+ 
+ 
+
+
+ 
+ 
+ Alzheimers
+ 
+ 
+
+
+ 
+ 
+ Blog
+ 
+ 
+
+
+ 
+ 
+ Health In The News
+ 
+ 
+
+
+ 
+ 
+ Contact
+ 
+ 
+ 
+ 
+
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+ HomeMedicine A-ZHealth A-ZVideo SeriesAsthmaDiabetesAlzheimersBlogHealth In The NewsContact 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Health In The News
+Learn more about your health or illness with our health video series. 
+Please read our policy and consent to Marketing and Preferencesby clicking the icon on bottom left corner to view YouTube videos 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cough Treatment 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Types of coughs 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cold &amp; Flu 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ More Health in The News videos &nbsp; Message us with your health query 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ User account
+
+ You are here:HomeUser account 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Primary tabsLog in(active tab)
+Request new password
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Sign In 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Username *
+ 
+
+
+ Password *
+ 
+
+
+
+Forgot Password? 
+ 
+ 
+ 
+ 
+ Don't have Account? Sign Up 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+BLOG
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 12 Dec
+
+
+ Advice on Pfizer&#039;s COVID 19 Vaccine
+
+
+ Dec 12, 20
+ 
+So first: what is a vaccine? a vaccine teaches our immune system how to create antibodies, and it is these antibodies that protect people from disease. It is much safer for our... Read more
+
+ 
+ 
+ 17 Oct
+
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+
+ Oct 17, 20
+ 
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+This article is originally posted on Proven Skincare.
+When you’re a teenager, self-conscious and unsure, acne can weigh on your self-... Read more
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+
+CONTACT US
+
+ 
+Opening Hours:Monday - Friday: 9 am - 6 pm Saturday: 10am - 12noonPhone: 021 4366923Email: garvanjames@gmail.comAddress:Lynch's PharmacyBroadale, Maryborough Hill,Douglas, CorkIrelandT12CX72
+ 
+FOLLOW US
+
+
+
+
+
+
+WHO WE ARE
+Lynch’s Pharmacy is one of the last remaining, truly independent pharmacies in Cork. Based in Broadale, Douglas, we have over 20 years experience working in the community pharmacy sector.
+Read More
+
+HEALTH LITERACY FRIENDLY POLICY
+Nearly half of all Irish people have inadequate and problematic health literacy skills. Limited health literacy is very common. Read about our Health Literacy Policy here...
+Read More
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+&nbsp;© 2023 Lynch’s Pharmacy. All rights reserved. | Privacy Notice || Admin
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+
+ 
+ 
+
+
+
+
+<!--
+(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","//www.google-analytics.com/analytics.js","ga");ga("create", "UA-19666557-1", {"Domain":"auto"});ga("set", "anonymizeIp", true);ga("send", "pageview");
+//-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"aurum_sub","theme_token":"m1AtLrJT7KABp2Pd6UTViGPhkuymY5jJYM6MP-3aRXw","js":{"sites\/all\/modules\/jquery_update\/replace\/jquery\/1.10\/jquery.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/google_analytics\/googleanalytics.js":1,"0":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.scrollTo.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.easing.1.3.js":1,"sites\/all\/themes\/aurum\/3dParty\/FitVids.js\/jquery.fitvids.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.touchSwipe.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/jquery.colorbox-min.js":1,"sites\/all\/themes\/aurum\/3dParty\/isotope\/isotope.js":1,"sites\/all\/themes\/aurum\/3dParty\/inview.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.gmap.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/bootstrap\/js\/bootstrap.min.js":1,"sites\/all\/themes\/aurum\/js\/pi.googleMapStyles.js":1,"sites\/all\/themes\/aurum\/js\/pi.accordion.js":1,"sites\/all\/themes\/aurum\/js\/pi.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.isotope.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.fitvids.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.map.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.animations.js":1,"sites\/all\/themes\/aurum\/js\/pi.global.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.messages.css":1,"sites\/all\/modules\/date\/date_api\/date.css":1,"sites\/all\/modules\/date\/date_popup\/themes\/datepicker.1.7.css":1,"modules\/field\/theme\/field.css":1,"modules\/node\/node.css":1,"modules\/user\/user.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ckeditor\/css\/ckeditor.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/themes\/aurum\/css\/blue\/global.css":1,"sites\/all\/themes\/aurum\/css\/blue\/portfolio.css":1,"sites\/all\/themes\/aurum\/css\/blue\/social.css":1,"sites\/all\/themes\/aurum\/css\/blue\/typo.css":1,"sites\/all\/themes\/aurum\/css\/blue\/page-nav.css":1,"sites\/all\/themes\/aurum\/css\/blue\/boxes.css":1,"sites\/all\/themes\/aurum\/css\/blue\/comments.css":1,"sites\/all\/themes\/aurum\/css\/blue\/testimonials.css":1,"sites\/all\/themes\/aurum\/css\/blue\/accordion.css":1,"sites\/all\/themes\/aurum\/css\/blue\/counters.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tabs.css":1,"sites\/all\/themes\/aurum\/css\/blue\/shadows.css":1,"sites\/all\/themes\/aurum\/css\/blue\/pricing-tables.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tooltips.css":1,"sites\/all\/themes\/aurum\/css\/blue\/slider.css":1,"sites\/all\/themes\/aurum\/css\/blue\/animations.css":1,"sites\/all\/themes\/aurum\/css\/blue\/timeline.css":1,"sites\/all\/themes\/aurum\/3dParty\/fontello\/css\/fontello.css":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/colorbox.css":1,"sites\/all\/themes\/aurum\/css\/bootstrap.min.css":1,"sites\/all\/themes\/aurum\/css\/drupal.css":1,"sites\/all\/themes\/aurum\/aurum_sub\/css\/custom.css":1}},"urlIsAjaxTrusted":{"\/user":true},"googleanalytics":{"trackOutbound":1,"trackMailto":1,"trackDownload":1,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"aurum":{"sticky":1}});
+//-->
+
+ 
+ 

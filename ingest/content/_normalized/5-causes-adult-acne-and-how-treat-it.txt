@@ -1,0 +1,628 @@
+# Normalized
+# Encoding: UTF-8
+# Format: plain-text
+# Source-Stem: 5-causes-adult-acne-and-how-treat-it
+---
+
+
+
+ 
+
+
+
+
+
+
+
+ 
+ 
+ (adsbygoogle = window.adsbygoogle || []).push({ 
+ google_ad_client: "ca-pub-6744151061288343", 
+ enable_page_level_ads: true 
+ }); 
+
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT | Lynch's Pharmacy
+ 
+ 
+
+ 
+@import url("http://lynchspharmacy.com/modules/system/system.base.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/system/system.messages.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_api/date.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/date/date_popup/themes/datepicker.1.7.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/field/theme/field.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/node/node.css?rveunr");
+@import url("http://lynchspharmacy.com/modules/user/user.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/views/css/views.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/ckeditor/css/ckeditor.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/modules/ctools/css/ctools.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/modules/print/print_ui/css/print_ui.theme.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/global.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/portfolio.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/social.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/typo.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/page-nav.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/boxes.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/comments.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/testimonials.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/accordion.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/counters.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tabs.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/shadows.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/pricing-tables.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/tooltips.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/slider.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/animations.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/blue/timeline.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/fontello/css/fontello.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/3dParty/colorbox/colorbox.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/bootstrap.min.css?rveunr");
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/css/drupal.css?rveunr");
+
+
+@import url("http://lynchspharmacy.com/sites/all/themes/aurum/aurum_sub/css/custom.css?rveunr");
+
+ 
+ 
+
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+ 
+ 
+ Home
+ 
+ 
+
+
+ 
+ 
+ Medicine A-Z
+ 
+ 
+
+
+ 
+ 
+ Health A-Z
+ 
+ 
+
+
+ 
+ 
+ Video Series
+ 
+ 
+
+
+ 
+ 
+ Asthma
+ 
+ 
+
+
+ 
+ 
+ Diabetes
+ 
+ 
+
+
+ 
+ 
+ Alzheimers
+ 
+ 
+
+
+ 
+ 
+ Blog
+ 
+ 
+
+
+ 
+ 
+ Health In The News
+ 
+ 
+
+
+ 
+ 
+ Contact
+ 
+ 
+ 
+ 
+
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+ HomeMedicine A-ZHealth A-ZVideo SeriesAsthmaDiabetesAlzheimersBlogHealth In The NewsContact 
+ 
+ 
+
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ Health In The News
+Learn more about your health or illness with our health video series. 
+Please read our policy and consent to Marketing and Preferencesby clicking the icon on bottom left corner to view YouTube videos 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cough Treatment 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Types of coughs 
+ 
+ 
+ 
+
+ 
+ 
+
+ 
+ Cold &amp; Flu 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ More Health in The News videos &nbsp; Message us with your health query 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+ You are here:Home5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+ 
+ 
+ 
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ Submitted by Garvan on 17 October 20 
+ 
+ 
+ 
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+This article is originally posted on Proven Skincare.
+When you’re a teenager, self-conscious and unsure, acne can weigh on your self-esteem and make you feel like isolating yourself. You dream of a day when you’re older and zit-free, only to discover that acne does not necessarily ride off into the sunset on your 18thbirthday. For up to 22% of adult women and 3 percent of adult men, acne is something that lingers well into your adult years.&nbsp;&nbsp;
+&nbsp;
+
+ What’s the difference between teenage acne and adult acne?
+The definition of adult acne is acne that occurs in people older than 18 years of age. This extremely visible skin disorder affects women more than men, and tends to be more inflamed than adolescent pimples. Adult acne is often characterized by deep, painful cysts and tends to affect the cheeks and lower half of the face. Due to the inflammatory nature and deep, cystic appearance of lesions, facial scarring often occurs. This scarring can be particularly traumatizing for adults, which is why rapid treatment is recommended. However it can be hard to know which are the best products for adult acne which you should use, or whether there are other treatments options to consider.
+&nbsp;Psychological Effects
+Studies show that facial acne is linked to depression and anxiety. Pimples can impair self-image and cause people to isolate themselves. This has a major effect on mental wellbeing as well as one’s ability to develop and maintain friendships. Women tend to cover up acne with makeup, which can often irritate and clog pores, making symptoms worse.&nbsp;
+&nbsp;
+
+ TOP 5 CAUSES OF ADULT ACNE:
+&nbsp;There are many different adult acne causes, which means that finding the best adult acne treatment for your skin will depend on what is causing your acne.
+
+ 
+ Hormones
+ 
+
+The most common cause of adult acne is hormonal fluctuations. It’s common to experience breakouts during the second half of your menstrual cycle and then see symptoms calm down after your period arrives. This is perfectly normal. Unfortunately, adult hormonal acne is also the most difficult to treat, but healthy habits like maintaining a healthy weight and low stress levels can help to relieve the severity of your symptoms.
+
+ 
+ Hair Products
+ 
+
+If your acne tends to appear on your forehead, cheeks, jawline and back, the culprit could be your hair products. Hair products are designed for your hair, not your skin, and often contain pore-clogging ingredients. Fragrances can also be laden with allergens, and tend to be used in higher levels in hair products. Avoid hair styles that fall into your face, like bangs. Wipe away excess styling product when you’re getting ready and make sure to change and wash your pillowcase frequently so that you’re not soaking up extra dirt and irritants while you sleep.
+&nbsp;
+&nbsp;
+
+ 
+ Facial Hair Removal
+ 
+
+Your goal was to achieve soft, smooth skin but&nbsp; you end up with bumps instead. Whether you wax, pluck or shave, hair removal can often result in pimples. Use an aftershave with glycolic acid or other Salicylic Acid to help keep pores clear and prevent ingrown bumps and pimples from forming.
+
+ 
+ Diet
+ 
+
+Luckily there is no proven link between chocolate and acne, so eat all you want! However, there IS a link between dairy and acne. Specifically, low-fat dairy is proven to aggravate acne issues. Dairy itself is often collected from cows treated with hormones, which is thought to influence our own hormonal fluctuations. Low fat dairy specifically spikes insulin levels which creates hormonal imbalances as well. If you’re trying to curb breakouts, choose full-fat, organic dairy whenever possible, or avoid it completely.
+
+ 
+ Stress
+ 
+
+High stress levels are linked to inflammation, slow healing, low immunity and hormonal imbalances. Stress-relief is our favorite method of controlling acne because it involves fun activities like exercise, cooking healthy meals, laughing with friends and family, taking naps and self care. Yes, there are many excellent ingredients and adult acne treatments, but treating this condition topically is very one-sided. The mind-body connection is powerful- more powerful than Tea Tree Oil or Salicylic Acid. It can be hard to hear, but focusing on looking for the best acne face wash for adults or miracle cures for adult acne may not be the solution. If you really want to stop the cycle of inflammatory acne, it’s time to consider your daily habits and how you can become more healthy, relaxed and happy.
+
+ Adult Acne Sufferers: You’re not alone
+The last thing to remember is that you are not on your own in this battle. Due to the prevalence of adult acne, there are many online forums and support groups to help you deal with the psychological effects of acne. It’s cliche, but we tend to look at our skin under a microscope, while others may not necessarily notice our imperfections at all. Finding other people who share your concerns can help put your adult acne in perspective and allow you to come to terms and heal from any emotional trauma you’ve endured. Letting go can also be a part of #5 above, so it doesn’t hurt to lean on others and take some of the pressure and judgment off yourself. Follow the steps above and learn more about the mind-body acne connection here.
+For more: Click https://www.provenskincare.com/blog/what-causes-adult-acne
+&nbsp;
+ 
+
+ Print This Page
+
+ 
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+Order Your Prescription
+Pre-order your prescription online nowWe'll text you when it's ready to collect at our Pharmacy!
+Order Your Prescription
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+ 
+ 
+ Search
+ 
+ 
+ 
+ Search 
+ 
+
+
+
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+BLOG
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 12 Dec
+
+
+ Advice on Pfizer&#039;s COVID 19 Vaccine
+
+
+ Dec 12, 20
+ 
+So first: what is a vaccine? a vaccine teaches our immune system how to create antibodies, and it is these antibodies that protect people from disease. It is much safer for our... Read more
+
+ 
+ 
+ 17 Oct
+
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+
+ Oct 17, 20
+ 
+
+ 5 CAUSES OF ADULT ACNE AND HOW TO TREAT IT
+
+This article is originally posted on Proven Skincare.
+When you’re a teenager, self-conscious and unsure, acne can weigh on your self-... Read more
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+
+CONTACT US
+
+ 
+Opening Hours:Monday - Friday: 9 am - 6 pm Saturday: 10am - 12noonPhone: 021 4366923Email: garvanjames@gmail.comAddress:Lynch's PharmacyBroadale, Maryborough Hill,Douglas, CorkIrelandT12CX72
+ 
+FOLLOW US
+
+
+
+
+
+
+WHO WE ARE
+Lynch’s Pharmacy is one of the last remaining, truly independent pharmacies in Cork. Based in Broadale, Douglas, we have over 20 years experience working in the community pharmacy sector.
+Read More
+
+HEALTH LITERACY FRIENDLY POLICY
+Nearly half of all Irish people have inadequate and problematic health literacy skills. Limited health literacy is very common. Read about our Health Literacy Policy here...
+Read More
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+
+&nbsp;© 2023 Lynch’s Pharmacy. All rights reserved. | Privacy Notice || Admin
+
+
+
+
+
+
+
+
+
+
+ 
+ 
+ 
+
+ 
+ 
+ 
+ 
+ 
+ 
+ 
+
+ 
+
+ 
+ 
+ 
+
+
+
+ 
+ 
+
+
+
+
+<!--
+(function(i,s,o,g,r,a,m){i["GoogleAnalyticsObject"]=r;i[r]=i[r]||function(){(i[r].q=i[r].q||[]).push(arguments)},i[r].l=1*new Date();a=s.createElement(o),m=s.getElementsByTagName(o)[0];a.async=1;a.src=g;m.parentNode.insertBefore(a,m)})(window,document,"script","//www.google-analytics.com/analytics.js","ga");ga("create", "UA-19666557-1", {"Domain":"auto"});ga("set", "anonymizeIp", true);ga("send", "pageview");
+//-->
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+<!--
+jQuery.extend(Drupal.settings, {"basePath":"\/","pathPrefix":"","ajaxPageState":{"theme":"aurum_sub","theme_token":"75U2KWpYuXfhKV4orAr-4ymF8je_9YHeDqluLjdt8GM","js":{"sites\/all\/modules\/jquery_update\/replace\/jquery\/1.10\/jquery.min.js":1,"misc\/jquery.once.js":1,"misc\/drupal.js":1,"sites\/all\/modules\/google_analytics\/googleanalytics.js":1,"0":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.scrollTo.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.easing.1.3.js":1,"sites\/all\/themes\/aurum\/3dParty\/FitVids.js\/jquery.fitvids.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.touchSwipe.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/jquery.colorbox-min.js":1,"sites\/all\/themes\/aurum\/3dParty\/isotope\/isotope.js":1,"sites\/all\/themes\/aurum\/3dParty\/inview.js":1,"sites\/all\/themes\/aurum\/3dParty\/jquery.gmap.min.js":1,"sites\/all\/themes\/aurum\/3dParty\/bootstrap\/js\/bootstrap.min.js":1,"sites\/all\/themes\/aurum\/js\/pi.googleMapStyles.js":1,"sites\/all\/themes\/aurum\/js\/pi.accordion.js":1,"sites\/all\/themes\/aurum\/js\/pi.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.isotope.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.fitvids.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.counter.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tab.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.parallax.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.map.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.slider.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.tooltip.js":1,"sites\/all\/themes\/aurum\/js\/pi.init.animations.js":1,"sites\/all\/themes\/aurum\/js\/pi.global.js":1},"css":{"modules\/system\/system.base.css":1,"modules\/system\/system.messages.css":1,"sites\/all\/modules\/date\/date_api\/date.css":1,"sites\/all\/modules\/date\/date_popup\/themes\/datepicker.1.7.css":1,"modules\/field\/theme\/field.css":1,"modules\/node\/node.css":1,"modules\/user\/user.css":1,"sites\/all\/modules\/views\/css\/views.css":1,"sites\/all\/modules\/ckeditor\/css\/ckeditor.css":1,"sites\/all\/modules\/ctools\/css\/ctools.css":1,"sites\/all\/modules\/print\/print_ui\/css\/print_ui.theme.css":1,"sites\/all\/themes\/aurum\/css\/blue\/global.css":1,"sites\/all\/themes\/aurum\/css\/blue\/portfolio.css":1,"sites\/all\/themes\/aurum\/css\/blue\/social.css":1,"sites\/all\/themes\/aurum\/css\/blue\/typo.css":1,"sites\/all\/themes\/aurum\/css\/blue\/page-nav.css":1,"sites\/all\/themes\/aurum\/css\/blue\/boxes.css":1,"sites\/all\/themes\/aurum\/css\/blue\/comments.css":1,"sites\/all\/themes\/aurum\/css\/blue\/testimonials.css":1,"sites\/all\/themes\/aurum\/css\/blue\/accordion.css":1,"sites\/all\/themes\/aurum\/css\/blue\/counters.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tabs.css":1,"sites\/all\/themes\/aurum\/css\/blue\/shadows.css":1,"sites\/all\/themes\/aurum\/css\/blue\/pricing-tables.css":1,"sites\/all\/themes\/aurum\/css\/blue\/tooltips.css":1,"sites\/all\/themes\/aurum\/css\/blue\/slider.css":1,"sites\/all\/themes\/aurum\/css\/blue\/animations.css":1,"sites\/all\/themes\/aurum\/css\/blue\/timeline.css":1,"sites\/all\/themes\/aurum\/3dParty\/fontello\/css\/fontello.css":1,"sites\/all\/themes\/aurum\/3dParty\/colorbox\/colorbox.css":1,"sites\/all\/themes\/aurum\/css\/bootstrap.min.css":1,"sites\/all\/themes\/aurum\/css\/drupal.css":1,"sites\/all\/themes\/aurum\/aurum_sub\/css\/custom.css":1}},"urlIsAjaxTrusted":{"\/content\/5-causes-adult-acne-and-how-treat-it":true},"googleanalytics":{"trackOutbound":1,"trackMailto":1,"trackDownload":1,"trackDownloadExtensions":"7z|aac|arc|arj|asf|asx|avi|bin|csv|doc(x|m)?|dot(x|m)?|exe|flv|gif|gz|gzip|hqx|jar|jpe?g|js|mp(2|3|4|e?g)|mov(ie)?|msi|msp|pdf|phps|png|ppt(x|m)?|pot(x|m)?|pps(x|m)?|ppam|sld(x|m)?|thmx|qtm?|ra(m|r)?|sea|sit|tar|tgz|torrent|txt|wav|wma|wmv|wpd|xls(x|m|b)?|xlt(x|m)|xlam|xml|z|zip"},"aurum":{"sticky":1}});
+//-->
+
+ 
+ 

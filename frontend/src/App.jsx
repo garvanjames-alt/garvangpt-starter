@@ -1,92 +1,132 @@
-// frontend/src/App.jsx
-import React, { useState } from "react";
-import { API_BASE, RESPOND_URL, DEFAULT_QUESTION } from "./config.js";
-
-/**
- * Small helper: choose respond endpoint.
- * If RESPOND_URL is set in config.js we use it (good for proxies / dev),
- * otherwise fall back to `${API_BASE}/respond`.
- */
-function getRespondUrl() {
-  if (RESPOND_URL && RESPOND_URL.trim().length > 0) return RESPOND_URL;
-  return `${API_BASE.replace(/\/+$/, "")}/respond`;
-}
+import { useState } from "react";
+import { RESPOND_URL, DEFAULT_QUESTION } from "./config";
 
 export default function App() {
-  // ✅ Default prompt pre-filled; answer starts empty
-  const [text, setText] = useState(DEFAULT_QUESTION);
+  const [question, setQuestion] = useState(DEFAULT_QUESTION || "");
   const [answer, setAnswer] = useState("");
-  const [loading, setLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
+  const [error, setError] = useState("");
 
   async function onAsk() {
+    if (!question.trim()) return;
+    setIsLoading(true);
+    setError("");
+    setAnswer("");
     try {
-      setLoading(true);
-      setAnswer(""); // clear previous
-      const res = await fetch(getRespondUrl(), {
+      const res = await fetch(RESPOND_URL, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+        body: JSON.stringify({ text: question })
       });
-
-      if (!res.ok) {
-        const body = await res.text();
-        throw new Error(`HTTP ${res.status}: ${body}`);
-      }
-
+      if (!res.ok) throw new Error(`HTTP ${res.status}`);
       const data = await res.json();
-      if (data?.ok && typeof data?.content === "string") {
-        setAnswer(data.content);
-      } else {
-        throw new Error(
-          `Unexpected response shape: ${JSON.stringify(data).slice(0, 200)}`
-        );
-      }
-    } catch (err) {
-      setAnswer(`Error: ${String(err.message || err)}`);
+      const md = typeof data === "string"
+        ? data
+        : (data.markdown ?? data.text ?? data.answer ?? data.content ?? "");
+      if (!md) throw new Error("Unexpected response shape");
+      setAnswer(md);
+    } catch (e) {
+      setError(String(e?.message || e));
     } finally {
-      setLoading(false);
+      setIsLoading(false);
     }
   }
 
   function onClear() {
-    setText(DEFAULT_QUESTION);
+    setQuestion("");
     setAnswer("");
+    setError("");
   }
 
   return (
-    <div className="container">
-      <h1 className="text-2xl font-semibold mb-4">GarvanGPT — Clinic Docs</h1>
+    <main style={{
+      maxWidth: 900,
+      margin: "40px auto",
+      padding: "0 16px",
+      fontFamily: "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial"
+    }}>
+      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 16 }}>GarvanGPT — Clinic Docs</h1>
 
-      <label htmlFor="q" className="sr-only">
-        Question
-      </label>
+      <label htmlFor="q" style={{ display: "block", fontWeight: 600, margin: "8px 0" }}>Question</label>
       <textarea
         id="q"
-        value={text}
-        onChange={(e) => setText(e.target.value)}
-        placeholder="Ask a question about the loaded clinic PDFs…"
+        value={question}
+        onChange={e => setQuestion(e.target.value)}
         rows={5}
-        className="w-full max-w-[640px] min-h-[96px]"
-        style={{ whiteSpace: "pre-wrap" }}
+        style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #ddd", fontSize: 16 }}
       />
 
-      <div className="mt-3 flex gap-2">
-        <button onClick={onAsk} disabled={loading}>
-          {loading ? "Thinking…" : "Ask"}
+      <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
+        <button onClick={onAsk} disabled={isLoading} style={btnStyle}>
+          {isLoading ? "Thinking…" : "Ask"}
         </button>
-        <button onClick={onClear} disabled={loading}>
-          Clear
-        </button>
+        <button onClick={onClear} disabled={isLoading} style={btnSecondaryStyle}>Clear</button>
+        {isLoading && <Spinner />}
       </div>
 
-      {answer ? (
-        <section className="mt-6">
-          {/* Show the model output in a readable way without needing a markdown lib */}
-          <pre className="text-sm" style={{ whiteSpace: "pre-wrap" }}>
-            {answer}
-          </pre>
-        </section>
-      ) : null}
-    </div>
+      {error && (
+        <div role="alert" style={{
+          marginTop: 16,
+          padding: 12,
+          borderRadius: 8,
+          background: "#fff6f6",
+          color: "#b00020",
+          border: "1px solid #ffd6d6",
+          whiteSpace: "pre-wrap"
+        }}>
+          Error: {error}
+        </div>
+      )}
+
+      {answer && (
+        <pre style={{
+          marginTop: 16,
+          padding: 12,
+          borderRadius: 8,
+          background: "#fafafa",
+          border: "1px solid #eee",
+          whiteSpace: "pre-wrap"
+        }}>{answer}</pre>
+      )}
+    </main>
   );
 }
+
+function Spinner() {
+  return (
+    <span aria-label="Loading" style={{
+      width: 20,
+      height: 20,
+      border: "3px solid rgba(0,0,0,0.15)",
+      borderTopColor: "currentColor",
+      borderRadius: "50%",
+      display: "inline-block",
+      animation: "spin 0.8s linear infinite"
+    }} />
+  );
+}
+
+const btnStyle = {
+  background: "black",
+  color: "white",
+  border: "none",
+  padding: "10px 14px",
+  borderRadius: 8,
+  fontWeight: 600,
+  cursor: "pointer"
+};
+
+const btnSecondaryStyle = {
+  background: "#f5f5f5",
+  color: "#111",
+  border: "1px solid #ddd",
+  padding: "10px 14px",
+  borderRadius: 8,
+  fontWeight: 600,
+  cursor: "pointer"
+};
+
+// keyframes for inline spinner
+const style = document.createElement("style");
+style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
+document.head.appendChild(style);

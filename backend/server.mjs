@@ -1,115 +1,142 @@
-// backend/server.mjs — health, memory list, respond (Composer v2 w/ summary)
-// Node >= 18, ESM
+// backend/server.mjs — GarvanGPT (CORS-tight, drop-in)
+// ESM Node 18+ required
 
 import express from "express";
-import fs from "node:fs";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
-import { formatComposerV2 } from "../helpers/compose.js";
+import cors from "cors";
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-const ROOT = path.resolve(__dirname, "..");
-const MEMFILE = path.resolve(ROOT, "memory.jsonl");
 
+// ---------------------------
+// Config
+// ---------------------------
+const PORT = process.env.PORT || 3001;
+
+// Comma-separated allowlist; default allows local and Netlify prod
+const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
+  "http://localhost:5173,https://garvangpt.netlify.app"
+).split(",").map(s => s.trim());
+
+const corsOptions = {
+  origin(origin, callback) {
+    // Allow non-browser requests (curl/postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("Not allowed by CORS"));
+  },
+  methods: ["GET", "POST", "DELETE", "OPTIONS"],
+  allowedHeaders: ["Content-Type", "Authorization"],
+};
+
+// ---------------------------
+// App
+// ---------------------------
 const app = express();
-const PORT = Number(process.env.PORT || 3001);
-app.use(express.json({ limit: "2mb" }));
+app.use(express.json({ limit: "1mb" }));
+app.use(cors(corsOptions));
+app.options("*", cors(corsOptions));
 
-app.use((req, res, next) => {
-  res.setHeader("Access-Control-Allow-Origin", "*");
-  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
-  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
-  if (req.method === "OPTIONS") return res.sendStatus(200);
+// Simple JSON logger
+app.use((req, _res, next) => {
+  console.log(JSON.stringify({
+    t: new Date().toISOString(),
+    method: req.method,
+    path: req.path,
+    ip: req.ip,
+  }));
   next();
 });
 
-function readMemoryItems(max = 200) {
-  if (!fs.existsSync(MEMFILE)) return [];
-  const lines = fs.readFileSync(MEMFILE, "utf8").split("\n").filter(Boolean).slice(-max);
-  const out = [];
-  for (const l of lines) { try { out.push(JSON.parse(l)); } catch {} }
-  return out;
-}
-
-let handleRespond = null;
+// ---------------------------
+// Memory store (demo)
+// ---------------------------
+const memoryPath = path.join(__dirname, "data", "memory.jsonl");
+let memory = [];
 try {
-  const mod = await import(path.resolve(ROOT, "respondHandler.cjs"));
-  handleRespond = mod.handleRespond || mod.default || mod.respond || mod.handler || null;
-} catch {
-  console.warn("respondHandler.cjs not loaded; using echo shim");
+  if (fs.existsSync(memoryPath)) {
+    const lines = fs.readFileSync(memoryPath, "utf8").split(/\r?\n/).filter(Boolean);
+    memory = lines.map(l => ({ text: JSON.parse(l).text ?? String(l).trim(), t: Date.now() }));
+    console.log(`[memory] seeded ${memory.length} items from data/memory.jsonl`);
+  }
+} catch (e) {
+  console.warn("[memory] seed load failed:", e?.message);
 }
 
-app.get(["/health", "/api/health"], (req, res) => {
-  res.json({ ok: true, ts: new Date().toISOString() });
+// GET: list
+app.get("/api/memory", (_req, res) => {
+  res.json({ items: memory });
 });
 
-app.get(["/memory/list", "/api/memory/list"], (req, res) => {
+// POST: add {text}
+app.post("/api/memory", (req, res) => {
+  const text = String(req.body?.text || "").trim();
+  if (!text) return res.status(400).json({ error: "Missing text" });
+  const item = { text, t: Date.now() };
+  memory.unshift(item);
+  return res.json({ ok: true, item });
+});
+
+// DELETE: clear
+app.delete("/api/memory", (_req, res) => {
+  memory = [];
+  res.json({ ok: true });
+});
+
+// ---------------------------
+// Health
+// ---------------------------
+app.get("/health", (_req, res) => {
+  res.json({ ok: true, ts: Date.now(), uptime: process.uptime() });
+});
+
+// ---------------------------
+// Respond (dev shim)
+// ---------------------------
+app.post("/respond", async (req, res) => {
   try {
-    res.json({ items: readMemoryItems(200) });
+    const text = String(req.body?.text || "").trim();
+    if (!text) return res.status(400).json({ error: "Missing text" });
+
+    // Dev shim response with markdown + example sources/memories
+    const sources = Array.from({ length: 10 }, (_, i) => `ingest/pdfs/25071900000128283.pdf#page=${9 + i}`);
+    const memories = memory.slice(0, 5).map(m => m.text);
+
+    const markdown = [
+      `## Here’s what I found`,
+      `- Echo (dev shim): ${text}`,
+      `\n## Summary (non-diagnostic)`,
+      `This is an informational summary and **not** a diagnosis. Consult a licensed clinician.`,
+      `\n## Sources used`,
+      ...sources.map((s, i) => `${i + 1}. ${s}`),
+      `\n## Memories referenced`,
+      ...(memories.length ? memories.map((m, i) => `${i + 1}. ${m}`) : ["(none)"]),
+    ].join("\n");
+
+    res.json({ markdown, sources, memories });
   } catch (e) {
-    console.error("memory/list error", e);
-    res.status(500).json({ ok: false, error: "memory_list_failed" });
+    console.error("/respond error", e);
+    res.status(500).json({ error: "Internal error" });
   }
 });
 
-app.post(["/respond", "/api/respond"], async (req, res) => {
-  try {
-    const text = typeof req.body?.text === "string" ? req.body.text : "";
-    if (!text) return res.status(400).json({ ok: false, error: "missing_text" });
-
-    // 1) Main answer (your handler or echo shim)
-    let modelAnswer;
-    if (typeof handleRespond === "function") {
-      modelAnswer = await handleRespond(text);
-    } else {
-      modelAnswer = `Echo (dev shim): ${text}`;
-    }
-
-    // 2) Optional short summary from your handler
-    let summaryText = "";
-    if (typeof handleRespond === "function") {
-      const prompt = [
-        "Given the following assistant draft, produce a brief, plain-English summary for a patient.",
-        "- 1–3 short bullets or 2–3 concise sentences.",
-        "- strictly non-diagnostic, helpful, neutral tone.",
-        "- no hallucinated sources—base only on the draft.",
-        "",
-        "Assistant draft:",
-        "```",
-        String(modelAnswer || "").slice(0, 4000),
-        "```",
-      ].join("\n");
-      try {
-        summaryText = String(await handleRespond(prompt));
-      } catch {}
-    }
-
-    // 3) Sources/Memories from recent items
-    const recent = readMemoryItems(10);
-    const sources = recent
-      .filter((r) => r?.source)
-      .map((r, i) => `${i + 1}. ${r.path || r.source || "memory"}`);
-    const memories = recent.slice(0, 5).map((r, i) => {
-      const prev = String(r?.text || "").slice(0, 80).replace(/\s+/g, " ");
-      return `${r.id || `m${i + 1}`}: ${prev}…`;
-    });
-
-    // 4) Compose v2
-    const content = formatComposerV2({
-      findingsText: String(modelAnswer || "").trim(),
-      summaryText,
-      sources,
-      memories,
-    });
-
-    res.json({ ok: true, content });
-  } catch (e) {
-    console.error("respond error", e);
-    res.status(500).json({ ok: false, error: "respond_failed" });
+// ---------------------------
+// Error handler
+// ---------------------------
+app.use((err, _req, res, _next) => {
+  console.error("[error]", err?.message || err);
+  if (String(err?.message || "").includes("CORS")) {
+    return res.status(403).json({ error: "CORS blocked" });
   }
+  res.status(500).json({ error: "Server error" });
 });
 
+// ---------------------------
+// Listen
+// ---------------------------
 app.listen(PORT, () => {
-  console.log(`GarvanGPT backend listening on http://localhost:${PORT}`);
+  console.log(`Server listening on :${PORT}`);
+  console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
 });

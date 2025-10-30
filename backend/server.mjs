@@ -1,114 +1,86 @@
-// backend/server.mjs — GarvanGPT (CORS-tight, simplified)
-// ESM Node 18+ required
-
+// backend/server.mjs
 import express from "express";
 import cors from "cors";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
+import path from "node:path";
+import fs from "node:fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+const app = express();
 
-// ---------------------------
+// ------------------------------
 // Config
-// ---------------------------
+// ------------------------------
 const PORT = process.env.PORT || 3001;
 
-// Comma-separated allowlist; default allows local and Netlify prod
+// Comma-separated allowlist; default allows local and Netlify
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
   "http://localhost:5173,https://garvangpt.netlify.app"
 ).split(",").map(s => s.trim());
 
-// SIMPLIFIED CORS: let the library handle the array
 const corsOptions = {
-  origin: allowedOrigins,
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type", "Authorization"],
+  origin(origin, callback) {
+    // Allow non-browser requests (curl/postman)
+    if (!origin) return callback(null, true);
+    if (allowedOrigins.includes(origin)) return callback(null, true);
+    return callback(new Error("CORS"), false);
+  },
+  credentials: true,
 };
 
-// ---------------------------
-// App
-// ---------------------------
-const app = express();
-app.use(express.json({ limit: "1mb" }));
 app.use(cors(corsOptions));
-app.options("*", cors(corsOptions));
+app.use(express.json());
 
-// Simple JSON logger
-app.use((req, _res, next) => {
-  console.log(JSON.stringify({
-    t: new Date().toISOString(),
-    method: req.method,
-    path: req.path,
-    ip: req.ip,
-  }));
-  next();
-});
+// Resolve repo root (one level up from /backend)
+const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
 
-// ---------------------------
-// Memory store (demo)
-// ---------------------------
-const memoryPath = path.join(__dirname, "data", "memory.jsonl");
-let memory = [];
-try {
-  if (fs.existsSync(memoryPath)) {
-    const lines = fs.readFileSync(memoryPath, "utf8").split(/\r?\n/).filter(Boolean);
-    memory = lines.map(l => ({ text: JSON.parse(l).text ?? String(l).trim(), t: Date.now() }));
-    console.log(`[memory] seeded ${memory.length} items from data/memory.jsonl`);
-  }
-} catch (e) {
-  console.warn("[memory] seed load failed:", e?.message);
+// ------------------------------
+// Serve PDFs under /ingest/pdfs
+// ------------------------------
+const PDFS_DIR = path.resolve(ROOT, "ingest", "pdfs");
+if (fs.existsSync(PDFS_DIR)) {
+  app.use(
+    "/ingest/pdfs",
+    express.static(PDFS_DIR, {
+      // (optional) helpful headers for PDF viewing
+      setHeaders(res) {
+        res.setHeader("Cache-Control", "public, max-age=3600");
+      },
+    })
+  );
+  console.log(`Static PDFs: ${PDFS_DIR}`);
+} else {
+  console.warn(`PDF folder not found at ${PDFS_DIR}`);
 }
 
-// GET: list
-app.get("/api/memory", (_req, res) => {
-  res.json({ items: memory });
-});
-
-// POST: add {text}
-app.post("/api/memory", (req, res) => {
-  const text = String(req.body?.text || "").trim();
-  if (!text) return res.status(400).json({ error: "Missing text" });
-  const item = { text, t: Date.now() };
-  memory.unshift(item);
-  return res.json({ ok: true, item });
-});
-
-// DELETE: clear
-app.delete("/api/memory", (_req, res) => {
-  memory = [];
-  res.json({ ok: true });
-});
-
-// ---------------------------
+// ------------------------------
 // Health
-// ---------------------------
+// ------------------------------
 app.get("/health", (_req, res) => {
-  res.json({ ok: true, ts: Date.now(), uptime: process.uptime() });
+  res.json({ ok: true, service: "almosthuman-starter", time: new Date().toISOString() });
 });
 
-// ---------------------------
-// Respond (dev shim)
-// ---------------------------
+// ------------------------------
+// Dev shim: /respond
+// ------------------------------
 app.post("/respond", async (req, res) => {
   try {
-    const text = String(req.body?.text || "").trim();
-    if (!text) return res.status(400).json({ error: "Missing text" });
+    const text = String(req.body?.text ?? "").trim();
 
-    // Dev shim response with markdown + example sources/memories
-    const sources = Array.from({ length: 10 }, (_, i) => `ingest/pdfs/25071900000128283.pdf#page=${9 + i}`);
-    const memories = memory.slice(0, 5).map(m => m.text);
+    // pretend we did RAG; return markdown + sources
+    const sources = Array.from({ length: 10 }, (_, i) => `ingest/pdfs/25071900000128283.pdf#page=${i + 9}`);
+    const memories = [];
 
     const markdown = [
-      `## Here’s what I found`,
+      "## Here’s what I found",
       `- Echo (dev shim): ${text}`,
-      `\n## Summary (non-diagnostic)`,
-      `This is an informational summary and **not** a diagnosis. Consult a licensed clinician.`,
-      `\n## Sources used`,
+      "",
+      "## Summary (non-diagnostic)",
+      "This is an informational summary and **not** a diagnosis. Consult a licensed clinician.",
+      "",
+      "## Sources used",
       ...sources.map((s, i) => `${i + 1}. ${s}`),
-      `\n## Memories referenced`,
-      ...(memories.length ? memories.map((m, i) => `${i + 1}. ${m}`) : ["(none)"]),
+      "",
+      "## Memories referenced",
+      memories.length ? memories.map((m, i) => `${i + 1}. ${m}`).join("\n") : "(none)",
     ].join("\n");
 
     res.json({ markdown, sources, memories });
@@ -118,9 +90,9 @@ app.post("/respond", async (req, res) => {
   }
 });
 
-// ---------------------------
+// ------------------------------
 // Error handler
-// ---------------------------
+// ------------------------------
 app.use((err, _req, res, _next) => {
   console.error("[error]", err?.message || err);
   if (String(err?.message || "").includes("CORS")) {
@@ -129,9 +101,9 @@ app.use((err, _req, res, _next) => {
   res.status(500).json({ error: "Server error" });
 });
 
-// ---------------------------
+// ------------------------------
 // Listen
-// ---------------------------
+// ------------------------------
 app.listen(PORT, () => {
   console.log(`Server listening on :${PORT}`);
   console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);

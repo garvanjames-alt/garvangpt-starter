@@ -1,4 +1,4 @@
-// backend/server.mjs — GarvanGPT (CORS-tight, drop-in)
+// backend/server.mjs — GarvanGPT (CORS-tight, simplified)
 // ESM Node 18+ required
 
 import express from "express";
@@ -20,13 +20,9 @@ const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
   "http://localhost:5173,https://garvangpt.netlify.app"
 ).split(",").map(s => s.trim());
 
+// SIMPLIFIED CORS: let the library handle the array
 const corsOptions = {
-  origin(origin, callback) {
-    // Allow non-browser requests (curl/postman)
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("Not allowed by CORS"));
-  },
+  origin: allowedOrigins,
   methods: ["GET", "POST", "DELETE", "OPTIONS"],
   allowedHeaders: ["Content-Type", "Authorization"],
 };

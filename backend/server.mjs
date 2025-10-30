@@ -1,77 +1,100 @@
 // backend/server.mjs
 import express from "express";
 import cors from "cors";
-import path from "node:path";
-import fs from "node:fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-const app = express();
+const __filename = fileURLToPath(import.meta.url);
+const __dirname  = path.dirname(__filename);
 
 // ------------------------------
 // Config
 // ------------------------------
 const PORT = process.env.PORT || 3001;
 
-// Comma-separated allowlist; default allows local and Netlify
+// Comma-separated allowlist; default allows local + Netlify app
 const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
   "http://localhost:5173,https://garvangpt.netlify.app"
 ).split(",").map(s => s.trim());
 
 const corsOptions = {
   origin(origin, callback) {
-    // Allow non-browser requests (curl/postman)
+    // allow curl/postman/no-Origin
     if (!origin) return callback(null, true);
     if (allowedOrigins.includes(origin)) return callback(null, true);
-    return callback(new Error("CORS"), false);
-  },
-  credentials: true,
+    const err = new Error("CORS");
+    err.message = "CORS";
+    return callback(err);
+  }
 };
 
+// ------------------------------
+// App
+// ------------------------------
+const app = express();
+app.use("/ingest/pdfs", express.static(path.resolve(process.cwd(), "ingest/pdfs")));
 app.use(cors(corsOptions));
 app.use(express.json());
 
-// Resolve repo root (one level up from /backend)
-const ROOT = path.resolve(path.dirname(new URL(import.meta.url).pathname), "..");
+// --- serve static PDFs (two ways to be extra safe) ---
+const repoRoot = process.cwd(); // /opt/render/project/src
+const pdfDirA  = path.resolve(__dirname, "..", "ingest", "pdfs"); // relative to backend/
+const pdfDirB  = path.resolve(repoRoot, "ingest", "pdfs");        // relative to repo root
 
-// ------------------------------
-// Serve PDFs under /ingest/pdfs
-// ------------------------------
-const PDFS_DIR = path.resolve(ROOT, "ingest", "pdfs");
-if (fs.existsSync(PDFS_DIR)) {
-  app.use(
-    "/ingest/pdfs",
-    express.static(PDFS_DIR, {
-      // (optional) helpful headers for PDF viewing
-      setHeaders(res) {
-        res.setHeader("Cache-Control", "public, max-age=3600");
-      },
-    })
-  );
-  console.log(`Static PDFs: ${PDFS_DIR}`);
-} else {
-  console.warn(`PDF folder not found at ${PDFS_DIR}`);
-}
+console.log("[static] pdfDirA:", pdfDirA);
+console.log("[static] pdfDirB:", pdfDirB);
 
-// ------------------------------
-// Health
-// ------------------------------
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, service: "almosthuman-starter", time: new Date().toISOString() });
+// Primary mount (repo-root based)
+app.use("/ingest/pdfs", express.static(pdfDirB, {
+  setHeaders(res) { res.setHeader("Cache-Control", "public, max-age=3600"); }
+}));
+
+// Secondary mount (backend/.. based) in case of path differences
+app.use("/ingest/pdfs", express.static(pdfDirA, {
+  setHeaders(res) { res.setHeader("Cache-Control", "public, max-age=3600"); }
+}));
+
+// Fallback explicit route (logs what it tries to serve)
+app.get("/ingest/pdfs/:name", (req, res) => {
+  const candidate1 = path.join(pdfDirB, req.params.name);
+  const candidate2 = path.join(pdfDirA, req.params.name);
+  console.log("[pdf GET]", req.params.name, "\n  try1:", candidate1, "\n  try2:", candidate2);
+  res.sendFile(candidate1, err1 => {
+    if (!err1) return;
+    res.sendFile(candidate2, err2 => {
+      if (!err2) return;
+      console.error("[pdf 404]", req.params.name);
+      res.status(404).send("PDF not found");
+    });
+  });
 });
 
 // ------------------------------
-// Dev shim: /respond
+// Dev shim respond endpoint
 // ------------------------------
 app.post("/respond", async (req, res) => {
   try {
-    const text = String(req.body?.text ?? "").trim();
+    const text = String(req.body?.text || "").trim();
 
-    // pretend we did RAG; return markdown + sources
-    const sources = Array.from({ length: 10 }, (_, i) => `ingest/pdfs/25071900000128283.pdf#page=${i + 9}`);
+    // echo-style dev shim
+    const sources = [
+      "ingest/pdfs/25071900000128283.pdf#page=9",
+      "ingest/pdfs/25071900000128283.pdf#page=10",
+      "ingest/pdfs/25071900000128283.pdf#page=11",
+      "ingest/pdfs/25071900000128283.pdf#page=12",
+      "ingest/pdfs/25071900000128283.pdf#page=13",
+      "ingest/pdfs/25071900000128283.pdf#page=14",
+      "ingest/pdfs/25071900000128283.pdf#page=15",
+      "ingest/pdfs/25071900000128283.pdf#page=16",
+      "ingest/pdfs/25071900000128283.pdf#page=17",
+      "ingest/pdfs/25071900000128283.pdf#page=18",
+    ];
+
     const memories = [];
 
     const markdown = [
       "## Here’s what I found",
-      `- Echo (dev shim): ${text}`,
+      `- Echo (dev shim): ${text || "Using the clinic docs, what should a new patient bring?"}`,
       "",
       "## Summary (non-diagnostic)",
       "This is an informational summary and **not** a diagnosis. Consult a licensed clinician.",

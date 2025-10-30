@@ -7,7 +7,7 @@ import { RESPOND_URL, DEFAULT_QUESTION } from "./config";
 const BACKEND_ORIGIN = new URL(RESPOND_URL).origin;
 
 function linkifySources(md) {
-  // Turn bare tokens like ingest/pdfs/foo.pdf#page=3 into markdown links
+  // Turn bare tokens like ingest/pdfs/foo.pdf#page=3 into markdown links:
   // [ingest/pdfs/foo.pdf#page=3](https://backend/ingest/pdfs/foo.pdf#page=3)
   return md.replace(/(^|\s)(ingest\/[^\s)]+)(?=\s|$)/g, (_m, lead, path) => {
     const href = `${BACKEND_ORIGIN}/${path}`;
@@ -40,7 +40,7 @@ export default function App() {
       const mdRaw =
         typeof data === "string"
           ? data
-          : data.markdown ?? data.text ?? data.answer ?? data.content ?? "";
+          : (data.markdown ?? data.text ?? data.answer ?? data.content ?? "");
 
       if (!mdRaw) throw new Error("Unexpected response shape");
 
@@ -146,7 +146,6 @@ export default function App() {
             border: "1px solid #eee",
             lineHeight: 1.5
           }}
-          // Marked renders headings, lists, etc.
           dangerouslySetInnerHTML={{ __html: marked.parse(answer) }}
         />
       )}

@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useRef } from "react";
 import { marked } from "marked";
 import { RESPOND_URL, DEFAULT_QUESTION } from "./config";
 
@@ -7,6 +7,7 @@ export default function App() {
   const [answer, setAnswer] = useState("");
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const textareaRef = useRef(null);
 
   async function onAsk() {
     if (!question.trim()) return;
@@ -37,6 +38,15 @@ export default function App() {
     setQuestion("");
     setAnswer("");
     setError("");
+    textareaRef.current?.focus();
+  }
+
+  function onTextareaKeyDown(e) {
+    // Submit with Cmd+Enter (Mac) or Ctrl+Enter (Win/Linux)
+    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
+      e.preventDefault();
+      onAsk();
+    }
   }
 
   return (
@@ -51,18 +61,24 @@ export default function App() {
       <label htmlFor="q" style={{ display: "block", fontWeight: 600, margin: "8px 0" }}>Question</label>
       <textarea
         id="q"
+        ref={textareaRef}
         value={question}
         onChange={e => setQuestion(e.target.value)}
+        onKeyDown={onTextareaKeyDown}
         rows={5}
+        placeholder="Type your question…  (Tip: Cmd/Ctrl + Enter to Ask)"
         style={{ width: "100%", padding: 12, borderRadius: 8, border: "1px solid #ddd", fontSize: 16 }}
       />
 
-      <div style={{ display: "flex", gap: 12, marginTop: 12 }}>
-        <button onClick={onAsk} disabled={isLoading} style={btnStyle}>
+      <div style={{ display: "flex", gap: 12, marginTop: 12, alignItems: "center" }}>
+        <button onClick={onAsk} disabled={isLoading} style={btnStyle} title="Cmd/Ctrl + Enter">
           {isLoading ? "Thinking…" : "Ask"}
         </button>
         <button onClick={onClear} disabled={isLoading} style={btnSecondaryStyle}>Clear</button>
         {isLoading && <Spinner />}
+        <span style={{ color: "#666", fontSize: 13 }} aria-hidden>
+          Tip: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd>
+        </span>
       </div>
 
       {error && (

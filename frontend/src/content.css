@@ -108,3 +108,23 @@ button { border-radius: 12px; padding: .5rem 1rem; }
 .container, main { max-width: 1040px; margin: 0 auto; padding: var(--pad); padding-bottom: 4rem; }
 .section { margin-top: 1rem; }
 .small-muted { opacity: .7; font-size: .925rem; }
+/* a11y pass 1 (focus + links) */
+:focus-visible {
+  outline: 3px solid #111;
+  outline-offset: 3px;
+}
+
+/* Make links clearly visible and accessible */
+a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Ensure buttons show focus too */
+button:focus-visible {
+  outline: 3px solid #111;
+  outline-offset: 3px;
+}

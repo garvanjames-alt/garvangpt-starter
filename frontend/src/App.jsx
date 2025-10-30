@@ -1,138 +1,92 @@
-import { useState } from "react";
-import ReactMarkdown from "react-markdown";
+// frontend/src/App.jsx
+import React, { useState } from "react";
+import { API_BASE, RESPOND_URL, DEFAULT_QUESTION } from "./config.js";
 
-function extractBlock(content, heading) {
-  // pull the block that follows a "## Heading" until next "##" or end
-  const re = new RegExp(`##\\s*${heading}\\s*([\\s\\S]*?)(?=\\n##\\s|$)`, "i");
-  const m = content.match(re);
-  return m ? m[1].trim() : "";
-}
-
-function toList(block) {
-  // accept either "1. item" style or "- item" lines
-  return block
-    .split("\n")
-    .map((l) => l.trim())
-    .filter((l) => l && (/^\d+\.\s+/.test(l) || /^-\s+/.test(l)))
-    .map((l) => l.replace(/^\d+\.\s+/, "").replace(/^-\s+/, "").trim());
+/**
+ * Small helper: choose respond endpoint.
+ * If RESPOND_URL is set in config.js we use it (good for proxies / dev),
+ * otherwise fall back to `${API_BASE}/respond`.
+ */
+function getRespondUrl() {
+  if (RESPOND_URL && RESPOND_URL.trim().length > 0) return RESPOND_URL;
+  return `${API_BASE.replace(/\/+$/, "")}/respond`;
 }
 
 export default function App() {
-  const [text, setText] = useState(
-    "From the newly loaded clinic PDFs, what should a new patient prepare or bring?"
-  );
+  // ✅ Default prompt pre-filled; answer starts empty
+  const [text, setText] = useState(DEFAULT_QUESTION);
   const [answer, setAnswer] = useState("");
   const [loading, setLoading] = useState(false);
-  const [err, setErr] = useState("");
 
-  async function ask(e) {
-    e?.preventDefault?.();
-    setLoading(true);
-    setErr("");
-    setAnswer("");
-
+  async function onAsk() {
     try {
-      const res = await fetch("/api/respond", {
+      setLoading(true);
+      setAnswer(""); // clear previous
+      const res = await fetch(getRespondUrl(), {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({ text }),
       });
+
+      if (!res.ok) {
+        const body = await res.text();
+        throw new Error(`HTTP ${res.status}: ${body}`);
+      }
+
       const data = await res.json();
-      if (!data?.ok) throw new Error(data?.error || "request_failed");
-      // backend returns { ok: true, content: "markdown string..." }
-      setAnswer(String(data.content || "").trim());
-    } catch (e) {
-      setErr(String(e.message || e));
+      if (data?.ok && typeof data?.content === "string") {
+        setAnswer(data.content);
+      } else {
+        throw new Error(
+          `Unexpected response shape: ${JSON.stringify(data).slice(0, 200)}`
+        );
+      }
+    } catch (err) {
+      setAnswer(`Error: ${String(err.message || err)}`);
     } finally {
       setLoading(false);
     }
   }
 
-  const sources = toList(extractBlock(answer, "Sources used"));
-  const memories = toList(extractBlock(answer, "Memories referenced"));
+  function onClear() {
+    setText(DEFAULT_QUESTION);
+    setAnswer("");
+  }
 
   return (
-    <div className="min-h-screen p-6 mx-auto max-w-3xl text-slate-900">
-      <h1 className="text-2xl font-semibold mb-4">GarvanGPT — Clinic PDFs</h1>
+    <div className="container">
+      <h1 className="text-2xl font-semibold mb-4">GarvanGPT — Clinic Docs</h1>
 
-      <form onSubmit={ask} className="mb-4">
-        <textarea
-          className="w-full border rounded p-3 mb-2"
-          rows={3}
-          value={text}
-          onChange={(e) => setText(e.target.value)}
-        />
-        <div className="flex gap-2">
-          <button
-            type="submit"
-            disabled={loading}
-            className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
-          >
-            {loading ? "Asking…" : "Ask"}
-          </button>
-          <button
-            type="button"
-            className="px-3 py-2 rounded border"
-            onClick={() => {
-              setText("");
-              setAnswer("");
-              setErr("");
-            }}
-          >
-            Clear
-          </button>
-        </div>
-      </form>
+      <label htmlFor="q" className="sr-only">
+        Question
+      </label>
+      <textarea
+        id="q"
+        value={text}
+        onChange={(e) => setText(e.target.value)}
+        placeholder="Ask a question about the loaded clinic PDFs…"
+        rows={5}
+        className="w-full max-w-[640px] min-h-[96px]"
+        style={{ whiteSpace: "pre-wrap" }}
+      />
 
-      {err && (
-        <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm">
-          Error: {err}
-        </div>
-      )}
+      <div className="mt-3 flex gap-2">
+        <button onClick={onAsk} disabled={loading}>
+          {loading ? "Thinking…" : "Ask"}
+        </button>
+        <button onClick={onClear} disabled={loading}>
+          Clear
+        </button>
+      </div>
 
-      {answer && (
-        <>
-          {/* Markdown answer (already sectioned by backend) */}
-          <div className="prose max-w-none">
-            <ReactMarkdown>{answer}</ReactMarkdown>
-          </div>
-
-          {/* Simple chips for Sources & Memories */}
-          {sources.length > 0 && (
-            <div className="mt-6">
-              <div className="text-sm font-medium mb-2">Sources used</div>
-              <div className="flex flex-wrap gap-2">
-                {sources.map((s, i) => (
-                  <span
-                    key={i}
-                    className="inline-block rounded-full border px-3 py-1 text-sm"
-                    title={s}
-                  >
-                    {s}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {memories.length > 0 && (
-            <div className="mt-4">
-              <div className="text-sm font-medium mb-2">Memories referenced</div>
-              <div className="flex flex-wrap gap-2">
-                {memories.map((m, i) => (
-                  <span
-                    key={i}
-                    className="inline-block rounded-full border px-3 py-1 text-sm"
-                    title={m}
-                  >
-                    {m}
-                  </span>
-                ))}
-              </div>
-            </div>
-          )}
-        </>
-      )}
+      {answer ? (
+        <section className="mt-6">
+          {/* Show the model output in a readable way without needing a markdown lib */}
+          <pre className="text-sm" style={{ whiteSpace: "pre-wrap" }}>
+            {answer}
+          </pre>
+        </section>
+      ) : null}
     </div>
   );
 }

@@ -1,69 +1,75 @@
-// backend/ingest.js  (ESM; Node >= 18)
+// backend/ingest.js (ESM)
+import fs from "fs";
+import path from "path";
+import { fileURLToPath } from "url";
 
-import { createWriteStream } from "node:fs";
-import { readFile, readdir } from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-const __dirname = path.dirname(fileURLToPath(import.meta.url));
-const DATA_DIR = path.join(__dirname, "data");
-const OUT_FILE = path.join(__dirname, "memory.jsonl");
+// --- config ----------------------------------------------------
+const OUT_PATH = path.resolve(__dirname, "memory.jsonl");
+// take scan root from CLI arg, else default to ./data
+const SCAN_ROOT = path.resolve(__dirname, process.argv[2] || "data");
+// ---------------------------------------------------------------
 
-function splitIntoChunks(text, max = 1000) {
-  const paras = text.split(/\n{2,}/g).map(s => s.trim()).filter(Boolean);
-  const chunks = [];
-  let buf = "";
-  for (const p of paras) {
-    if ((buf + "\n\n" + p).length > max) {
-      if (buf) chunks.push(buf.trim());
-      if (p.length > max) {
-        for (let i = 0; i < p.length; i += max) chunks.push(p.slice(i, i + max));
-      } else {
-        buf = p;
-      }
-    } else {
-      buf = buf ? buf + "\n\n" + p : p;
+console.log(`🔎 Scanning: ${SCAN_ROOT}`);
+
+function walk(dir, out = []) {
+  const entries = fs.readdirSync(dir, { withFileTypes: true });
+  for (const e of entries) {
+    const p = path.join(dir, e.name);
+    if (e.isDirectory()) walk(p, out);
+    else out.push(p);
+  }
+  return out;
+}
+
+function htmlToText(html) {
+  // strip <script>/<style>, tags, collapse whitespace
+  return html
+    .replace(/<script[\s\S]*?<\/script>/gi, " ")
+    .replace(/<style[\s\S]*?<\/style>/gi, " ")
+    .replace(/<[^>]+>/g, " ")
+    .replace(/\s+/g, " ")
+    .trim();
+}
+
+function loadAsText(fp) {
+  const ext = path.extname(fp).toLowerCase();
+  try {
+    if (ext === ".html" || ext === ".htm") {
+      const raw = fs.readFileSync(fp, "utf8");
+      return htmlToText(raw);
     }
+    if (ext === ".txt" || ext === ".md") {
+      return fs.readFileSync(fp, "utf8");
+    }
+    // skip unknown binary types for now (PDFs, images, etc.)
+    return "";
+  } catch {
+    return "";
   }
-  if (buf) chunks.push(buf.trim());
-  return chunks;
 }
 
-async function main() {
-  const files = (await readdir(DATA_DIR))
-    .filter(f => /\.(txt|md|mdx)$/i.test(f))
-    .map(f => path.join(DATA_DIR, f));
+const files = fs.existsSync(SCAN_ROOT) ? walk(SCAN_ROOT) : [];
+let written = 0;
 
-  console.log(`🔎  Scanning: ${DATA_DIR}`);
-  const stream = createWriteStream(OUT_FILE, { flags: "w" });
-  let total = 0;
+const out = fs.createWriteStream(OUT_PATH, { flags: "a" });
 
-  for (const file of files) {
-    const rel = path.relative(__dirname, file);
-    const text = await readFile(file, "utf8");
-    const chunks = splitIntoChunks(text, 1000);
+for (const fp of files) {
+  const text = loadAsText(fp);
+  if (!text) continue;
 
-    chunks.forEach((chunk, idx) => {
-      const rec = {
-        id: `${path.basename(file)}:${idx}`,
-        source: rel,
-        text: chunk,
-        ts: Date.now(),
-        tags: ["ingested"],
-      };
-      stream.write(JSON.stringify(rec) + "\n");
-      total++;
-    });
-
-    console.log(`• Ingested ${rel} → ${chunks.length} chunk(s)`);
-  }
-
-  stream.end();
-  await new Promise(res => stream.on("close", res));
-  console.log(`✅ Wrote ${total} records to ${path.relative(__dirname, OUT_FILE)}`);
+  const rel = path.relative(SCAN_ROOT, fp) || path.basename(fp);
+  const rec = {
+    id: `${Date.now()}-${written + 1}`,
+    source: `ingest:${rel}`,
+    text,
+  };
+  out.write(JSON.stringify(rec) + "\n");
+  written++;
 }
 
-main().catch(err => {
-  console.error("❌ Ingest failed:", err);
-  process.exit(1);
+out.end(() => {
+  console.log(`✅ Wrote ${written} records to memory.jsonl`);
 });

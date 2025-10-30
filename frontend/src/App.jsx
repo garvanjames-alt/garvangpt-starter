@@ -1,61 +1,138 @@
-// frontend/src/App.jsx
-import React from 'react';
-import './content.css';
+import { useState } from "react";
+import ReactMarkdown from "react-markdown";
 
-// DEMO list
-import Memories from './components/Memories.jsx';
+function extractBlock(content, heading) {
+  // pull the block that follows a "## Heading" until next "##" or end
+  const re = new RegExp(`##\\s*${heading}\\s*([\\s\\S]*?)(?=\\n##\\s|$)`, "i");
+  const m = content.match(re);
+  return m ? m[1].trim() : "";
+}
 
-// Voice prototype
-import VoiceChat from './VoiceChat.jsx';
+function toList(block) {
+  // accept either "1. item" style or "- item" lines
+  return block
+    .split("\n")
+    .map((l) => l.trim())
+    .filter((l) => l && (/^\d+\.\s+/.test(l) || /^-\s+/.test(l)))
+    .map((l) => l.replace(/^\d+\.\s+/, "").replace(/^-\s+/, "").trim());
+}
 
 export default function App() {
+  const [text, setText] = useState(
+    "From the newly loaded clinic PDFs, what should a new patient prepare or bring?"
+  );
+  const [answer, setAnswer] = useState("");
+  const [loading, setLoading] = useState(false);
+  const [err, setErr] = useState("");
+
+  async function ask(e) {
+    e?.preventDefault?.();
+    setLoading(true);
+    setErr("");
+    setAnswer("");
+
+    try {
+      const res = await fetch("/api/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+      const data = await res.json();
+      if (!data?.ok) throw new Error(data?.error || "request_failed");
+      // backend returns { ok: true, content: "markdown string..." }
+      setAnswer(String(data.content || "").trim());
+    } catch (e) {
+      setErr(String(e.message || e));
+    } finally {
+      setLoading(false);
+    }
+  }
+
+  const sources = toList(extractBlock(answer, "Sources used"));
+  const memories = toList(extractBlock(answer, "Memories referenced"));
+
   return (
-    <div className="page">
-      {/* ---- Hero ---- */}
-      <header style={{ margin: "0 0 28px" }}>
-        <h1 style={{ margin: "0 0 8px" }}>Almost Human</h1>
-        <p style={{ margin: "0 0 16px", maxWidth: 680 }}>
-          A speaking avatar that learns your preferences and actually remembers.
-        </p>
+    <div className="min-h-screen p-6 mx-auto max-w-3xl text-slate-900">
+      <h1 className="text-2xl font-semibold mb-4">GarvanGPT — Clinic PDFs</h1>
 
-        <div className="controls" style={{ justifyContent: "flex-start" }}>
-          <a
-            href="mailto:garvanjames@gmail.com?subject=Almost%20Human%20early%20access&body=Hi%20Garvan%2C%20I%27d%20like%20early%20access."
-            style={{ fontWeight: 600 }}
+      <form onSubmit={ask} className="mb-4">
+        <textarea
+          className="w-full border rounded p-3 mb-2"
+          rows={3}
+          value={text}
+          onChange={(e) => setText(e.target.value)}
+        />
+        <div className="flex gap-2">
+          <button
+            type="submit"
+            disabled={loading}
+            className="px-4 py-2 rounded bg-black text-white disabled:opacity-50"
           >
-            Get early access
-          </a>
-
-          <a href="#memories" style={{ marginLeft: 16 }}>
-            Try the memory demo
-          </a>
-
-          <a href="#voice" style={{ marginLeft: 16 }}>
-            Talk to the prototype
-          </a>
+            {loading ? "Asking…" : "Ask"}
+          </button>
+          <button
+            type="button"
+            className="px-3 py-2 rounded border"
+            onClick={() => {
+              setText("");
+              setAnswer("");
+              setErr("");
+            }}
+          >
+            Clear
+          </button>
         </div>
-      </header>
+      </form>
 
-      <hr />
+      {err && (
+        <div className="mb-4 rounded border border-red-300 bg-red-50 p-3 text-sm">
+          Error: {err}
+        </div>
+      )}
 
-      {/* ---- Memory demo ---- */}
-      <section id="memories" className="page">
-        <h2>Memories</h2>
-        <Memories />
-      </section>
+      {answer && (
+        <>
+          {/* Markdown answer (already sectioned by backend) */}
+          <div className="prose max-w-none">
+            <ReactMarkdown>{answer}</ReactMarkdown>
+          </div>
 
-      <hr />
+          {/* Simple chips for Sources & Memories */}
+          {sources.length > 0 && (
+            <div className="mt-6">
+              <div className="text-sm font-medium mb-2">Sources used</div>
+              <div className="flex flex-wrap gap-2">
+                {sources.map((s, i) => (
+                  <span
+                    key={i}
+                    className="inline-block rounded-full border px-3 py-1 text-sm"
+                    title={s}
+                  >
+                    {s}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
 
-      {/* ---- Voice prototype ---- */}
-      <section id="voice" className="page">
-        <h2>Talk to the prototype</h2>
-        <VoiceChat />
-      </section>
-
-      {/* ---- Footer ---- */}
-      <footer style={{ marginTop: 48, opacity: 0.7 }}>
-        © {new Date().getFullYear()} Almost Human
-      </footer>
+          {memories.length > 0 && (
+            <div className="mt-4">
+              <div className="text-sm font-medium mb-2">Memories referenced</div>
+              <div className="flex flex-wrap gap-2">
+                {memories.map((m, i) => (
+                  <span
+                    key={i}
+                    className="inline-block rounded-full border px-3 py-1 text-sm"
+                    title={m}
+                  >
+                    {m}
+                  </span>
+                ))}
+              </div>
+            </div>
+          )}
+        </>
+      )}
     </div>
   );
 }

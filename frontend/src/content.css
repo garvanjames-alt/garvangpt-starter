@@ -97,3 +97,14 @@ ul.memories li { margin: 4px 0; }
 .toast--err {
   background: #ef4444;   /* red */
 }
+/* --- UI polish pass 1 (safe) --- */
+:root { --pad: 1.25rem; }
+h1 { margin: 1.25rem 0 1rem; line-height: 1.2; }
+h2 { margin: 1.5rem 0 .75rem; line-height: 1.25; }
+ul { padding-left: 1.25rem; }
+ul li { margin: .25rem 0; }
+textarea { width: 100%; max-width: 640px; min-height: 96px; font-size: 16px; line-height: 1.4; }
+button { border-radius: 12px; padding: .5rem 1rem; }
+.container, main { max-width: 1040px; margin: 0 auto; padding: var(--pad); padding-bottom: 4rem; }
+.section { margin-top: 1rem; }
+.small-muted { opacity: .7; font-size: .925rem; }

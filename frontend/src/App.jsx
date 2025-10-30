@@ -1,4 +1,5 @@
 import { useState } from "react";
+import { marked } from "marked";
 import { RESPOND_URL, DEFAULT_QUESTION } from "./config";
 
 export default function App() {
@@ -79,14 +80,17 @@ export default function App() {
       )}
 
       {answer && (
-        <pre style={{
-          marginTop: 16,
-          padding: 12,
-          borderRadius: 8,
-          background: "#fafafa",
-          border: "1px solid #eee",
-          whiteSpace: "pre-wrap"
-        }}>{answer}</pre>
+        <div
+          style={{
+            marginTop: 16,
+            padding: 12,
+            borderRadius: 8,
+            background: "#fafafa",
+            border: "1px solid #eee",
+            lineHeight: 1.5
+          }}
+          dangerouslySetInnerHTML={{ __html: marked.parse(answer) }}
+        />
       )}
     </main>
   );

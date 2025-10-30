@@ -1,135 +1,115 @@
-// backend/server.mjs — Express server for Almost Human (GarvanGPT)
-// Drop-in replacement that enables CORS for the Vite dev app (5173)
-// and provides the required endpoints:
-//   GET  /health                   -> { ok: true, ts }
-//   GET  /api/memory               -> { items: string[] }
-//   POST /api/memory { text }      -> { ok: true }
-//   DELETE /api/memory             -> { ok: true }
-//   POST /respond { prompt }       -> { text }
-//
-// Notes:
-// - Persists memories to ./data/memory.json (creates file if missing)
-// - Tries to use ./respondHandler.cjs if present; otherwise echoes the prompt
+// backend/server.mjs — health, memory list, respond (Composer v2 w/ summary)
+// Node >= 18, ESM
 
 import express from "express";
-import cors from "cors";
-import fs from "fs";
-import path from "path";
-import { fileURLToPath } from "url";
-import { createRequire } from "module";
+import fs from "node:fs";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
+import { formatComposerV2 } from "../helpers/compose.js";
 
-const require = createRequire(import.meta.url);
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const ROOT = path.resolve(__dirname, "..");
+const MEMFILE = path.resolve(ROOT, "memory.jsonl");
 
-const PORT = process.env.PORT || 3001;
-
-// --- App & middleware ---
 const app = express();
+const PORT = Number(process.env.PORT || 3001);
+app.use(express.json({ limit: "2mb" }));
 
-// Allow local dev app on Vite to call this API directly
-const DEFAULT_ORIGINS = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-];
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || "")
-  .split(",")
-  .map((s) => s.trim())
-  .filter(Boolean);
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", "*");
+  res.setHeader("Access-Control-Allow-Headers", "Origin, X-Requested-With, Content-Type, Accept");
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  if (req.method === "OPTIONS") return res.sendStatus(200);
+  next();
+});
 
-app.use(
-  cors({
-    origin: (origin, cb) => {
-      if (!origin) return cb(null, true); // allow curl/Postman
-      if (ALLOWED_ORIGINS.includes(origin) || DEFAULT_ORIGINS.includes(origin)) {
-        return cb(null, true);
-      }
-      return cb(null, false);
-    },
-    credentials: false,
-  })
-);
+function readMemoryItems(max = 200) {
+  if (!fs.existsSync(MEMFILE)) return [];
+  const lines = fs.readFileSync(MEMFILE, "utf8").split("\n").filter(Boolean).slice(-max);
+  const out = [];
+  for (const l of lines) { try { out.push(JSON.parse(l)); } catch {} }
+  return out;
+}
 
-app.use(express.json({ limit: "1mb" }));
+let handleRespond = null;
+try {
+  const mod = await import(path.resolve(ROOT, "respondHandler.cjs"));
+  handleRespond = mod.handleRespond || mod.default || mod.respond || mod.handler || null;
+} catch {
+  console.warn("respondHandler.cjs not loaded; using echo shim");
+}
 
-// --- Simple health check ---
-app.get("/health", (_req, res) => {
+app.get(["/health", "/api/health"], (req, res) => {
   res.json({ ok: true, ts: new Date().toISOString() });
 });
 
-// --- Memory store (persisted) ---
-const dataDir = path.join(__dirname, "..", "data");
-const memoryFile = path.join(dataDir, "memory.json");
-
-function readMemories() {
+app.get(["/memory/list", "/api/memory/list"], (req, res) => {
   try {
-    if (!fs.existsSync(memoryFile)) return [];
-    const raw = fs.readFileSync(memoryFile, "utf8");
-    const parsed = JSON.parse(raw);
-    return Array.isArray(parsed?.items) ? parsed.items : [];
+    res.json({ items: readMemoryItems(200) });
   } catch (e) {
-    console.error("Failed to read memories:", e);
-    return [];
+    console.error("memory/list error", e);
+    res.status(500).json({ ok: false, error: "memory_list_failed" });
   }
-}
+});
 
-function writeMemories(items) {
+app.post(["/respond", "/api/respond"], async (req, res) => {
   try {
-    if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
-    fs.writeFileSync(memoryFile, JSON.stringify({ items }, null, 2));
-  } catch (e) {
-    console.error("Failed to write memories:", e);
-  }
-}
+    const text = typeof req.body?.text === "string" ? req.body.text : "";
+    if (!text) return res.status(400).json({ ok: false, error: "missing_text" });
 
-app.get("/api/memory", (_req, res) => {
-  const items = readMemories();
-  res.json({ items });
-});
-
-app.post("/api/memory", (req, res) => {
-  const text = String(req.body?.text || "").trim();
-  if (!text) return res.status(400).json({ error: "`text` is required" });
-  const items = readMemories();
-  items.push(text);
-  writeMemories(items);
-  res.json({ ok: true });
-});
-
-app.delete("/api/memory", (_req, res) => {
-  writeMemories([]);
-  res.json({ ok: true });
-});
-
-// --- /respond ---
-let externalRespondHandler = null;
-try {
-  // If the project provides a custom handler, use it
-  externalRespondHandler = require("./respondHandler.cjs");
-  if (externalRespondHandler && typeof externalRespondHandler !== "function") {
-    externalRespondHandler = externalRespondHandler.default || externalRespondHandler.handler;
-  }
-} catch (_) {
-  // optional
-}
-
-app.post("/respond", async (req, res) => {
-  const prompt = String(req.body?.prompt || "").trim();
-  if (!prompt) return res.status(400).json({ error: "`prompt` is required" });
-
-  try {
-    if (typeof externalRespondHandler === "function") {
-      return externalRespondHandler(req, res);
+    // 1) Main answer (your handler or echo shim)
+    let modelAnswer;
+    if (typeof handleRespond === "function") {
+      modelAnswer = await handleRespond(text);
+    } else {
+      modelAnswer = `Echo (dev shim): ${text}`;
     }
-    // Fallback: echo-style response
-    return res.json({ text: `You said: ${prompt}` });
-  } catch (err) {
-    console.error("/respond failed:", err);
-    return res.status(500).json({ error: "Respond failed" });
+
+    // 2) Optional short summary from your handler
+    let summaryText = "";
+    if (typeof handleRespond === "function") {
+      const prompt = [
+        "Given the following assistant draft, produce a brief, plain-English summary for a patient.",
+        "- 1–3 short bullets or 2–3 concise sentences.",
+        "- strictly non-diagnostic, helpful, neutral tone.",
+        "- no hallucinated sources—base only on the draft.",
+        "",
+        "Assistant draft:",
+        "```",
+        String(modelAnswer || "").slice(0, 4000),
+        "```",
+      ].join("\n");
+      try {
+        summaryText = String(await handleRespond(prompt));
+      } catch {}
+    }
+
+    // 3) Sources/Memories from recent items
+    const recent = readMemoryItems(10);
+    const sources = recent
+      .filter((r) => r?.source)
+      .map((r, i) => `${i + 1}. ${r.path || r.source || "memory"}`);
+    const memories = recent.slice(0, 5).map((r, i) => {
+      const prev = String(r?.text || "").slice(0, 80).replace(/\s+/g, " ");
+      return `${r.id || `m${i + 1}`}: ${prev}…`;
+    });
+
+    // 4) Compose v2
+    const content = formatComposerV2({
+      findingsText: String(modelAnswer || "").trim(),
+      summaryText,
+      sources,
+      memories,
+    });
+
+    res.json({ ok: true, content });
+  } catch (e) {
+    console.error("respond error", e);
+    res.status(500).json({ ok: false, error: "respond_failed" });
   }
 });
 
-// --- Start ---
 app.listen(PORT, () => {
-  console.log(`Almost Human backend listening on :${PORT}`);
+  console.log(`GarvanGPT backend listening on http://localhost:${PORT}`);
 });

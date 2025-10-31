@@ -1,133 +1,70 @@
-// backend/server.mjs
+// backend/server.mjs — health + memory API (ESM, Node >=18)
 import express from "express";
-import cors from "cors";
+import fs from "fs/promises";
+import fsSync from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
 
+const PORT = Number(process.env.PORT || 3001);
+const HOST = "0.0.0.0";
+const CORS_ORIGIN = "http://localhost:5173";
+
 const __filename = fileURLToPath(import.meta.url);
-const __dirname  = path.dirname(__filename);
+const __dirname = path.dirname(__filename);
+const MEM_PATH = path.join(__dirname, "memory.jsonl");
 
-// ------------------------------
-// Config
-// ------------------------------
-const PORT = process.env.PORT || 3001;
+async function readItems() {
+  if (!fsSync.existsSync(MEM_PATH)) return [];
+  const txt = await fs.readFile(MEM_PATH, "utf8").catch(() => "");
+  return txt.split("\n").filter(Boolean).map(line => {
+    try { return JSON.parse(line); } catch { return null; }
+  }).filter(Boolean);
+}
+async function appendItem(text) {
+  const item = { id: String(Date.now()), text: String(text), createdAt: new Date().toISOString() };
+  await fs.appendFile(MEM_PATH, JSON.stringify(item) + "\n");
+  return item;
+}
+async function clearItems() {
+  if (fsSync.existsSync(MEM_PATH)) await fs.writeFile(MEM_PATH, "");
+}
 
-// Comma-separated allowlist; default allows local + Netlify app
-const allowedOrigins = (process.env.ALLOWED_ORIGINS ||
-  "http://localhost:5173,https://garvangpt.netlify.app"
-).split(",").map(s => s.trim());
-
-const corsOptions = {
-  origin(origin, callback) {
-    // allow curl/postman/no-Origin
-    if (!origin) return callback(null, true);
-    if (allowedOrigins.includes(origin)) return callback(null, true);
-    const err = new Error("CORS");
-    err.message = "CORS";
-    return callback(err);
-  }
-};
-
-// ------------------------------
-// App
-// ------------------------------
 const app = express();
-app.use("/ingest/pdfs", express.static(path.resolve(process.cwd(), "ingest/pdfs")));
-app.use(cors(corsOptions));
+
+// minimal CORS
+app.use((req, res, next) => {
+  res.setHeader("Access-Control-Allow-Origin", CORS_ORIGIN);
+  res.setHeader("Access-Control-Allow-Methods", "GET,POST,DELETE,OPTIONS");
+  res.setHeader("Access-Control-Allow-Headers", "Content-Type");
+  if (req.method === "OPTIONS") return res.sendStatus(204);
+  next();
+});
+
 app.use(express.json());
 
-// --- serve static PDFs (two ways to be extra safe) ---
-const repoRoot = process.cwd(); // /opt/render/project/src
-const pdfDirA  = path.resolve(__dirname, "..", "ingest", "pdfs"); // relative to backend/
-const pdfDirB  = path.resolve(repoRoot, "ingest", "pdfs");        // relative to repo root
+app.get("/health", (_req, res) => res.json({ ok: true }));
+app.get("/", (_req, res) => res.type("text/plain").send("ok"));
 
-console.log("[static] pdfDirA:", pdfDirA);
-console.log("[static] pdfDirB:", pdfDirB);
-
-// Primary mount (repo-root based)
-app.use("/ingest/pdfs", express.static(pdfDirB, {
-  setHeaders(res) { res.setHeader("Cache-Control", "public, max-age=3600"); }
-}));
-
-// Secondary mount (backend/.. based) in case of path differences
-app.use("/ingest/pdfs", express.static(pdfDirA, {
-  setHeaders(res) { res.setHeader("Cache-Control", "public, max-age=3600"); }
-}));
-
-// Fallback explicit route (logs what it tries to serve)
-app.get("/ingest/pdfs/:name", (req, res) => {
-  const candidate1 = path.join(pdfDirB, req.params.name);
-  const candidate2 = path.join(pdfDirA, req.params.name);
-  console.log("[pdf GET]", req.params.name, "\n  try1:", candidate1, "\n  try2:", candidate2);
-  res.sendFile(candidate1, err1 => {
-    if (!err1) return;
-    res.sendFile(candidate2, err2 => {
-      if (!err2) return;
-      console.error("[pdf 404]", req.params.name);
-      res.status(404).send("PDF not found");
-    });
-  });
+// MEMORY ROUTES
+app.get("/api/memory", async (_req, res, next) => {
+  try { res.json({ items: await readItems() }); } catch (e) { next(e); }
 });
-
-// ------------------------------
-// Dev shim respond endpoint
-// ------------------------------
-app.post("/respond", async (req, res) => {
+app.post("/api/memory", async (req, res, next) => {
   try {
-    const text = String(req.body?.text || "").trim();
-
-    // echo-style dev shim
-    const sources = [
-      "ingest/pdfs/25071900000128283.pdf#page=9",
-      "ingest/pdfs/25071900000128283.pdf#page=10",
-      "ingest/pdfs/25071900000128283.pdf#page=11",
-      "ingest/pdfs/25071900000128283.pdf#page=12",
-      "ingest/pdfs/25071900000128283.pdf#page=13",
-      "ingest/pdfs/25071900000128283.pdf#page=14",
-      "ingest/pdfs/25071900000128283.pdf#page=15",
-      "ingest/pdfs/25071900000128283.pdf#page=16",
-      "ingest/pdfs/25071900000128283.pdf#page=17",
-      "ingest/pdfs/25071900000128283.pdf#page=18",
-    ];
-
-    const memories = [];
-
-    const markdown = [
-      "## Here’s what I found",
-      `- Echo (dev shim): ${text || "Using the clinic docs, what should a new patient bring?"}`,
-      "",
-      "## Summary (non-diagnostic)",
-      "This is an informational summary and **not** a diagnosis. Consult a licensed clinician.",
-      "",
-      "## Sources used",
-      ...sources.map((s, i) => `${i + 1}. ${s}`),
-      "",
-      "## Memories referenced",
-      memories.length ? memories.map((m, i) => `${i + 1}. ${m}`).join("\n") : "(none)",
-    ].join("\n");
-
-    res.json({ markdown, sources, memories });
-  } catch (e) {
-    console.error("/respond error", e);
-    res.status(500).json({ error: "Internal error" });
-  }
+    const { text } = req.body || {};
+    if (!text) return res.status(400).json({ error: "text is required" });
+    res.json({ ok: true, item: await appendItem(text) });
+  } catch (e) { next(e); }
+});
+app.delete("/api/memory", async (_req, res, next) => {
+  try { await clearItems(); res.json({ ok: true }); } catch (e) { next(e); }
 });
 
-// ------------------------------
-// Error handler
-// ------------------------------
 app.use((err, _req, res, _next) => {
-  console.error("[error]", err?.message || err);
-  if (String(err?.message || "").includes("CORS")) {
-    return res.status(403).json({ error: "CORS blocked" });
-  }
-  res.status(500).json({ error: "Server error" });
+  console.error("[error]", err?.stack || err?.message || err);
+  res.status(500).type("text/plain").send("error");
 });
 
-// ------------------------------
-// Listen
-// ------------------------------
-app.listen(PORT, () => {
-  console.log(`Server listening on :${PORT}`);
-  console.log(`Allowed origins: ${allowedOrigins.join(", ")}`);
+app.listen(PORT, HOST, () => {
+  console.log(`LISTENING on ${HOST}:${PORT}`);
 });

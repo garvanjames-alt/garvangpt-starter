@@ -1,196 +1,137 @@
-import { useState, useRef } from "react";
-import { marked } from "marked";
-import { RESPOND_URL, DEFAULT_QUESTION } from "./config";
-
-// Build a base URL so relative paths like "ingest/pdfs/…pdf#page=9"
-// become absolute links to your backend: https://<backend>/ingest/pdfs/…pdf#page=9
-const BACKEND_ORIGIN = new URL(RESPOND_URL).origin;
-
-function linkifySources(md) {
-  // Turn bare tokens like ingest/pdfs/foo.pdf#page=3 into markdown links:
-  // [ingest/pdfs/foo.pdf#page=3](https://backend/ingest/pdfs/foo.pdf#page=3)
-  return md.replace(/(^|\s)(ingest\/[^\s)]+)(?=\s|$)/g, (_m, lead, path) => {
-    const href = `${BACKEND_ORIGIN}/${path}`;
-    return `${lead}[${path}](${href})`;
-  });
-}
+import React, { useEffect, useMemo, useState } from 'react';
 
 export default function App() {
-  const [question, setQuestion] = useState(DEFAULT_QUESTION || "");
-  const [answer, setAnswer] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const [error, setError] = useState("");
-  const textareaRef = useRef(null);
+  const [question, setQuestion] = useState('Using the clinic docs, what should a new patient bring?');
+  const [memories, setMemories] = useState([]);
+  const [newMemoryText, setNewMemoryText] = useState('');
+  const [loading, setLoading] = useState(false);
+  const [error, setError] = useState('');
 
-  async function onAsk() {
-    if (!question.trim()) return;
-    setIsLoading(true);
-    setError("");
-    setAnswer("");
+  // ---- Memory API helpers ----
+  async function listMemories() {
+    setError('');
     try {
-      const res = await fetch(RESPOND_URL, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text: question })
-      });
-      if (!res.ok) throw new Error(`HTTP ${res.status}`);
-      const data = await res.json();
-
-      // Accept any of our known response shapes
-      const mdRaw =
-        typeof data === "string"
-          ? data
-          : (data.markdown ?? data.text ?? data.answer ?? data.content ?? "");
-
-      if (!mdRaw) throw new Error("Unexpected response shape");
-
-      // Make source paths clickable
-      const mdLinked = linkifySources(mdRaw);
-      setAnswer(mdLinked);
+      const r = await fetch('/api/memory');
+      if (!r.ok) throw new Error(`list failed: ${r.status}`);
+      const { items } = await r.json();
+      setMemories(Array.isArray(items) ? items : []);
     } catch (e) {
-      setError(String(e?.message || e));
+      setError(e.message || String(e));
+      setMemories([]);
+    }
+  }
+
+  async function addMemory(text) {
+    if (!text?.trim()) return;
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+      if (!r.ok) throw new Error(`add failed: ${r.status}`);
+      await listMemories();
+      setNewMemoryText('');
+    } catch (e) {
+      setError(e.message || String(e));
     } finally {
-      setIsLoading(false);
+      setLoading(false);
     }
   }
 
-  function onClear() {
-    setQuestion("");
-    setAnswer("");
-    setError("");
-    textareaRef.current?.focus();
-  }
-
-  function onTextareaKeyDown(e) {
-    // Submit with Cmd+Enter (Mac) or Ctrl+Enter (Windows/Linux)
-    if (e.key === "Enter" && (e.metaKey || e.ctrlKey)) {
-      e.preventDefault();
-      onAsk();
+  async function clearMemory() {
+    setLoading(true);
+    setError('');
+    try {
+      const r = await fetch('/api/memory', { method: 'DELETE' });
+      if (!r.ok) throw new Error(`clear failed: ${r.status}`);
+      await listMemories();
+    } catch (e) {
+      setError(e.message || String(e));
+    } finally {
+      setLoading(false);
     }
   }
 
+  useEffect(() => { listMemories(); }, []);
+  const memCount = useMemo(() => memories.length, [memories]);
+
+  // ---- UI ----
   return (
-    <main
-      style={{
-        maxWidth: 900,
-        margin: "40px auto",
-        padding: "0 16px",
-        fontFamily:
-          "ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial"
-      }}
-    >
-      <h1 style={{ fontSize: 32, fontWeight: 700, marginBottom: 16 }}>
-        GarvanGPT — Clinic Docs
-      </h1>
+    <div className="min-h-screen p-8 max-w-3xl mx-auto">
+      <h1 className="text-4xl font-extrabold mb-6">GarvanGPT — Clinic Docs</h1>
 
-      <label
-        htmlFor="q"
-        style={{ display: "block", fontWeight: 600, margin: "8px 0" }}
-      >
-        Question
-      </label>
-      <textarea
-        id="q"
-        ref={textareaRef}
-        value={question}
-        onChange={(e) => setQuestion(e.target.value)}
-        onKeyDown={onTextareaKeyDown}
-        rows={5}
-        placeholder="Type your question…  (Tip: Cmd/Ctrl + Enter to Ask)"
-        style={{
-          width: "100%",
-          padding: 12,
-          borderRadius: 8,
-          border: "1px solid #ddd",
-          fontSize: 16
-        }}
-      />
-
-      <div style={{ display: "flex", gap: 12, marginTop: 12, alignItems: "center" }}>
-        <button onClick={onAsk} disabled={isLoading} style={btnStyle} title="Cmd/Ctrl + Enter">
-          {isLoading ? "Thinking…" : "Ask"}
-        </button>
-        <button onClick={onClear} disabled={isLoading} style={btnSecondaryStyle}>
-          Clear
-        </button>
-        {isLoading && <Spinner />}
-        <span style={{ color: "#666", fontSize: 13 }} aria-hidden>
-          Tip: <kbd>Cmd</kbd>/<kbd>Ctrl</kbd> + <kbd>Enter</kbd>
-        </span>
-      </div>
-
-      {error && (
-        <div
-          role="alert"
-          style={{
-            marginTop: 16,
-            padding: 12,
-            borderRadius: 8,
-            background: "#fff6f6",
-            color: "#b00020",
-            border: "1px solid #ffd6d6",
-            whiteSpace: "pre-wrap"
-          }}
-        >
-          Error: {error}
-        </div>
-      )}
-
-      {answer && (
-        <div
-          style={{
-            marginTop: 16,
-            padding: 12,
-            borderRadius: 8,
-            background: "#fafafa",
-            border: "1px solid #eee",
-            lineHeight: 1.5
-          }}
-          dangerouslySetInnerHTML={{ __html: marked.parse(answer) }}
+      <section className="mb-10">
+        <label className="block font-semibold mb-2">Question</label>
+        <textarea
+          className="w-full h-40 rounded border p-3"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
         />
-      )}
-    </main>
+        <div className="flex gap-3 mt-4 items-center">
+          <button
+            className="px-4 py-2 rounded bg-black text-white"
+            onClick={() => alert('Hook this to /respond next')}
+          >
+            Ask
+          </button>
+          <button className="px-4 py-2 rounded border" onClick={() => setQuestion('')}>
+            Clear
+          </button>
+          <span className="text-sm text-gray-500">Tip: Cmd/Ctrl + Enter</span>
+        </div>
+      </section>
+
+      <section className="mb-8">
+        <div className="flex items-center justify-between mb-2">
+          <h2 className="text-2xl font-bold">
+            Memories <span className="text-gray-500">({memCount})</span>
+          </h2>
+          <div className="flex gap-2">
+            <button className="px-3 py-1 rounded border" onClick={listMemories} disabled={loading}>
+              Refresh
+            </button>
+            <button
+              className="px-3 py-1 rounded border"
+              onClick={clearMemory}
+              disabled={loading || memCount === 0}
+            >
+              Clear All
+            </button>
+          </div>
+        </div>
+
+        <div className="flex gap-2 mb-4">
+          <input
+            className="flex-1 rounded border p-2"
+            placeholder="Add a memory…"
+            value={newMemoryText}
+            onChange={(e) => setNewMemoryText(e.target.value)}
+            onKeyDown={(e) => { if (e.key === 'Enter') addMemory(newMemoryText); }}
+          />
+          <button
+            className="px-4 py-2 rounded bg-black text-white"
+            onClick={() => addMemory(newMemoryText)}
+            disabled={loading}
+          >
+            Add
+          </button>
+        </div>
+
+        {error && <div className="mb-3 text-red-600">Error: {error}</div>}
+
+        <ul className="space-y-2">
+          {memories.map((m) => (
+            <li key={m.id} className="p-3 rounded border">
+              <div className="text-xs text-gray-500 mb-1">{m.createdAt || ''}</div>
+              <div className="whitespace-pre-wrap">{m.text}</div>
+            </li>
+          ))}
+          {memories.length === 0 && <li className="text-gray-500">No memories yet.</li>}
+        </ul>
+      </section>
+    </div>
   );
 }
-
-function Spinner() {
-  return (
-    <span
-      aria-label="Loading"
-      style={{
-        width: 20,
-        height: 20,
-        border: "3px solid rgba(0,0,0,0.15)",
-        borderTopColor: "currentColor",
-        borderRadius: "50%",
-        display: "inline-block",
-        animation: "spin 0.8s linear infinite"
-      }}
-    />
-  );
-}
-
-const btnStyle = {
-  background: "black",
-  color: "white",
-  border: "none",
-  padding: "10px 14px",
-  borderRadius: 8,
-  fontWeight: 600,
-  cursor: "pointer"
-};
-
-const btnSecondaryStyle = {
-  background: "#f5f5f5",
-  color: "#111",
-  border: "1px solid #ddd",
-  padding: "10px 14px",
-  borderRadius: 8,
-  fontWeight: 600,
-  cursor: "pointer"
-};
-
-// keyframes for inline spinner
-const style = document.createElement("style");
-style.textContent = `@keyframes spin { to { transform: rotate(360deg); } }`;
-document.head.appendChild(style);

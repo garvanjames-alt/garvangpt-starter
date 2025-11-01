@@ -1,40 +1,31 @@
 // frontend/src/lib/api.js
-// Small helper for API calls from the UI.
+// Centralized helper so dev/prod both "just work".
 
-export const API_BASE =
-  (typeof window !== "undefined" && window.location.hostname === "localhost")
-    ? "http://localhost:3001"                               // local dev
-    : "https://almosthuman-starter.onrender.com";           // Render
+const API_BASE =
+  // In production, set this in Render as VITE_API_BASE=https://<your-backend>.onrender.com
+  (typeof import.meta !== 'undefined' && import.meta.env && import.meta.env.VITE_API_BASE) ||
+  ''; // dev (Vite proxy) → same origin
 
-export async function askPrototype(prompt) {
-  // existing simple /respond passthrough if you use it
-  const res = await fetch(`${API_BASE}/respond`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ prompt }),
+async function json(method, path, body) {
+  const url = `${API_BASE}${path}`;
+  const r = await fetch(url, {
+    method,
+    headers: { 'Content-Type': 'application/json' },
+    body: body ? JSON.stringify(body) : undefined,
   });
-  if (!res.ok) throw new Error(await res.text());
-  const data = await res.json();
-  return data; // { text: "..." } or similar
-}
-
-/**
- * Speak text using your backend TTS.
- * Returns an <audio> element that’s already loaded and ready to play.
- */
-export async function speakWithTTS(text) {
-  const res = await fetch(`${API_BASE}/api/tts`, {
-    method: "POST",
-    headers: { "Content-Type": "application/json" },
-    body: JSON.stringify({ text }),
-  });
-  if (!res.ok) {
-    const errTxt = await res.text().catch(() => "");
-    throw new Error(`TTS failed (${res.status}): ${errTxt}`);
+  if (!r.ok) {
+    const t = await r.text().catch(() => '');
+    throw new Error(`${method} ${path} ${r.status} ${t}`);
   }
-  const blob = await res.blob(); // audio/mpeg
-  const url = URL.createObjectURL(blob);
-  const audio = new Audio(url);
-  audio.controls = true; // show a tiny player so you can replay/pause
-  return audio;
+  return r.json();
 }
+
+// Public API used by the app
+export const api = {
+  respond: (question) => json('POST', '/api/respond', { question }),
+  memList: () => json('GET', '/api/memory'),
+  memAdd: (text) => json('POST', '/api/memory', { text }),
+  memClear: () => json('DELETE', '/api/memory'),
+};
+
+export default api;

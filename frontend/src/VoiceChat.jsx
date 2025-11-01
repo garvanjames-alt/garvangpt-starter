@@ -1,89 +1,95 @@
-import { useEffect, useRef, useState } from 'react'
+import React, { useState } from "react";
 
-/**
- * Simple Web Speech API mic.
- * - Click once to start, again to stop.
- * - On final result it calls props.onFinalText(finalTranscript)
- */
-export default function VoiceChat({ onFinalText }) {
-  const [listening, setListening] = useState(false)
-  const recogRef = useRef(null)
-  const finalRef = useRef('')
+export default function VoiceChat() {
+  const [input, setInput] = useState("");
+  const [assistantReply, setAssistantReply] = useState("");
+  const [isReading, setIsReading] = useState(false);
+  const [autoRead, setAutoRead] = useState(false);
 
-  useEffect(() => {
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition
-    if (!SR) {
-      console.warn('SpeechRecognition not supported in this browser.')
-      return
+  // --- send user text to backend /respond route
+  const sendToPrototype = async () => {
+    if (!input.trim()) return;
+
+    const response = await fetch("/api/respond", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ text: input }),
+    });
+
+    const data = await response.json();
+    const reply = data.reply || "(no reply)";
+    setAssistantReply(reply);
+    setInput("");
+
+    // auto-read if checkbox is on
+    if (autoRead) {
+      await speak(reply);
     }
-    const recog = new SR()
-    recog.continuous = true
-    recog.interimResults = true
-    recog.lang = 'en-US'
+  };
 
-    recog.onresult = (e) => {
-      let interim = ''
-      let final = finalRef.current
-      for (let i = e.resultIndex; i < e.results.length; i++) {
-        const chunk = e.results[i][0].transcript
-        if (e.results[i].isFinal) final += chunk
-        else interim += chunk
+  // --- ElevenLabs playback using your backend
+  const speak = async (text) => {
+    try {
+      setIsReading(true);
+      const res = await fetch("/api/tts", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ text }),
+      });
+
+      if (!res.ok) {
+        console.error("TTS error:", res.status);
+        return;
       }
-      finalRef.current = final
-      // (optional) you could show interim somewhere if desired
-    }
 
-    recog.onend = () => {
-      // When user stops, emit the final transcript once
-      if (finalRef.current && typeof onFinalText === 'function') {
-        const text = finalRef.current.trim()
-        if (text) onFinalText(text)
-      }
-      finalRef.current = ''
-      setListening(false)
+      // convert to playable audio blob
+      const blob = await res.blob();
+      const url = URL.createObjectURL(blob);
+      const audio = new Audio(url);
+      audio.play();
+      audio.onended = () => {
+        URL.revokeObjectURL(url);
+        setIsReading(false);
+      };
+    } catch (err) {
+      console.error("Speak failed:", err);
+      setIsReading(false);
     }
-
-    recog.onerror = () => {
-      setListening(false)
-    }
-
-    recogRef.current = recog
-    return () => {
-      try {
-        recog.stop()
-      } catch {}
-      recogRef.current = null
-    }
-  }, [onFinalText])
-
-  function toggle() {
-    const recog = recogRef.current
-    if (!recog) return
-    if (!listening) {
-      finalRef.current = ''
-      try {
-        recog.start()
-        setListening(true)
-      } catch {}
-    } else {
-      try {
-        recog.stop()
-      } catch {}
-    }
-  }
+  };
 
   return (
-    <button
-      type="button"
-      onClick={toggle}
-      className={`inline-flex items-center rounded-xl border px-3 py-2 text-sm ${
-        listening
-          ? 'border-red-300 bg-red-50 hover:bg-red-100'
-          : 'border-gray-300 bg-white hover:bg-gray-50'
-      }`}
-      title={listening ? 'Stop mic' : 'Start mic'}
-    >
-      {listening ? '⏹ Stop mic' : '🎙️ Start mic'}
-    </button>
-  )
+    <div style={{ marginTop: 20 }}>
+      <h3>Talk to the prototype</h3>
+      <textarea
+        rows={3}
+        style={{ width: "100%" }}
+        placeholder="Speak or type here…"
+        value={input}
+        onChange={(e) => setInput(e.target.value)}
+      />
+      <div style={{ marginTop: 5 }}>
+        <button onClick={sendToPrototype}>Send to prototype</button>{" "}
+        <label style={{ fontSize: 14 }}>
+          <input
+            type="checkbox"
+            checked={autoRead}
+            onChange={(e) => setAutoRead(e.target.checked)}
+          />{" "}
+          Read assistant reply aloud
+        </label>{" "}
+        {isReading && <span>🔊 Speaking…</span>}
+      </div>
+      <h4>Assistant</h4>
+      <div
+        style={{
+          minHeight: 40,
+          border: "1px solid #ccc",
+          padding: 8,
+          borderRadius: 4,
+        }}
+      >
+        {assistantReply || "—"}
+      </div>
+    </div>
+  );
 }

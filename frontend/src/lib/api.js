@@ -1,36 +1,34 @@
 // frontend/src/lib/api.js
 
 async function json(method, path, body) {
-  // Prefer build-time Vite env, else optional window override,
-  // else hard fallback to your Render backend.
-  const API_BASE =
+  // Use the backend base URL from Vite env. Trim any trailing slash.
+  const BASE =
     (typeof import.meta !== "undefined" &&
       import.meta.env &&
-      import.meta.env.VITE_API_BASE) ||
-    (typeof window !== "undefined" && window.__APP_API_BASE__) ||
-    "https://almosthuman-starter.onrender.com";
+      (import.meta.env.VITE_API_BASE || "").trim().replace(/\/$/, "")) || "";
 
-  const url = API_BASE.replace(/\/+$/, "") + path;
+  // If BASE is empty, we'll still call same-origin (useful for local dev with Vite proxy).
+  const url = `${BASE}${path}`;
 
   const r = await fetch(url, {
     method,
     headers: { "content-type": "application/json" },
-    body: body ? JSON.stringify(body) : undefined,
+    body: method === "GET" ? undefined : JSON.stringify(body || {}),
   });
 
-  if (!r.ok) {
-    const txt = await r.text().catch(() => "");
-    throw new Error(`${method} ${path} -> ${r.status} ${r.statusText} ${txt}`);
-  }
-
+  // Try to read text always; parse JSON if possible
   const t = await r.text().catch(() => "");
+  if (!r.ok) {
+    throw new Error(`${method} ${path} ${r.status} ${t}`);
+  }
   try {
-    return JSON.parse(t);
+    return JSON.parse(t || "{}");
   } catch {
-    return t ? { ok: true } : {};
+    return t;
   }
 }
 
+// Public API used by the app
 const api = {
   respond: (question) => json("POST", "/api/respond", { question }),
   memList: () => json("GET", "/api/memory"),

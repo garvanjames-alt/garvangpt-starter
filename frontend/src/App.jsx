@@ -1,218 +1,249 @@
-import React, { useEffect, useRef, useState } from "react";
-
-// Point to your local backend API
-const API_BASE = import.meta.env.VITE_API_BASE || "http://localhost:3001/api";
+import React, { useEffect, useMemo, useRef, useState } from 'react';
 
 export default function App() {
-  // Dev question box
-  const [question, setQuestion] = useState("");
-  const [loadingAsk, setLoadingAsk] = useState(false);
+  // --- Top question box ---
+  const [q, setQ] = useState('');
 
-  // Prototype chat
-  const [protoText, setProtoText] = useState("");
-  const [assistant, setAssistant] = useState("");
-  const [ttsEnabled, setTtsEnabled] = useState(false);
-  const lastSpokenRef = useRef("");
+  // --- Prototype box ---
+  const [proto, setProto] = useState('');
+  const [micReady, setMicReady] = useState(false);
+  const recognitionRef = useRef(null);
 
-  // Memories UI
-  const [usedMemories, setUsedMemories] = useState([]); // optional: shows memories used in the last response
-  const [memories, setMemories] = useState([]);         // full list for Load/Clear/Add
-  const [newMemory, setNewMemory] = useState("");
-  const [loadingProto, setLoadingProto] = useState(false);
+  // --- Output ---
+  const [answer, setAnswer] = useState('');
+  const [err, setErr] = useState('');
+  const [isLoading, setIsLoading] = useState(false);
+  const [speak, setSpeak] = useState(true);
 
-  // ===== simple, placeholder TTS (browser speechSynthesis) =====
-  useEffect(() => {
-    if (!ttsEnabled) return;
-    if (!assistant || assistant === lastSpokenRef.current) return;
+  // --- Memories ---
+  const [memInput, setMemInput] = useState('');
+  const [mems, setMems] = useState([]);       // displayed slice (newest → oldest)
+  const [memTotal, setMemTotal] = useState(0); // total items in store
+
+  // Helpers
+  async function askBackend(question) {
+    const r = await fetch('/api/respond', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ question: question.trim() })
+    });
+    if (!r.ok) throw new Error('respond ' + r.status);
+    const j = await r.json();
+    return (j.reply ?? j.text ?? j.answer ?? '').trim();
+  }
+
+  async function speakAloud(text) {
+    const t = await fetch('/api/tts', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
+    });
+    if (!t.ok) throw new Error('tts ' + t.status);
+    const blob = await t.blob();
+    const url = URL.createObjectURL(blob);
+    const audio = new Audio(url);
+    audio.play().catch(() => {});
+  }
+
+  async function onAsk() {
+    const question = q.trim();
+    if (!question) return;
+    setErr('');
+    setIsLoading(true);
     try {
-      const utter = new SpeechSynthesisUtterance(assistant);
-      window.speechSynthesis.cancel();
-      window.speechSynthesis.speak(utter);
-      lastSpokenRef.current = assistant;
+      const a = await askBackend(question);
+      setAnswer(a);
+      if (speak && a) await speakAloud(a);
     } catch (e) {
-      // ignore TTS errors for now
+      setErr(String(e?.message || e));
+    } finally {
+      setIsLoading(false);
     }
-  }, [assistant, ttsEnabled]);
-
-  // ===== backend calls =====
-  async function postRespond(message) {
-    const res = await fetch(`${API_BASE}/respond`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ message }),
-    });
-    if (!res.ok) throw new Error(`respond ${res.status}`);
-    return res.json();
   }
 
-  // Memories API — NOTE: the base route is /api/memory (no /list)
+  async function onSendProto() {
+    const question = proto.trim();
+    if (!question) return;
+    setErr('');
+    setIsLoading(true);
+    try {
+      const a = await askBackend(question);
+      setAnswer(a);
+      if (speak && a) await speakAloud(a);
+    } catch (e) {
+      setErr(String(e?.message || e));
+    } finally {
+      setIsLoading(false);
+    }
+  }
+
+  // --- Mic (Web Speech API) ---
+  useEffect(() => {
+    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
+    if (!SR) return;
+    const rec = new SR();
+    rec.lang = 'en-US';
+    rec.interimResults = true;
+    rec.continuous = false;
+    rec.onresult = (evt) => {
+      let text = '';
+      for (let i = evt.resultIndex; i < evt.results.length; i++) {
+        text += evt.results[i][0].transcript;
+      }
+      setProto(text);
+    };
+    rec.onend = () => { recognitionRef.current = null; };
+    recognitionRef.current = rec;
+    setMicReady(true);
+  }, []);
+
+  function onStartMic() {
+    const rec = recognitionRef.current;
+    if (!rec) return;
+    try { rec.start(); } catch {}
+  }
+
+  // --- Memories API (show latest 20, newest first) ---
   async function loadMemories() {
-    const res = await fetch(`${API_BASE}/memory`, { method: "GET" });
-    if (!res.ok) throw new Error(`memory GET ${res.status}`);
-    const data = await res.json(); // shape: { items: [...] }
-    setMemories(Array.isArray(data.items) ? data.items : []);
+    let r = await fetch('/api/memory');
+    if (!r.ok) r = await fetch('/memory');
+    if (!r.ok) throw new Error('mem list ' + r.status);
+    const j = await r.json();
+    const all = Array.isArray(j.items) ? j.items : [];
+    setMemTotal(all.length);
+    const latest = all.slice(-20).reverse();
+    setMems(latest);
   }
 
-  async function addMemory(text) {
-    const res = await fetch(`${API_BASE}/memory`, {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text }),
+  async function addMemory() {
+    const text = memInput.trim();
+    if (!text) return;
+    let r = await fetch('/api/memory', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ text })
     });
-    if (!res.ok) throw new Error(`memory POST ${res.status}`);
-    await loadMemories();
+    if (!r.ok) {
+      r = await fetch('/memory', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ text })
+      });
+    }
+    if (!r.ok) throw new Error('mem add ' + r.status);
+    setMemInput('');
+    await loadMemories(); // refresh so the new item appears at top
   }
 
   async function clearMemories() {
-    const res = await fetch(`${API_BASE}/memory`, { method: "DELETE" });
-    if (!res.ok) throw new Error(`memory DELETE ${res.status}`);
+    let r = await fetch('/api/memory', { method: 'DELETE' });
+    if (!r.ok) r = await fetch('/memory', { method: 'DELETE' });
+    if (!r.ok) throw new Error('mem clear ' + r.status);
     await loadMemories();
   }
 
-  // ===== handlers =====
-  async function handleAsk() {
-    const msg = question.trim();
-    if (!msg) return;
-    setLoadingAsk(true);
+  // Share helpers
+  const transcript = useMemo(() => {
+    const lines = [];
+    if (q.trim()) lines.push(`Q: ${q.trim()}`);
+    if (proto.trim()) lines.push(`Q2: ${proto.trim()}`);
+    if (answer.trim()) lines.push(`A: ${answer.trim()}`);
+    return lines.join('\n');
+  }, [q, proto, answer]);
+
+  async function copyTranscript() {
     try {
-      const data = await postRespond(msg);
-      setAssistant(data?.text || "(no reply)");
-      setUsedMemories(
-        Array.isArray(data?.usedMemories) ? data.usedMemories : []
-      );
-    } catch (e) {
-      setAssistant(`(error) ${String(e.message || e)}`);
-    } finally {
-      setLoadingAsk(false);
+      await navigator.clipboard.writeText(transcript || '');
+      alert('Copied to clipboard');
+    } catch {
+      alert('Copy failed');
     }
   }
 
-  async function handleSendToPrototype() {
-    const msg = protoText.trim();
-    if (!msg) return;
-    setLoadingProto(true);
-    try {
-      const data = await postRespond(msg);
-      setAssistant(data?.text || "(no reply)");
-      setUsedMemories(
-        Array.isArray(data?.usedMemories) ? data.usedMemories : []
-      );
-    } catch (e) {
-      setAssistant(`(error) ${String(e.message || e)}`);
-    } finally {
-      setLoadingProto(false);
-    }
+  function downloadTranscript() {
+    const blob = new Blob([transcript || ''], { type: 'text/plain' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = 'garvangpt-transcript.txt';
+    a.click();
+    URL.revokeObjectURL(url);
   }
 
-  function handleAppendFromMic(t) {
-    if (!t) return;
-    setProtoText((p) => (p ? p + " " + t : t));
-  }
-
-  // ===== UI =====
   return (
-    <div style={{ maxWidth: 960, margin: "24px auto", padding: "0 16px" }}>
+    <div style={{ maxWidth: 900, margin: '2rem auto', padding: 16 }}>
       <h1>GarvanGPT — “Almost Human” (Local MVP)</h1>
-      <p style={{ marginTop: 4 }}>
-        Backend at <b>3001</b>; Frontend at <b>5173</b>. API base:{" "}
-        <a href={API_BASE} target="_blank" rel="noreferrer">
-          {API_BASE}
-        </a>
-      </p>
+      <p>Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>. API base via Vite proxy.</p>
 
-      {/* Dev question box */}
-      <section style={{ marginTop: 24 }}>
-        <h3>Question (dev-only)</h3>
-        <textarea
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-          placeholder="Type a quick test question…"
-          rows={3}
-          style={{ width: "100%" }}
+      {/* Question (dev-only) */}
+      <h3>Question (dev-only)</h3>
+      <textarea
+        rows={3}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        style={{ width: '100%', padding: 12, marginBottom: 8 }}
+        placeholder="what is amoxicillin"
+      />
+      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
+        <button onClick={onAsk} disabled={isLoading} style={{ padding: '8px 14px' }}>
+          {isLoading ? 'Thinking…' : 'Ask'}
+        </button>
+        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
+          <input type="checkbox" checked={speak} onChange={e => setSpeak(e.target.checked)} /> Read aloud (ElevenLabs)
+        </label>
+      </div>
+
+      {/* Prototype */}
+      <h3>Talk to the prototype</h3>
+      <textarea
+        rows={3}
+        value={proto}
+        onChange={(e) => setProto(e.target.value)}
+        style={{ width: '100%', padding: 12, marginBottom: 8 }}
+        placeholder="Speak or type here…"
+      />
+      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24 }}>
+        <button onClick={onStartMic} disabled={!micReady} style={{ padding: '8px 12px' }}>Start mic</button>
+        <button onClick={onSendProto} disabled={isLoading} style={{ padding: '8px 14px' }}>
+          {isLoading ? 'Thinking…' : 'Send to prototype'}
+        </button>
+      </div>
+
+      {/* Assistant */}
+      <h3>Assistant</h3>
+      <textarea
+        readOnly
+        rows={6}
+        value={answer}
+        style={{ width: '100%', padding: 12, marginBottom: 12 }}
+        placeholder="The answer will appear here…"
+      />
+      {err && <div style={{ color: 'crimson', marginBottom: 16 }}>Error: {err}</div>}
+
+      {/* Share */}
+      <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
+        <button onClick={copyTranscript}>Copy answer/transcript</button>
+        <button onClick={downloadTranscript}>Download .txt</button>
+      </div>
+
+      {/* Memories */}
+      <h3>Memories (count: {memTotal})</h3>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <button onClick={loadMemories}>Load</button>
+        <button onClick={clearMemories}>Clear all</button>
+      </div>
+      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
+        <input
+          value={memInput}
+          onChange={(e) => setMemInput(e.target.value)}
+          placeholder="Add a new memory…"
+          style={{ flex: 1, padding: 8 }}
         />
-        <div style={{ marginTop: 8, display: "flex", gap: 8 }}>
-          <button disabled={loadingAsk} onClick={handleAsk}>
-            {loadingAsk ? "Asking…" : "Ask"}
-          </button>
-          <button onClick={() => setQuestion("")}>Clear</button>
-        </div>
-      </section>
-
-      {/* Prototype chat */}
-      <section style={{ marginTop: 32 }}>
-        <h3>Talk to the prototype</h3>
-        <textarea
-          value={protoText}
-          onChange={(e) => setProtoText(e.target.value)}
-          placeholder="Speak or type here…"
-          rows={4}
-          style={{ width: "100%" }}
-        />
-        <div style={{ marginTop: 8, display: "flex", gap: 8, alignItems: "center" }}>
-          <button onClick={() => handleAppendFromMic("…mic text…")} title="placeholder mic">
-            Start mic
-          </button>
-          <button disabled={loadingProto} onClick={handleSendToPrototype}>
-            {loadingProto ? "Sending…" : "Send to prototype"}
-          </button>
-          <label style={{ display: "inline-flex", gap: 6, alignItems: "center" }}>
-            <input
-              type="checkbox"
-              checked={ttsEnabled}
-              onChange={(e) => setTtsEnabled(e.target.checked)}
-            />
-            Read assistant reply aloud (placeholder TTS)
-          </label>
-        </div>
-      </section>
-
-      {/* Assistant box */}
-      <section style={{ marginTop: 24 }}>
-        <h3>Assistant</h3>
-        <textarea
-          value={assistant || "—"}
-          readOnly
-          rows={4}
-          style={{ width: "100%" }}
-        />
-      </section>
-
-      {/* Memories panel */}
-      <section style={{ marginTop: 32 }}>
-        <h3>Memories (count: {memories.length})</h3>
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <button onClick={loadMemories}>Load</button>
-          <button onClick={clearMemories}>Clear all</button>
-        </div>
-
-        <ul style={{ paddingLeft: 18 }}>
-          {memories.map((m) => (
-            <li key={String(m.id)}>
-              <code>{m.text}</code>
-            </li>
-          ))}
-          {memories.length === 0 && <li style={{ opacity: 0.6 }}>(no memories)</li>}
-        </ul>
-
-        <div style={{ marginTop: 12, display: "flex", gap: 8 }}>
-          <input
-            value={newMemory}
-            onChange={(e) => setNewMemory(e.target.value)}
-            placeholder="Add a new memory…"
-            style={{ flex: 1, padding: "8px 10px" }}
-          />
-          <button
-            onClick={async () => {
-              const t = newMemory.trim();
-              if (!t) return;
-              await addMemory(t);
-              setNewMemory("");
-            }}
-          >
-            Add
-          </button>
-        </div>
-      </section>
+        <button onClick={addMemory}>Add</button>
+      </div>
+      <ul style={{ paddingLeft: 18 }}>
+        {mems.map((m, i) => (<li key={i}>{m}</li>))}
+      </ul>
     </div>
   );
 }

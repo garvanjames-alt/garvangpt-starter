@@ -1,127 +1,167 @@
-// backend/server.mjs (complete, safe version)
+// backend/server.mjs
+// Express server for GarvanGPT — keeps existing endpoints and adds GET /api/memory
+import 'dotenv/config';
+import express from 'express'
+import cors from 'cors'
+import fs from 'fs/promises'
+import path from 'path'
+import { fileURLToPath } from 'url'
+import { createRequire } from 'module'
 
-import express from "express";
-import cors from "cors";
-import fetch from "node-fetch";
-import dotenv from "dotenv";
-import bodyParser from "body-parser";
+const require = createRequire(import.meta.url)
+const __filename = fileURLToPath(import.meta.url)
+const __dirname = path.dirname(__filename)
 
-dotenv.config();
+const app = express()
+const PORT = process.env.PORT || 3001
 
-const app = express();
-const PORT = process.env.PORT || 3001;
+app.use(cors())
+app.use(express.json({ limit: '2mb' }))
+app.use(express.urlencoded({ extended: true }))
 
-// Allow localhost:5173 and your Netlify domain
-const allowedOrigins = [
-  "http://localhost:5173",
-  "http://127.0.0.1:5173",
-  "https://garvangpt.netlify.app",
-];
+// --- Health ---
+app.get(['/health', '/api/health'], (req, res) => {
+  res.json({ status: 'ok' })
+})
 
-app.use(
-  cors({
-    origin: (origin, callback) => {
-      if (!origin || allowedOrigins.includes(origin)) {
-        callback(null, true);
-      } else {
-        callback(new Error("CORS not allowed"));
+// --- Utilities ---
+const MEMORY_FILE = path.join(__dirname, 'memory.jsonl')
+
+async function ensureFile() {
+  try { await fs.access(MEMORY_FILE) } catch { await fs.writeFile(MEMORY_FILE, '') }
+}
+
+async function readMemoryItems() {
+  try {
+    const buf = await fs.readFile(MEMORY_FILE, 'utf8')
+    const items = buf
+      .split('\n')
+      .map(l => l.trim())
+      .filter(Boolean)
+      .map(l => { try { return JSON.parse(l) } catch { return null } })
+      .filter(Boolean)
+      .map(obj => (typeof obj.text === 'string' ? obj.text : ''))
+      .filter(Boolean)
+    return items
+  } catch {
+    return []
+  }
+}
+
+// --- /api/respond ---
+// Prefer using your existing respond handler if present (./respondHandler.cjs)
+let respondModule
+try {
+  respondModule = require('./respondHandler.cjs')
+} catch {
+  respondModule = null
+}
+
+app.post(['/api/respond', '/respond'], async (req, res) => {
+  try {
+    const question = (req.body?.question || req.body?.text || req.query?.question || '').toString().trim()
+    if (!question) return res.status(400).json({ error: 'Invalid or empty "question" field' })
+
+    // If user provided respond handler exists, try a few common signatures
+    if (respondModule) {
+      // 1) { respond: async (question) => string }
+      if (typeof respondModule.respond === 'function') {
+        const reply = await respondModule.respond(question)
+        return res.json({ reply })
       }
-    },
-  })
-);
-
-app.use(bodyParser.json());
-
-// --- Health Check
-app.get("/health", (req, res) => {
-  res.json({ ok: true });
-});
-
-// --- Memory API (stub for MVP)
-import fs from "fs";
-const memoryFile = "./backend/data/memory.json";
-
-app.get("/api/memory", (req, res) => {
-  if (!fs.existsSync(memoryFile)) return res.json({ items: [] });
-  const data = JSON.parse(fs.readFileSync(memoryFile, "utf-8"));
-  res.json({ items: data.items || [] });
-});
-
-app.post("/api/memory", (req, res) => {
-  const { text } = req.body;
-  if (!text) return res.status(400).json({ error: "Missing text" });
-  const items = fs.existsSync(memoryFile)
-    ? JSON.parse(fs.readFileSync(memoryFile, "utf-8")).items || []
-    : [];
-  const id = Date.now();
-  const updated = { items: [...items, { id, text }] };
-  fs.writeFileSync(memoryFile, JSON.stringify(updated, null, 2));
-  res.json({ success: true, id });
-});
-
-app.delete("/api/memory", (req, res) => {
-  fs.writeFileSync(memoryFile, JSON.stringify({ items: [] }, null, 2));
-  res.json({ success: true });
-});
-
-// --- Respond route (simulated AI response)
-app.post("/api/respond", async (req, res) => {
-  const { text } = req.body;
-  console.log("Incoming question:", text);
-
-  try {
-    const reply = `Hello! How can I assist you today?`;
-    res.json({ reply });
-  } catch (e) {
-    res.status(500).json({ error: e.message });
-  }
-});
-
-// --- ElevenLabs TTS route
-app.post("/api/tts", async (req, res) => {
-  try {
-    const text = req.body.text;
-    const apiKey = process.env.ELEVENLABS_API_KEY;
-    const voiceId = process.env.ELEVENLABS_VOICE_ID;
-
-    if (!apiKey || !voiceId) {
-      console.error("Missing ElevenLabs credentials");
-      return res.status(500).json({ error: "Missing ElevenLabs credentials" });
+      // 2) default export function(question) => string
+      if (typeof respondModule.default === 'function') {
+        const reply = await respondModule.default(question)
+        return res.json({ reply })
+      }
+      // 3) handler(req,res) style
+      if (typeof respondModule.handler === 'function') {
+        return respondModule.handler(req, res)
+      }
     }
 
-    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
-      method: "POST",
+    // Fallback: echo minimal reply (should not be used if your handler exists)
+    return res.json({ reply: `You asked: ${question}` })
+  } catch (e) {
+    console.error('respond error', e)
+    res.status(500).json({ error: 'respond failed' })
+  }
+})
+
+// --- /api/tts --- (proxy to ElevenLabs)
+app.post(['/api/tts', '/tts'], async (req, res) => {
+  try {
+    const text = (req.body?.text || req.body?.reply || '').toString().trim()
+    if (!text) return res.status(400).json({ error: 'Missing text' })
+
+    const apiKey = process.env.ELEVENLABS_API_KEY
+    const voiceId = process.env.ELEVENLABS_VOICE_ID || '21m00Tcm4TlvDq8ikWAM' // default voice if not set
+    if (!apiKey) return res.status(500).json({ error: 'ELEVENLABS_API_KEY not set' })
+
+    const url = `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`
+    const r = await fetch(url, {
+      method: 'POST',
       headers: {
-        "xi-api-key": apiKey,
-        "Content-Type": "application/json",
+        'xi-api-key': apiKey,
+        'Content-Type': 'application/json',
+        'Accept': 'audio/mpeg'
       },
-      body: JSON.stringify({
-        text,
-        voice_settings: {
-          stability: 0.4,
-          similarity_boost: 0.8,
-        },
-      }),
-    });
-
+      body: JSON.stringify({ text, model_id: 'eleven_turbo_v2' })
+    })
     if (!r.ok) {
-      const errTxt = await r.text();
-      console.error("ElevenLabs error:", errTxt);
-      return res.status(502).json({ error: "ElevenLabs error", status: r.status, body: errTxt });
+      const t = await r.text().catch(() => '')
+      console.error('elevenlabs tts failed', r.status, t)
+      return res.status(502).json({ error: 'tts upstream failed', status: r.status })
     }
-
-    // stream MP3 directly to frontend
-    res.setHeader("Content-Type", "audio/mpeg");
-    const buf = Buffer.from(await r.arrayBuffer());
-    res.send(buf);
+    const buf = Buffer.from(await r.arrayBuffer())
+    res.set('Content-Type', 'audio/mpeg')
+    res.send(buf)
   } catch (e) {
-    console.error("/api/tts failed:", e.message);
-    res.status(500).json({ error: e.message });
+    console.error('tts error', e)
+    res.status(500).json({ error: 'tts failed' })
   }
-});
+})
 
-// --- Start server
+// --- Memory API ---
+// Add: GET /api/memory → { items: [...] }
+app.get(['/api/memory', '/memory'], async (req, res) => {
+  try {
+    await ensureFile()
+    const items = await readMemoryItems()
+    res.json({ items })
+  } catch (e) {
+    console.error('memory list error', e)
+    res.status(500).json({ error: 'memory list failed' })
+  }
+})
+
+// POST /api/memory { text }
+app.post(['/api/memory', '/memory'], async (req, res) => {
+  try {
+    await ensureFile()
+    const text = (req.body?.text || req.body?.question || '').toString().trim()
+    if (!text) return res.status(400).json({ error: 'Missing text' })
+    const line = JSON.stringify({ text, ts: Date.now() }) + '\n'
+    await fs.appendFile(MEMORY_FILE, line, 'utf8')
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('memory add error', e)
+    res.status(500).json({ error: 'memory add failed' })
+  }
+})
+
+// DELETE /api/memory → clears file
+app.delete(['/api/memory', '/memory'], async (req, res) => {
+  try {
+    await fs.writeFile(MEMORY_FILE, '', 'utf8')
+    res.json({ ok: true })
+  } catch (e) {
+    console.error('memory clear error', e)
+    res.status(500).json({ error: 'memory clear failed' })
+  }
+})
+
+// --- Start ---
 app.listen(PORT, () => {
-  console.log(`Server listening on http://localhost:${PORT}`);
-  console.log("Allowed origins:", allowedOrigins.join(", "));
-});
+  console.log(`Backend listening on http://localhost:${PORT}`)
+})

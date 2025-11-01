@@ -1,94 +1,55 @@
-import React, { useState } from "react";
+// frontend/src/VoiceChat.jsx
+import React, { useState } from 'react';
 
 export default function VoiceChat() {
-  const [input, setInput] = useState("");
-  const [assistantReply, setAssistantReply] = useState("");
-  const [isReading, setIsReading] = useState(false);
-  const [autoRead, setAutoRead] = useState(false);
+  const [q, setQ] = useState('');
+  const [answer, setAnswer] = useState('');
+  const [err, setErr] = useState('');
 
-  // --- send user text to backend /respond route
-  const sendToPrototype = async () => {
-    if (!input.trim()) return;
-
-    const response = await fetch("/api/respond", {
-      method: "POST",
-      headers: { "Content-Type": "application/json" },
-      body: JSON.stringify({ text: input }),
-    });
-
-    const data = await response.json();
-    const reply = data.reply || "(no reply)";
-    setAssistantReply(reply);
-    setInput("");
-
-    // auto-read if checkbox is on
-    if (autoRead) {
-      await speak(reply);
-    }
-  };
-
-  // --- ElevenLabs playback using your backend
-  const speak = async (text) => {
+  async function onAsk() {
+    alert('VERSION 3'); // confirm this code is running
+    setErr('');
     try {
-      setIsReading(true);
-      const res = await fetch("/api/tts", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ text }),
+      const r = await fetch('/api/respond', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ question: q.trim() })   // <-- send {question}
       });
-
-      if (!res.ok) {
-        console.error("TTS error:", res.status);
-        return;
-      }
-
-      // convert to playable audio blob
-      const blob = await res.blob();
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play();
-      audio.onended = () => {
-        URL.revokeObjectURL(url);
-        setIsReading(false);
-      };
-    } catch (err) {
-      console.error("Speak failed:", err);
-      setIsReading(false);
+      if (!r.ok) throw new Error('respond ' + r.status);
+      const j = await r.json();
+      const a = (j.reply ?? j.text ?? j.answer ?? '').trim();
+      setAnswer(a || '(no answer)');
+    } catch (e) {
+      setErr(String(e?.message || e));
     }
-  };
+  }
 
   return (
-    <div style={{ marginTop: 20 }}>
-      <h3>Talk to the prototype</h3>
+    <div style={{ maxWidth: 700, margin: '2rem auto', padding: 16 }}>
+      <h1>GarvanGPT — Minimal Ask Test</h1>
+
+      <label style={{ display: 'block', marginBottom: 8 }}>Question (dev-only)</label>
       <textarea
         rows={3}
-        style={{ width: "100%" }}
-        placeholder="Speak or type here…"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
+        value={q}
+        onChange={(e) => setQ(e.target.value)}
+        style={{ width: '100%', padding: 12, marginBottom: 8 }}
+        placeholder="what is amoxicillin"
       />
-      <div style={{ marginTop: 5 }}>
-        <button onClick={sendToPrototype}>Send to prototype</button>{" "}
-        <label style={{ fontSize: 14 }}>
-          <input
-            type="checkbox"
-            checked={autoRead}
-            onChange={(e) => setAutoRead(e.target.checked)}
-          />{" "}
-          Read assistant reply aloud
-        </label>{" "}
-        {isReading && <span>🔊 Speaking…</span>}
-      </div>
-      <h4>Assistant</h4>
-      <div
-        style={{
-          minHeight: 40,
-          border: "1px solid #ccc",
-          padding: 8,
-          borderRadius: 4,
-        }}
-      >
-        {assistantReply || "—"}
+
+      <button onClick={onAsk} style={{ padding: '8px 14px' }}>Ask</button>
+
+      {err && <div style={{ marginTop: 12, color: 'crimson' }}>Error: {err}</div>}
+
+      <div style={{ marginTop: 20 }}>
+        <label style={{ display: 'block', marginBottom: 8 }}>Assistant</label>
+        <textarea
+          readOnly
+          rows={6}
+          value={answer}
+          style={{ width: '100%', padding: 12 }}
+          placeholder="The answer will appear here…"
+        />
       </div>
     </div>
   );

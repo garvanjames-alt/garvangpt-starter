@@ -1,31 +1,37 @@
 // frontend/src/lib/api.js
 
-async function json(method, path, body) {
-  // Use the backend base URL from Vite env. Trim any trailing slash.
-  const BASE =
-    (typeof import.meta !== "undefined" &&
-      import.meta.env &&
-      (import.meta.env.VITE_API_BASE || "").trim().replace(/\/$/, "")) || "";
+// Read at build time by Vite. For production on Render, set this in the
+// frontend service env vars: VITE_API_BASE=https://almosthuman-starter.onrender.com
+const PROD_BASE = (import.meta && import.meta.env && import.meta.env.VITE_API_BASE)
+  ? String(import.meta.env.VITE_API_BASE).trim()
+  : "";
 
-  // If BASE is empty, we'll still call same-origin (useful for local dev with Vite proxy).
-  const url = `${BASE}${path}`;
+// Normalize: no trailing slash
+const BASE = PROD_BASE ? PROD_BASE.replace(/\/+$/, "") : "";
+
+// Core JSON fetcher. Uses absolute backend URL in prod (BASE),
+// and same-origin path in local dev (Vite proxy handles /api/*).
+async function json(method, path, body) {
+  const url = BASE ? `${BASE}${path}` : path;
 
   const r = await fetch(url, {
     method,
     headers: { "content-type": "application/json" },
-    body: method === "GET" ? undefined : JSON.stringify(body || {}),
+    body: body ? JSON.stringify(body) : undefined,
   });
 
-  // Try to read text always; parse JSON if possible
-  const t = await r.text().catch(() => "");
+  const text = await r.text();
+  let data = {};
+  try { data = JSON.parse(text || "{}"); } catch { /* ignore non-JSON */ }
+
   if (!r.ok) {
-    throw new Error(`${method} ${path} ${r.status} ${t}`);
+    const err = new Error(`${method} ${url} -> ${r.status}`);
+    // helpful for quick debugging
+    err.status = r.status;
+    err.response = data || text;
+    throw err;
   }
-  try {
-    return JSON.parse(t || "{}");
-  } catch {
-    return t;
-  }
+  return data;
 }
 
 // Public API used by the app

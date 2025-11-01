@@ -1,145 +1,127 @@
-// backend/server.mjs
-import 'dotenv/config';
+// backend/server.mjs (complete, safe version)
+
 import express from "express";
 import cors from "cors";
-import fs from "node:fs/promises";
-import path from "node:path";
-import { fileURLToPath } from "node:url";
+import fetch from "node-fetch";
+import dotenv from "dotenv";
+import bodyParser from "body-parser";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+dotenv.config();
 
 const app = express();
-const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
+const PORT = process.env.PORT || 3001;
 
-// --- Paths (relative to this file) ---
-const PDF_DIR = path.join(__dirname, "ingest", "pdfs");
-const MEM_FILE = path.join(__dirname, "memory.json");
-
-// --- Helpers ---------------------------------------------------------------
-async function readMemory() {
-  try {
-    const raw = await fs.readFile(MEM_FILE, "utf8");
-    const data = JSON.parse(raw);
-    return Array.isArray(data) ? data : (data.items ?? []);
-  } catch (err) {
-    if (err.code === "ENOENT") return [];
-    throw err;
-  }
-}
-async function writeMemory(items) {
-  const payload = JSON.stringify(items, null, 2);
-  await fs.writeFile(MEM_FILE, payload, "utf8");
-}
-
-// --- CORS ------------------------------------------------------------------
-const ALLOWED_ORIGINS = [
+// Allow localhost:5173 and your Netlify domain
+const allowedOrigins = [
   "http://localhost:5173",
   "http://127.0.0.1:5173",
-  // prod/staging UI (keep as needed)
   "https://garvangpt.netlify.app",
 ];
 
 app.use(
   cors({
-    origin(origin, cb) {
-      // Allow same-origin / curl / Postman (no Origin)
-      if (!origin) return cb(null, true);
-      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-      return cb(new Error("CORS"), false);
+    origin: (origin, callback) => {
+      if (!origin || allowedOrigins.includes(origin)) {
+        callback(null, true);
+      } else {
+        callback(new Error("CORS not allowed"));
+      }
     },
-    credentials: true,
   })
 );
 
-app.use(express.json({ limit: "1mb" }));
+app.use(bodyParser.json());
 
-// --- Health ----------------------------------------------------------------
-app.get("/health", (_req, res) => {
-  res.json({
-    ok: true,
-    service: "garvangpt-backend",
-    time: new Date().toISOString(),
-  });
-});
-
-// --- Memory API ------------------------------------------------------------
-// Returns { items: [...] }
-app.get("/api/memory", async (_req, res) => {
-  const items = await readMemory();
-  res.json({ items });
-});
-
-// Body: { text: string }
-app.post("/api/memory", async (req, res) => {
-  const text = String(req.body?.text ?? "").trim();
-  if (!text) return res.status(400).json({ error: "Missing 'text'." });
-
-  const items = await readMemory();
-  const item = { id: Date.now(), text };
-  items.unshift(item);
-  await writeMemory(items);
-  res.json({ ok: true, item });
-});
-
-// Clear all
-app.delete("/api/memory", async (_req, res) => {
-  await writeMemory([]);
+// --- Health Check
+app.get("/health", (req, res) => {
   res.json({ ok: true });
 });
 
-// --- Respond (dev shim) ----------------------------------------------------
-// Accepts text via JSON body or query string; echoes for now.
-// ----- Respond (OpenAI) -----
-app.post("/api/respond", async (req, res) => {
-  try {
-    const text = String(req.body?.text ?? req.body?.message ?? "").trim();
-    if (!text) return res.json({ text: "Ask me something!", sources: [], usedMemories: [] });
+// --- Memory API (stub for MVP)
+import fs from "fs";
+const memoryFile = "./backend/data/memory.json";
 
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) {
-      return res.json({ text: `Echo (no OPENAI_API_KEY set): ${text}`, sources: [], usedMemories: [] });
+app.get("/api/memory", (req, res) => {
+  if (!fs.existsSync(memoryFile)) return res.json({ items: [] });
+  const data = JSON.parse(fs.readFileSync(memoryFile, "utf-8"));
+  res.json({ items: data.items || [] });
+});
+
+app.post("/api/memory", (req, res) => {
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: "Missing text" });
+  const items = fs.existsSync(memoryFile)
+    ? JSON.parse(fs.readFileSync(memoryFile, "utf-8")).items || []
+    : [];
+  const id = Date.now();
+  const updated = { items: [...items, { id, text }] };
+  fs.writeFileSync(memoryFile, JSON.stringify(updated, null, 2));
+  res.json({ success: true, id });
+});
+
+app.delete("/api/memory", (req, res) => {
+  fs.writeFileSync(memoryFile, JSON.stringify({ items: [] }, null, 2));
+  res.json({ success: true });
+});
+
+// --- Respond route (simulated AI response)
+app.post("/api/respond", async (req, res) => {
+  const { text } = req.body;
+  console.log("Incoming question:", text);
+
+  try {
+    const reply = `Hello! How can I assist you today?`;
+    res.json({ reply });
+  } catch (e) {
+    res.status(500).json({ error: e.message });
+  }
+});
+
+// --- ElevenLabs TTS route
+app.post("/api/tts", async (req, res) => {
+  try {
+    const text = req.body.text;
+    const apiKey = process.env.ELEVENLABS_API_KEY;
+    const voiceId = process.env.ELEVENLABS_VOICE_ID;
+
+    if (!apiKey || !voiceId) {
+      console.error("Missing ElevenLabs credentials");
+      return res.status(500).json({ error: "Missing ElevenLabs credentials" });
     }
 
-    // Minimal prompt; you can tune later
-    const system = "You are GarvanGPT, a helpful clinic assistant. Answer clearly and concisely.";
-    const user = text;
-
-    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+    const r = await fetch(`https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`, {
       method: "POST",
       headers: {
-        "Authorization": `Bearer ${apiKey}`,
+        "xi-api-key": apiKey,
         "Content-Type": "application/json",
       },
       body: JSON.stringify({
-        model: "gpt-4o-mini",
-        messages: [
-          { role: "system", content: system },
-          { role: "user", content: user }
-        ],
-        temperature: 0.3,
+        text,
+        voice_settings: {
+          stability: 0.4,
+          similarity_boost: 0.8,
+        },
       }),
     });
 
     if (!r.ok) {
-      const errText = await r.text().catch(() => "");
-      return res.status(500).json({ text: `LLM error: ${r.status} ${errText}`, sources: [], usedMemories: [] });
+      const errTxt = await r.text();
+      console.error("ElevenLabs error:", errTxt);
+      return res.status(502).json({ error: "ElevenLabs error", status: r.status, body: errTxt });
     }
 
-    const data = await r.json();
-    const answer = data?.choices?.[0]?.message?.content?.trim() || "Sorry, I couldn't generate an answer.";
-    res.json({ text: answer, sources: [], usedMemories: [] });
+    // stream MP3 directly to frontend
+    res.setHeader("Content-Type", "audio/mpeg");
+    const buf = Buffer.from(await r.arrayBuffer());
+    res.send(buf);
   } catch (e) {
-    res.status(500).json({ text: `Server error: ${e?.message || e}`, sources: [], usedMemories: [] });
+    console.error("/api/tts failed:", e.message);
+    res.status(500).json({ error: e.message });
   }
 });
 
-
-// --- Static (optional; used by ingest UI) ----------------------------------
-app.use("/ingest/pdfs", express.static(PDF_DIR));
-
-// --- Start -----------------------------------------------------------------
-app.listen(PORT, "0.0.0.0", () => {
+// --- Start server
+app.listen(PORT, () => {
   console.log(`Server listening on http://localhost:${PORT}`);
-  console.log("Allowed origins:", ALLOWED_ORIGINS.join(", "));
+  console.log("Allowed origins:", allowedOrigins.join(", "));
 });

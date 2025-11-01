@@ -1,124 +1,145 @@
-// backend/server.mjs — clean, standalone API (works locally and on Render).
-// ESM module (Node >= 18). Netlify hits us via /api/* proxy.
-
+// backend/server.mjs
+import 'dotenv/config';
 import express from "express";
-import path from "path";
-import fs from "fs/promises";
-import fsSync from "fs";
-import { fileURLToPath } from "url";
 import cors from "cors";
-
-// Handlers
-import respondHandler from "./respondHandler.cjs"; // expects POST { text }
-import query from "./query.cjs"; // used by /api/memory helpers
-
-// ---------------------------
-// Config
-// ---------------------------
-const PORT = Number(process.env.PORT || 3001);
-const HOST = process.env.HOST || "0.0.0.0";
+import fs from "node:fs/promises";
+import path from "node:path";
+import { fileURLToPath } from "node:url";
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
 const app = express();
+const PORT = process.env.PORT ? Number(process.env.PORT) : 3001;
 
-// CORS + JSON
-const corsOptions = {
-  origin: [
-    "http://localhost:5173",
-    "https://garvangpt.netlify.app",
-  ],
-  methods: ["GET", "POST", "DELETE", "OPTIONS"],
-  allowedHeaders: ["Content-Type"],
-};
-app.use(cors(corsOptions));
-app.use(express.json());
+// --- Paths (relative to this file) ---
+const PDF_DIR = path.join(__dirname, "ingest", "pdfs");
+const MEM_FILE = path.join(__dirname, "memory.json");
 
-// ---------------------------
-// Static PDFs (safe mounts)
-// ---------------------------
-const repoRoot = process.cwd();
-const pdfDirA = path.resolve(__dirname, "..", "ingest", "pdfs");       // relative to backend/
-const pdfDirB = path.resolve(repoRoot, "ingest", "pdfs");              // relative to repo root
-
-app.use("/ingest/pdfs", express.static(pdfDirB, {
-  setHeaders: (res) => res.setHeader("Cache-Control", "public, max-age=3600"),
-}));
-app.use("/ingest/pdfs", express.static(pdfDirA, {
-  setHeaders: (res) => res.setHeader("Cache-Control", "public, max-age=3600"),
-}));
-
-// explicit send-file helper (debug)
-app.get("/ingest/pdfs/:name", (req, res) => {
-  const candidate1 = path.join(pdfDirB, req.params.name);
-  const candidate2 = path.join(pdfDirA, req.params.name);
-  if (fsSync.existsSync(candidate1)) return res.sendFile(candidate1);
-  if (fsSync.existsSync(candidate2)) return res.sendFile(candidate2);
-  res.status(404).send("not found");
-});
-
-// ---------------------------
-/** Memory API (list/add/clear) at /api/memory */
-app.get("/api/memory", async (_req, res) => {
+// --- Helpers ---------------------------------------------------------------
+async function readMemory() {
   try {
-    const items = await query.listMemory();
-    res.status(200).json({ items });
-  } catch (e) {
-    res.status(500).json({ error: String(e?.message || e) });
+    const raw = await fs.readFile(MEM_FILE, "utf8");
+    const data = JSON.parse(raw);
+    return Array.isArray(data) ? data : (data.items ?? []);
+  } catch (err) {
+    if (err.code === "ENOENT") return [];
+    throw err;
   }
-});
+}
+async function writeMemory(items) {
+  const payload = JSON.stringify(items, null, 2);
+  await fs.writeFile(MEM_FILE, payload, "utf8");
+}
 
-app.post("/api/memory", async (req, res) => {
-  try {
-    const text = String(req.body?.text || "").trim();
-    if (!text) return res.status(400).json({ error: "text required" });
-    await query.addMemory(text);
-    res.status(200).json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: String(e?.message || e) });
-  }
-});
+// --- CORS ------------------------------------------------------------------
+const ALLOWED_ORIGINS = [
+  "http://localhost:5173",
+  "http://127.0.0.1:5173",
+  // prod/staging UI (keep as needed)
+  "https://garvangpt.netlify.app",
+];
 
-app.delete("/api/memory", async (_req, res) => {
-  try {
-    await query.clearMemory();
-    res.status(200).json({ ok: true });
-  } catch (e) {
-    res.status(500).json({ error: String(e?.message || e) });
-  }
-});
+app.use(
+  cors({
+    origin(origin, cb) {
+      // Allow same-origin / curl / Postman (no Origin)
+      if (!origin) return cb(null, true);
+      if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
+      return cb(new Error("CORS"), false);
+    },
+    credentials: true,
+  })
+);
 
-// ---------------------------
-// Respond endpoint (alias both paths)
-// Netlify proxy calls /api/respond; older code may call /respond
-// ---------------------------
-app.post(["/respond", "/api/respond"], async (req, res, next) => {
-  try {
-    await respondHandler(req, res, next);
-  } catch (e) {
-    res.status(500).json({ error: String(e?.message || e) });
-  }
-});
+app.use(express.json({ limit: "1mb" }));
 
-// ---------------------------
-// Health & root
-// ---------------------------
+// --- Health ----------------------------------------------------------------
 app.get("/health", (_req, res) => {
-  res.type("application/json").status(200).send('{"ok":true}');
+  res.json({
+    ok: true,
+    service: "garvangpt-backend",
+    time: new Date().toISOString(),
+  });
 });
 
-app.get("/", (_req, res) => {
-  res.type("text/plain").status(200).send("ok");
+// --- Memory API ------------------------------------------------------------
+// Returns { items: [...] }
+app.get("/api/memory", async (_req, res) => {
+  const items = await readMemory();
+  res.json({ items });
 });
 
-// last-resort error guard
-app.use((err, _req, res, _next) => {
-  console.error("[error]", err?.message || err);
-  res.status(500).type("text/plain").send("error");
+// Body: { text: string }
+app.post("/api/memory", async (req, res) => {
+  const text = String(req.body?.text ?? "").trim();
+  if (!text) return res.status(400).json({ error: "Missing 'text'." });
+
+  const items = await readMemory();
+  const item = { id: Date.now(), text };
+  items.unshift(item);
+  await writeMemory(items);
+  res.json({ ok: true, item });
 });
 
-app.listen(PORT, HOST, () => {
-  console.log(`Server listening on :${PORT}`);
-  console.log("Allowed origins:", corsOptions.origin.join(", "));
+// Clear all
+app.delete("/api/memory", async (_req, res) => {
+  await writeMemory([]);
+  res.json({ ok: true });
+});
+
+// --- Respond (dev shim) ----------------------------------------------------
+// Accepts text via JSON body or query string; echoes for now.
+// ----- Respond (OpenAI) -----
+app.post("/api/respond", async (req, res) => {
+  try {
+    const text = String(req.body?.text ?? req.body?.message ?? "").trim();
+    if (!text) return res.json({ text: "Ask me something!", sources: [], usedMemories: [] });
+
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) {
+      return res.json({ text: `Echo (no OPENAI_API_KEY set): ${text}`, sources: [], usedMemories: [] });
+    }
+
+    // Minimal prompt; you can tune later
+    const system = "You are GarvanGPT, a helpful clinic assistant. Answer clearly and concisely.";
+    const user = text;
+
+    const r = await fetch("https://api.openai.com/v1/chat/completions", {
+      method: "POST",
+      headers: {
+        "Authorization": `Bearer ${apiKey}`,
+        "Content-Type": "application/json",
+      },
+      body: JSON.stringify({
+        model: "gpt-4o-mini",
+        messages: [
+          { role: "system", content: system },
+          { role: "user", content: user }
+        ],
+        temperature: 0.3,
+      }),
+    });
+
+    if (!r.ok) {
+      const errText = await r.text().catch(() => "");
+      return res.status(500).json({ text: `LLM error: ${r.status} ${errText}`, sources: [], usedMemories: [] });
+    }
+
+    const data = await r.json();
+    const answer = data?.choices?.[0]?.message?.content?.trim() || "Sorry, I couldn't generate an answer.";
+    res.json({ text: answer, sources: [], usedMemories: [] });
+  } catch (e) {
+    res.status(500).json({ text: `Server error: ${e?.message || e}`, sources: [], usedMemories: [] });
+  }
+});
+
+
+// --- Static (optional; used by ingest UI) ----------------------------------
+app.use("/ingest/pdfs", express.static(PDF_DIR));
+
+// --- Start -----------------------------------------------------------------
+app.listen(PORT, "0.0.0.0", () => {
+  console.log(`Server listening on http://localhost:${PORT}`);
+  console.log("Allowed origins:", ALLOWED_ORIGINS.join(", "));
 });

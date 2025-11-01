@@ -1,0 +1,130 @@
+/* === Base === */
+:root {
+  --fg: #0f172a;           /* slate-900 */
+  --muted: #64748b;        /* slate-500 */
+  --border: #e2e8f0;       /* slate-200 */
+  --accent: #2563eb;       /* blue-600 */
+  --accent-600: #1d4ed8;   /* blue-700 */
+  --bg: #ffffff;
+}
+
+* { box-sizing: border-box; }
+html, body { height: 100%; }
+body {
+  margin: 0;
+  color: var(--fg);
+  background: var(--bg);
+  font-family: ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif;
+  line-height: 1.6;
+}
+
+/* Smooth scroll for in-page anchors (e.g. #memories) */
+html { scroll-behavior: smooth; }
+
+/* --- Page layout --- */
+.page { max-width: 760px; margin: 48px auto; padding: 0 20px; }
+h1 { font-size: 44px; line-height: 1.1; margin: 0 0 12px; }
+h2 { font-size: 28px; margin: 24px 0 12px; }
+.muted { color: var(--muted); }
+
+/* --- Controls --- */
+.controls {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  margin: 8px 0 18px;
+  flex-wrap: wrap;
+}
+input[type="text"] {
+  flex: 1 1 320px;
+  padding: 10px 12px;
+  border: 1px solid var(--border);
+  border-radius: 8px;
+}
+input[type="text"]:focus {
+  border-color: var(--accent);
+  box-shadow: 0 0 0 3px rgba(37, 99, 235, 0.15);
+  outline: none;
+}
+
+button {
+  padding: 9px 14px;
+  border: 1px solid var(--border);
+  background: #fff;
+  color: var(--fg);
+  border-radius: 8px;
+  cursor: pointer;
+}
+button:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}
+.button.primary {
+  background: var(--accent);
+  color: #fff;
+  border-color: var(--accent);
+}
+.button.primary:hover { background: var(--accent-600); }
+button:hover:not(:disabled) { filter: brightness(0.98); }
+
+/* --- List --- */
+ul.memories { padding-left: 22px; margin: 0; }
+ul.memories li { margin: 4px 0; }
+
+/* --- Small screens --- */
+@media (max-width: 640px) {
+  h1 { font-size: 36px; }
+  .controls { gap: 6px; }
+  input[type="text"] { flex-basis: 100%; }
+}
+
+/* --- Toast --- */
+.toast {
+  position: fixed;
+  right: 16px;
+  bottom: 16px;
+  padding: 10px 14px;
+  border-radius: 8px;
+  background: #10b981;   /* green */
+  color: #fff;
+  font-weight: 600;
+  box-shadow: 0 6px 24px rgba(0,0,0,0.12);
+  opacity: 0.98;
+  transform: translateY(0);
+  transition: opacity 200ms ease, transform 200ms ease;
+  z-index: 9999;
+}
+.toast--err {
+  background: #ef4444;   /* red */
+}
+/* --- UI polish pass 1 (safe) --- */
+:root { --pad: 1.25rem; }
+h1 { margin: 1.25rem 0 1rem; line-height: 1.2; }
+h2 { margin: 1.5rem 0 .75rem; line-height: 1.25; }
+ul { padding-left: 1.25rem; }
+ul li { margin: .25rem 0; }
+textarea { width: 100%; max-width: 640px; min-height: 96px; font-size: 16px; line-height: 1.4; }
+button { border-radius: 12px; padding: .5rem 1rem; }
+.container, main { max-width: 1040px; margin: 0 auto; padding: var(--pad); padding-bottom: 4rem; }
+.section { margin-top: 1rem; }
+.small-muted { opacity: .7; font-size: .925rem; }
+/* a11y pass 1 (focus + links) */
+:focus-visible {
+  outline: 3px solid #111;
+  outline-offset: 3px;
+}
+
+/* Make links clearly visible and accessible */
+a {
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+a:hover {
+  text-decoration-thickness: 2px;
+}
+
+/* Ensure buttons show focus too */
+button:focus-visible {
+  outline: 3px solid #111;
+  outline-offset: 3px;
+}

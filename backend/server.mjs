@@ -3,9 +3,9 @@ import cors from "cors";
 import cookieParser from "cookie-parser";
 import dotenv from "dotenv";
 import rateLimit from "express-rate-limit";
-import { respondHandler } from "./respondHandler.cjs";
-import { memoryRouter } from "./memoryRouter.cjs";
-import { adminRouter } from "./adminRouter.cjs";
+import { respondHandler } from "./respondHandler.mjs";
+import { memoryRouter } from "./memoryRouter.mjs";
+import { adminRouter } from "./adminRouter.mjs";
 
 dotenv.config();
 
@@ -45,10 +45,6 @@ app.use("/api/login", strictLimiter, adminRouter);
 app.use("/api/respond", strictLimiter, respondHandler);
 app.use("/api/memory", strictLimiter, memoryRouter);
 
-// 🧠 Admin ping
-app.get("/api/admin/ping", (req, res) => {
-  res.json({ ok: true, message: "pong" });
-});
 
 app.listen(port, () => {
   console.log(`Almost Human server listening on :${port}`);

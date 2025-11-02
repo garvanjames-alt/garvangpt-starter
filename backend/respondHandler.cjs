@@ -1,50 +1,54 @@
 // backend/respondHandler.cjs
-const fs = require('fs');
-const path = require('path');
+// Minimal, fast OpenAI Chat Completion call with a safe timeout.
 
-const MEMORY_FILE = path.join(process.cwd(), 'backend', 'memory.jsonl');
+const API_URL = 'https://api.openai.com/v1/chat/completions';
+const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
+const TIMEOUT_MS = 20000;
 
-function readRecentMemories(max = 20) {
+module.exports = async function respondHandler(req, res) {
   try {
-    const text = fs.readFileSync(MEMORY_FILE, 'utf8');
-    const lines = text.split('\n').filter(Boolean);
-    const last = lines.slice(-max).map(l => { try { return JSON.parse(l); } catch { return null; }})
-      .filter(Boolean).map(x => x.text).filter(Boolean);
-    return last;
-  } catch { return []; }
-}
+    const apiKey = process.env.OPENAI_API_KEY;
+    if (!apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY missing' });
 
-async function callOpenAI(prompt) {
-  const apiKey = process.env.OPENAI_API_KEY;
-  if (!apiKey) return `You asked: ${prompt}`; // fallback keeps UI working
+    const q = (req.body && req.body.question) || '';
+    if (!q) return res.status(400).json({ error: 'question required' });
 
-  const resp = await fetch('https://api.openai.com/v1/chat/completions', {
-    method: 'POST',
-    headers: { 'Authorization': `Bearer ${apiKey}`, 'Content-Type': 'application/json' },
-    body: JSON.stringify({
-      model: 'gpt-4o-mini',
-      messages: [
-        { role: 'system', content: 'You are GarvanGPT, a helpful pharmacist educator. Answer clearly and concisely for a layperson; add brief cautions if safety is relevant.' },
-        { role: 'user', content: prompt }
-      ],
-      temperature: 0.2,
-      max_tokens: 400
-    })
-  });
+    const messages = [
+      { role: 'system', content: 'You are a concise, accurate medical information assistant.' },
+      { role: 'user', content: q }
+    ];
 
-  if (!resp.ok) {
-    const t = await resp.text().catch(()=> '');
-    throw new Error(`OpenAI error ${resp.status}: ${t.slice(0,200)}`);
+    const ac = new AbortController();
+    const timeout = setTimeout(() => ac.abort(), TIMEOUT_MS);
+
+    const r = await fetch(API_URL, {
+      method: 'POST',
+      headers: {
+        authorization: `Bearer ${apiKey}`,
+        'content-type': 'application/json',
+      },
+      signal: ac.signal,
+      body: JSON.stringify({
+        model: MODEL,
+        messages,
+        temperature: 0.2,
+      }),
+    }).catch(err => {
+      throw (err.name === 'AbortError')
+        ? new Error(`OpenAI request timed out after ${TIMEOUT_MS}ms`)
+        : err;
+    });
+    clearTimeout(timeout);
+
+    if (!r.ok) {
+      const text = await r.text().catch(() => '');
+      return res.status(r.status).json({ error: `OpenAI ${r.status}`, detail: text.slice(0, 500) });
+    }
+
+    const data = await r.json();
+    const answer = data?.choices?.[0]?.message?.content?.trim() || '(no answer)';
+    return res.json({ answer });
+  } catch (err) {
+    return res.status(502).json({ error: 'respond failed', detail: String(err && err.message || err) });
   }
-  const data = await resp.json();
-  return (data?.choices?.[0]?.message?.content || '').trim() || 'Sorry, I could not generate an answer.';
-}
-
-async function respond(question) {
-  const recent = readRecentMemories(10);
-  const context = recent.length ? `\n\nRecent user memories:\n- ${recent.join('\n- ')}` : '';
-  const prompt = `Question: ${question}${context}\n\nAnswer in 3–6 sentences.`;
-  return await callOpenAI(prompt);
-}
-
-module.exports = { respond };
+};

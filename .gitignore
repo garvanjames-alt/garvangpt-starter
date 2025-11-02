@@ -9,3 +9,7 @@ frontend/.env*
 backend/.env*
 
 backend/.env
+
+# Local env snapshots (never commit)
+snapshots/*.local
+.env*

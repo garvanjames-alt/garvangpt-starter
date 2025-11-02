@@ -42,8 +42,15 @@ try {
   };
 }
 
-// Register BOTH routes so UI can call either path
-app.post(['/api/respond', '/respond'], respondHandler);
+// --- TEMP STUB: make /api/respond return immediately while we debug the real handler ---
+const respondStub = (req, res) => {
+  const q = (req.body && req.body.question) || '';
+  return res.json({ answer: `(stub) You asked: ${q}` });
+};
+
+// Use the STUB for now (comment out the real handler line)
+// app.post(['/api/respond', '/respond'], respondHandler);
+app.post(['/api/respond', '/respond'], respondStub);
 
 // --- Memory API (fallback if your memory module isn't present) ---
 let memList, memAdd, memClear;

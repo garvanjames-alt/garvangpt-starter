@@ -1,38 +1,55 @@
-import express from "express";
+import { Router } from "express";
 import fs from "fs";
 import path from "path";
+import { fileURLToPath } from "url";
 
-const router = express.Router();
-const filePath = path.resolve("./backend/memory.jsonl");
+const router = Router();
+
+// Resolve a stable data path
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+const dataDir = path.join(__dirname, "data");
+const filePath = path.join(dataDir, "memory.json");
+
+// Ensure data directory & file exist
+function ensureStore() {
+  if (!fs.existsSync(dataDir)) fs.mkdirSync(dataDir, { recursive: true });
+  if (!fs.existsSync(filePath)) fs.writeFileSync(filePath, "[]");
+}
 
 function loadItems() {
+  ensureStore();
   try {
-    const content = fs.readFileSync(filePath, "utf8");
-    const lines = content.trim().split("\n").filter(Boolean);
-    return lines.map(line => JSON.parse(line));
+    const raw = fs.readFileSync(filePath, "utf8");
+    return JSON.parse(raw || "[]");
   } catch {
     return [];
   }
 }
 
 function saveItems(items) {
-  const jsonl = items.map(item => JSON.stringify(item)).join("\n");
-  fs.writeFileSync(filePath, jsonl);
+  ensureStore();
+  const json = JSON.stringify(items ?? [], null, 2);
+  fs.writeFileSync(filePath, json);
 }
 
-router.get("/", (req, res) => {
+// GET /api/memory
+router.get("/", (_req, res) => {
   res.json({ ok: true, items: loadItems() });
 });
 
+// POST /api/memory   body: { text: string }
 router.post("/", (req, res) => {
   const items = loadItems();
-  const newItem = { text: req.body.text, ts: Date.now() };
+  const text = (req.body?.text ?? "").toString().trim();
+  const newItem = { text, ts: Date.now() };
   items.push(newItem);
   saveItems(items);
   res.json({ ok: true, item: newItem });
 });
 
-router.delete("/", (req, res) => {
+// DELETE /api/memory (clear all)
+router.delete("/", (_req, res) => {
   saveItems([]);
   res.json({ ok: true, items: [] });
 });

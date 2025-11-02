@@ -1,11 +1,13 @@
 // backend/server.mjs
-// ESM entry for the Almost Human backend
+// ESM entry for the Almost Human backend (single-service: serves API + React build)
 
 import 'dotenv/config';
 import express from 'express';
 import path from 'path';
 import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
 
+const require = createRequire(import.meta.url);
 const app = express();
 app.use(express.json());
 
@@ -18,32 +20,39 @@ app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 
-// --- Load respond handler (from .cjs) ---
-let respondHandler = null;
+// --- Load respond handler (CJS-friendly, tolerate multiple export shapes) ---
+let respondHandler;
 try {
-  // expects default export: module.exports = async function respondHandler(req,res){...}
-  respondHandler = (await import('./respondHandler.cjs')).default;
+  const mod = require('./respondHandler.cjs');
+  respondHandler =
+    (typeof mod === 'function' && mod) ||
+    (mod && typeof mod.default === 'function' && mod.default) ||
+    (mod && typeof mod.respond === 'function' && mod.respond) ||
+    (mod && typeof mod.handler === 'function' && mod.handler);
+
+  if (typeof respondHandler !== 'function') {
+    throw new Error(
+      `respondHandler.cjs did not export a function. Keys: ${Object.keys(mod || {})}`
+    );
+  }
 } catch (err) {
-  console.error('[server] Could not load respondHandler.cjs:', err);
+  console.error('[server] Could not load a function from respondHandler.cjs:', err);
   respondHandler = async (_req, res) => {
-    res.status(500).json({ error: 'respond handler missing' });
+    res.status(500).json({ error: 'respond handler missing or invalid export' });
   };
 }
 
 // Register BOTH routes so UI can call either path
 app.post(['/api/respond', '/respond'], respondHandler);
 
-// --- Memory API (try real module; otherwise in-memory fallback) ---
+// --- Memory API (fallback if your memory module isn't present) ---
 let memList, memAdd, memClear;
 try {
-  // Optional helper module; if you already have routes wired elsewhere,
-  // this try/catch will be ignored and the fallback won’t run.
   const mod = await import('./memory.cjs');
   memList = mod.listMemory;
   memAdd = mod.addMemory;
   memClear = mod.clearMemory;
 } catch {
-  // Minimal in-memory fallback so the UI isn't blocked if the module isn't present.
   const store = [];
   memList = async () => store;
   memAdd = async (text) => store.push({ text, ts: Date.now() });
@@ -64,11 +73,11 @@ app.delete(['/api/memory', '/memory'], async (_req, res) => {
   res.json({ ok: true });
 });
 
-// --- Serve built frontend (single-service deployment) ---
+// --- Serve built frontend (../frontend/dist) ---
 const frontendDist = path.resolve(__dirname, '../frontend/dist');
 app.use(express.static(frontendDist));
 
-// SPA fallback: serve index.html for non-API routes
+// SPA fallback: send index.html for non-API routes
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/respond')) return next();
   res.sendFile(path.join(frontendDist, 'index.html'));

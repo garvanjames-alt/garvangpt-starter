@@ -2,11 +2,6 @@
 // TEMP: force backend host so production calls go to the right place
 const base = 'https://almosthuman-starter.onrender.com';
 
-// Visible marker so we KNOW this file is live in prod
-try { document.title = (document.title || 'Almost Human') + ' [TEMP LIVE]'; } catch {}
-
-console.log('[TEMP LIVE] API base =', base);
-
 async function json(method, path, body) {
   const url = `${base}${path}`;
   const r = await fetch(url, {

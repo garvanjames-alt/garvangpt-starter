@@ -1,35 +1,283 @@
 <!doctype html>
 <html lang="en">
   <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Almost Human</title>
-
-    <!-- Force backend base at runtime + rewrite any /api/* calls to backend -->
-    <script>
-      window.__VITE_API_BASE__ = 'https://almosthuman-starter.onrender.com';
-      (function () {
-        const BACKEND = 'https://almosthuman-starter.onrender.com';
-        const origFetch = window.fetch;
-        window.fetch = function (input, init) {
-          try {
-            const urlStr = typeof input === 'string' ? input : (input && input.url) || '';
-            if (urlStr.startsWith('/api/') || urlStr.startsWith('./api/')) {
-              const newUrl = BACKEND + (urlStr.startsWith('./') ? urlStr.slice(1) : urlStr);
-              console.log('[FETCH PATCH] →', newUrl);
-              return origFetch(newUrl, init);
-            }
-          } catch (e) {
-            console.warn('[FETCH PATCH] error inspecting request', e);
-          }
-          return origFetch(input, init);
-        };
-      })();
-    </script>
+    <meta charset="utf-8" />
+    <title>GarvanGPT — “Almost Human” (Local MVP)</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.45; padding: 24px; max-width: 900px; margin: 0 auto; }
+      h1 { font-size: 28px; margin: 0 0 8px; }
+      small { color: #666; }
+      textarea, input[type="text"] { width: 100%; box-sizing: border-box; font: inherit; padding: 10px; }
+      textarea { min-height: 90px; }
+      button { font: inherit; padding: 8px 12px; }
+      .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+      .stack { display: grid; gap: 10px; }
+      .card { border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px; background: #fafafa; }
+      .label { font-weight: 600; }
+      .muted { color: #777; }
+      .error { color: #b00020; }
+      .ok    { color: #0a7a0a; }
+      ul { margin: 8px 0; padding-left: 18px; }
+      .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
+    </style>
   </head>
   <body>
-    <div id="root"></div>
-    <!-- Vite entry for your React app -->
-    <script type="module" src="/src/main.jsx"></script>
+    <h1>GarvanGPT — “Almost Human” (Local MVP)</h1>
+    <p class="muted">
+      Backend at <span class="mono">3001</span>; Frontend at <span class="mono">5173</span>. API base via Vite proxy / runtime patch.
+    </p>
+
+    <div class="stack">
+      <div class="stack">
+        <div class="label">Question (dev-only)</div>
+        <textarea id="q" placeholder="Ask anything…">what is amoxicillin</textarea>
+        <div class="row">
+          <button id="btnAsk">Ask</button>
+          <label class="row" style="gap:6px;">
+            <input type="checkbox" id="chkRead" checked />
+            Read aloud (ElevenLabs)
+          </label>
+          <span id="askStatus" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="label">Talk to the prototype</div>
+        <textarea id="protoText" placeholder="Speak or type here…"></textarea>
+        <div class="row">
+          <button id="btnMic" disabled>Start mic</button>
+          <button id="btnSendProto">Send to prototype</button>
+          <span id="protoStatus" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="stack">
+        <div class="label">Assistant</div>
+        <textarea id="answer" placeholder="The answer will appear here…" readonly></textarea>
+        <div class="row">
+          <button id="btnCopy">Copy answer/transcript</button>
+          <button id="btnDownload">Download .txt</button>
+          <span id="ttsStatus" class="muted"></span>
+        </div>
+      </div>
+
+      <div class="stack card">
+        <div class="row" style="justify-content:space-between;">
+          <div class="label">Memories (count: <span id="memCount">0</span>)</div>
+          <span id="memStatus" class="muted"></span>
+        </div>
+        <div class="row">
+          <button id="btnLoad">Load</button>
+          <button id="btnClear">Clear all</button>
+        </div>
+        <ul id="memList"></ul>
+        <div class="row">
+          <input id="memInput" type="text" placeholder="Add a new memory…" />
+          <button id="btnAdd">Add</button>
+        </div>
+      </div>
+    </div>
+
+    <script>
+      // If the static site injected a runtime base, it will be here.
+      // Otherwise, we rely on relative /api/* (Vite proxy in local dev).
+      const API_BASE = window.__VITE_API_BASE__ || '';
+
+      // fetch wrapper remains simple; server-side fetch patch handles '/api/*'
+      async function postJSON(path, body) {
+        const r = await fetch(path, {
+          method: 'POST',
+          headers: { 'content-type': 'application/json' },
+          body: JSON.stringify(body || {})
+        });
+        return r;
+      }
+
+      // --- UI nodes ---
+      const elQ = document.getElementById('q');
+      const elAsk = document.getElementById('btnAsk');
+      const elAskStatus = document.getElementById('askStatus');
+      const elRead = document.getElementById('chkRead');
+      const elAnswer = document.getElementById('answer');
+
+      const elCopy = document.getElementById('btnCopy');
+      const elDownload = document.getElementById('btnDownload');
+      const elTtsStatus = document.getElementById('ttsStatus');
+
+      const elProtoText = document.getElementById('protoText');
+      const elSendProto = document.getElementById('btnSendProto');
+      const elProtoStatus = document.getElementById('protoStatus');
+
+      const elMemCount = document.getElementById('memCount');
+      const elMemList = document.getElementById('memList');
+      const elMemStatus = document.getElementById('memStatus');
+      const elMemInput = document.getElementById('memInput');
+      const elMemLoad = document.getElementById('btnLoad');
+      const elMemClear = document.getElementById('btnClear');
+      const elMemAdd = document.getElementById('btnAdd');
+
+      // --- Helpers ---
+      function setStatus(node, text, ok=true) {
+        node.textContent = text || '';
+        node.className = ok ? 'ok' : 'error';
+      }
+
+      // --- Memories (shape-safe) ---
+      async function loadMemories() {
+        try {
+          setStatus(elMemStatus, 'loading…', true);
+          const r = await fetch(`${API_BASE}/api/memory`);
+          const data = await r.json();
+          const items = Array.isArray(data?.items) ? data.items
+                      : Array.isArray(data) ? data
+                      : [];
+          renderMemories(items);
+          setStatus(elMemStatus, 'loaded', true);
+        } catch (e) {
+          console.error('loadMemories', e);
+          setStatus(elMemStatus, 'error', false);
+          renderMemories([]);
+        }
+      }
+
+      function renderMemories(items) {
+        elMemCount.textContent = items.length;
+        elMemList.innerHTML = '';
+        for (const m of items) {
+          const li = document.createElement('li');
+          li.textContent = m?.text ?? String(m);
+          elMemList.appendChild(li);
+        }
+      }
+
+      async function addMemory() {
+        const text = elMemInput.value.trim();
+        if (!text) return;
+        try {
+          setStatus(elMemStatus, 'adding…', true);
+          await postJSON(`${API_BASE}/api/memory`, { text });
+          elMemInput.value = '';
+          await loadMemories();
+          setStatus(elMemStatus, 'added', true);
+        } catch (e) {
+          console.error('addMemory', e);
+          setStatus(elMemStatus, 'add failed', false);
+        }
+      }
+
+      async function clearMemories() {
+        try {
+          setStatus(elMemStatus, 'clearing…', true);
+          await fetch(`${API_BASE}/api/memory`, { method: 'DELETE' });
+          await loadMemories();
+          setStatus(elMemStatus, 'cleared', true);
+        } catch (e) {
+          console.error('clearMemories', e);
+          setStatus(elMemStatus, 'clear failed', false);
+        }
+      }
+
+      // --- Ask / Respond ---
+      async function ask() {
+        const question = elQ.value.trim();
+        if (!question) return;
+        elAnswer.value = '';
+        setStatus(elAskStatus, 'thinking…', true);
+        elTtsStatus.textContent = '';
+
+        try {
+          const r = await postJSON(`${API_BASE}/api/respond`, { question });
+          if (!r.ok) throw new Error(`respond ${r.status}`);
+          const data = await r.json();
+          const text = data?.text ?? '(no text)';
+          elAnswer.value = text;
+          setStatus(elAskStatus, 'done', true);
+
+          if (elRead.checked) {
+            await tts(text);
+          }
+        } catch (e) {
+          console.error('ask', e);
+          setStatus(elAskStatus, 'error', false);
+        }
+      }
+
+      // --- TTS ---
+      async function tts(text) {
+        setStatus(elTtsStatus, 'speaking…', true);
+        try {
+          const r = await postJSON(`${API_BASE}/api/tts`, { text });
+          // Expect audio/mpeg (204 means “no content”)
+          if (r.status === 204) {
+            setStatus(elTtsStatus, 'no audio', false);
+            return;
+          }
+          const ct = r.headers.get('content-type') || '';
+          if (!ct.includes('audio')) {
+            const msg = await r.text().catch(()=> '');
+            throw new Error(`bad TTS content-type (${ct}) ${msg}`);
+          }
+          const blob = await r.blob();
+          if (blob.size === 0) {
+            setStatus(elTtsStatus, 'empty audio', false);
+            return;
+          }
+          const url = URL.createObjectURL(blob);
+          const audio = new Audio(url);
+          audio.play().catch(console.error);
+          setStatus(elTtsStatus, 'spoken', true);
+        } catch (e) {
+          console.error('tts', e);
+          setStatus(elTtsStatus, 'tts error', false);
+        }
+      }
+
+      // --- Prototype box hook (optional demo) ---
+      async function sendToProto() {
+        const t = elProtoText.value.trim();
+        if (!t) return;
+        setStatus(elProtoStatus, 'sent (stub)', true);
+        // You can wire this to another endpoint later if needed.
+      }
+
+      // --- Utilities ---
+      async function copyAnswer() {
+        try {
+          await navigator.clipboard.writeText(elAnswer.value || '');
+        } catch (e) {}
+      }
+
+      function downloadAnswer() {
+        const blob = new Blob([elAnswer.value || ''], { type: 'text/plain' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'answer.txt';
+        a.click();
+        URL.revokeObjectURL(url);
+      }
+
+      // --- Wire events ---
+      elAsk.addEventListener('click', ask);
+      elSendProto.addEventListener('click', sendToProto);
+      elCopy.addEventListener('click', copyAnswer);
+      elDownload.addEventListener('click', downloadAnswer);
+
+      elMemLoad.addEventListener('click', loadMemories);
+      elMemClear.addEventListener('click', clearMemories);
+      elMemAdd.addEventListener('click', addMemory);
+
+      // Initial load
+      loadMemories();
+
+      // --- Optional smoke tests (run in DevTools Console) ---
+      // fetch('/health').then(r=>r.text()).then(console.log)         // "OK"
+      // fetch('/api/memory').then(r=>r.json()).then(console.log)     // {items:[...]}
+      // fetch('/api/memory',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text:'hello memory'})}).then(r=>r.json()).then(console.log)
+      // fetch('/api/tts',{method:'POST',headers:{'content-type':'application/json'},body:JSON.stringify({text:'hello from garvan'})})
+      //   .then(r=>{ console.log('STATUS', r.status, r.headers.get('content-type')); return r.blob();})
+      //   .then(b=>console.log('BLOB SIZE', b.size))
+    </script>
   </body>
 </html>

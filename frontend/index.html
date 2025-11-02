@@ -5,12 +5,12 @@
   <title>GarvanGPT — “Almost Human” (Local MVP)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
   <style>
-    body { font-family: -apple-system, Segoe UI, Roboto, Helvetica, Arial, sans-serif; max-width: 900px; margin: 0 auto; padding: 24px; }
+    body { font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif; line-height: 1.45; max-width: 900px; margin: 0 auto; padding: 24px; }
     h1 { font-size: 28px; margin: 0 0 8px; }
     small { color: #666; }
     textarea, input[type="text"] { width: 100%; box-sizing: border-box; font: inherit; padding: 10px; }
     textarea { min-height: 90px; }
-    button { font: inherit; padding: 8px 12px; }
+    button { font: inherit; padding: 8px 12px; cursor: pointer; }
     .row { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
     .stack { display: grid; gap: 10px; }
     .card { border: 1px solid #e5e5e5; border-radius: 6px; padding: 10px; background: #fafafa; }
@@ -19,205 +19,225 @@
     .error { color: #b00020; }
     .ok { color: #0a7a0a; }
     ul { margin: 8px 0; padding-left: 18px; }
-    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, "Liberation Mono", monospace; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace; }
   </style>
 </head>
 <body>
   <h1>GarvanGPT — “Almost Human” (Local MVP)</h1>
-  <p class="muted">Backend at <span class="mono">3001</span>; Frontend at <span class="mono">5173</span>. API base via Vite proxy / runtime patch.</p>
+  <p class="muted">
+    Backend at <b>3001</b>; Frontend at <b>5173</b>. API base via Vite proxy / runtime patch.
+  </p>
 
-  <!-- Ask -->
   <div class="stack">
-    <div class="label">Question (dev-only)</div>
-    <textarea id="q" placeholder="what is amoxicillin">what is amoxicillin</textarea>
-    <div class="row">
-      <button id="askBtn">Ask</button>
-      <label><input id="ttsChk" type="checkbox" checked> Read aloud (ElevenLabs)</label>
-      <span id="ttsErr" class="error"></span>
-    </div>
-  </div>
-
-  <!-- Prototype chat -->
-  <div class="stack" style="margin-top:16px;">
-    <div class="label">Talk to the prototype</div>
-    <textarea id="protoInput" placeholder="Speak or type here…"></textarea>
-    <div class="row">
-      <button id="micBtn" disabled>Start mic</button>
-      <button id="protoSend">Send to prototype</button>
-    </div>
-  </div>
-
-  <!-- Answer -->
-  <div class="stack" style="margin-top:16px;">
-    <div class="label">Assistant</div>
-    <textarea id="answer" placeholder="The answer will appear here…"></textarea>
-    <div class="row">
-      <button id="copyBtn">Copy answer/transcript</button>
-      <button id="dlBtn">Download .txt</button>
-    </div>
-  </div>
-
-  <!-- Memories -->
-  <div class="stack" style="margin-top:16px;">
-    <div class="label">Memories (count: <span id="memCount">0</span>) <span id="memStatus" class="muted"></span></div>
-    <div class="row">
-      <button id="memLoad">Load</button>
-      <button id="memClear">Clear all</button>
-    </div>
-    <div class="row">
-      <input id="memNew" type="text" placeholder="Add a new memory…" />
-      <button id="memAdd">Add</button>
-    </div>
-    <div id="memError" class="error"></div>
-    <div id="memOk" class="ok"></div>
+    <!-- Ask -->
     <div class="card">
+      <div class="label">Question (dev-only)</div>
+      <textarea id="q" placeholder="what is amoxicillin"></textarea>
+      <div class="row">
+        <button id="askBtn" type="button">Ask</button>
+        <label><input id="speakChk" type="checkbox" checked /> Read aloud (ElevenLabs)</label>
+        <span id="askErr" class="error"></span>
+      </div>
+    </div>
+
+    <!-- Prototype talk -->
+    <div class="card">
+      <div class="label">Talk to the prototype</div>
+      <textarea id="protoText" placeholder="Speak or type here…"></textarea>
+      <div class="row">
+        <button id="micBtn" type="button" disabled>Start mic</button>
+        <button id="protoSend" type="button">Send to prototype</button>
+      </div>
+    </div>
+
+    <!-- Assistant -->
+    <div class="card">
+      <div class="label">Assistant</div>
+      <textarea id="answer" readonly placeholder="The answer will appear here…"></textarea>
+      <div class="row">
+        <button id="copyBtn" type="button">Copy answer/transcript</button>
+        <button id="dlBtn" type="button">Download .txt</button>
+      </div>
+    </div>
+
+    <!-- Memories -->
+    <div class="card">
+      <div class="row" style="justify-content:space-between;">
+        <div class="label">Memories (<span id="memCount">count: 0</span>)</div>
+        <span id="memStatus" class="error"></span>
+      </div>
+      <div class="row">
+        <button id="memLoad"  type="button">Load</button>
+        <button id="memClear" type="button">Clear all</button>
+      </div>
       <ul id="memList"></ul>
+      <div class="row">
+        <input id="memInput" type="text" placeholder="Add a new memory…" />
+        <button id="memAdd" type="button">Add</button>
+      </div>
     </div>
   </div>
 
   <script>
-    // --- Helpers -------------------------------------------------------------
-    const $ = (sel) => document.querySelector(sel);
-    const setText = (sel, txt) => { const el = $(sel); if (el) el.textContent = txt; };
-    const safeJson = async (res) => {
-      // Never throw-to-blank: surface a readable error instead
-      const ct = (res.headers.get('content-type') || '').toLowerCase();
-      const raw = await res.text();
-      if (!res.ok) throw new Error(`HTTP ${res.status}: ${raw.slice(0, 200)}`);
-      if (!ct.includes('application/json')) {
-        // This is usually the HTML shell from the static site: show it, don’t crash
-        throw new Error(`Expected JSON but got ${ct || 'unknown'}. First bytes: ${raw.slice(0,80)}`);
-      }
-      try { return JSON.parse(raw); }
-      catch (e) { throw new Error(`Invalid JSON. First bytes: ${raw.slice(0,80)}`); }
-    };
-    const playBlob = (blob) => {
-      if (!(blob instanceof Blob) || blob.size === 0) return;
-      const url = URL.createObjectURL(blob);
-      const audio = new Audio(url);
-      audio.play().finally(() => URL.revokeObjectURL(url));
-    };
+    // ---------- Utilities ----------
+    const $ = sel => document.querySelector(sel);
+    const sleep = ms => new Promise(r => setTimeout(r, ms));
 
-    // --- Ask → /api/respond + optional /api/tts -----------------------------
-    $('#askBtn').addEventListener('click', async () => {
-      setText('#ttsErr', '');
-      const question = $('#q').value.trim();
-      if (!question) return;
+    // Force all buttons to be non-submit (prevents accidental page navigation)
+    document.querySelectorAll('button').forEach(b => b.setAttribute('type','button'));
 
+    // Normalize API JSON → always an array for memories
+    function toItems(json) {
+      if (Array.isArray(json)) return json;
+      if (json && Array.isArray(json.items)) return json.items;
+      return [];
+    }
+
+    // Safe fetch wrapper (shows network failures)
+    async function safeFetch(url, opts) {
       try {
-        const r = await fetch('/api/respond', {
-          method: 'POST',
-          headers: {'content-type':'application/json'},
-          body: JSON.stringify({ question })
-        });
-        const data = await safeJson(r);
-        $('#answer').value = data?.answer || JSON.stringify(data, null, 2);
-
-        if ($('#ttsChk').checked) {
-          const r2 = await fetch('/api/tts', {
-            method: 'POST',
-            headers: {'content-type':'application/json'},
-            body: JSON.stringify({ text: data?.answer || question })
-          });
-          // Some platforms return 204 for “no audio”—handle gracefully
-          if (r2.status === 204) return;
-          const ct = (r2.headers.get('content-type') || '').toLowerCase();
-          if (!ct.includes('audio')) {
-            setText('#ttsErr', 'TTS did not return audio.');
-            return;
-          }
-          const b = await r2.blob();
-          playBlob(b);
-        }
+        const r = await fetch(url, opts);
+        return r;
       } catch (e) {
-        $('#answer').value = `Error: ${e.message}`;
-      }
-    });
-
-    // --- Memory UI (robust; never blanks) -----------------------------------
-    async function refreshMemories() {
-      setText('#memError', '');
-      setText('#memOk', '');
-      setText('#memStatus', 'loading…');
-      $('#memList').innerHTML = '';
-
-      try {
-        const r = await fetch('/api/memory');
-        const data = await safeJson(r);
-        const items = Array.isArray(data?.items) ? data.items : [];
-        setText('#memCount', String(items.length));
-        if (items.length === 0) {
-          $('#memList').innerHTML = '<li class="muted">No memories yet.</li>';
-        } else {
-          $('#memList').innerHTML = items
-            .map(m => `<li><span class="mono">${new Date(m.ts||Date.now()).toLocaleString()}</span> — ${escapeHtml(m.text||'')}</li>`)
-            .join('');
-        }
-        setText('#memStatus', '');
-      } catch (e) {
-        setText('#memStatus', '');
-        setText('#memError', e.message);
+        console.error('NETWORK ERR', e);
+        throw e;
       }
     }
 
-    $('#memLoad').addEventListener('click', refreshMemories);
+    // ---------- ASK ----------
+    const askBtn = $('#askBtn');
+    const qEl    = $('#q');
+    const speak  = $('#speakChk');
+    const ansEl  = $('#answer');
+    const askErr = $('#askErr');
 
-    $('#memAdd').addEventListener('click', async () => {
-      setText('#memError', ''); setText('#memOk',''); setText('#memStatus','saving…');
-      const text = $('#memNew').value.trim();
-      if (!text) { setText('#memError','Please enter some text.'); setText('#memStatus',''); return; }
+    askBtn.addEventListener('click', async (e) => {
+      e.preventDefault?.();
+      askBtn.disabled = true; askErr.textContent = '';
       try {
-        const r = await fetch('/api/memory', {
+        const r = await safeFetch('/api/respond', {
           method: 'POST',
-          headers: {'content-type':'application/json'},
+          headers: { 'content-type':'application/json' },
+          body: JSON.stringify({ question: qEl.value || '' })
+        });
+        if (!r.ok) throw new Error(`respond ${r.status}`);
+        const j = await r.json();
+        ansEl.value = j?.answer || j?.text || '(no answer returned)';
+
+        if (speak.checked) {
+          // Streamlined: POST text → get audio blob → play
+          const tts = await safeFetch('/api/tts', {
+            method: 'POST',
+            headers: { 'content-type':'application/json' },
+            body: JSON.stringify({ text: ansEl.value })
+          });
+          if (tts.ok) {
+            const blob = await tts.blob();
+            if (blob.size > 0) {
+              const url = URL.createObjectURL(blob);
+              const a = new Audio(url);
+              a.play().catch(console.error);
+            }
+          } else {
+            console.warn('TTS failed', tts.status);
+          }
+        }
+      } catch (err) {
+        console.error('ask error', err);
+        askErr.textContent = 'error';
+      } finally {
+        askBtn.disabled = false;
+      }
+    });
+
+    // ---------- Prototype send (stub) ----------
+    $('#protoSend').addEventListener('click', e => e.preventDefault?.());
+
+    // ---------- Copy / Download ----------
+    $('#copyBtn').addEventListener('click', () => {
+      navigator.clipboard.writeText(ansEl.value || '').catch(console.error);
+    });
+    $('#dlBtn').addEventListener('click', () => {
+      const blob = new Blob([ansEl.value || ''], { type: 'text/plain' });
+      const url = URL.createObjectURL(blob);
+      const a = Object.assign(document.createElement('a'), { href: url, download: 'answer.txt' });
+      document.body.appendChild(a); a.click(); a.remove();
+      URL.revokeObjectURL(url);
+    });
+
+    // ---------- Memories ----------
+    const memList   = $('#memList');
+    const memCount  = $('#memCount');
+    const memStatus = $('#memStatus');
+    const memInput  = $('#memInput');
+
+    async function renderItems(items) {
+      memList.innerHTML = '';
+      for (const it of items) {
+        const li = document.createElement('li');
+        const ts = it.ts ? new Date(Number(it.ts)).toLocaleString() : '';
+        li.textContent = it.text + (ts ? `  (${ts})` : '');
+        memList.appendChild(li);
+      }
+      memCount.textContent = `count: ${items.length}`;
+    }
+
+    async function loadMemories() {
+      memStatus.textContent = '';
+      try {
+        const r = await safeFetch('/api/memory');
+        if (!r.ok) throw new Error(`GET /api/memory ${r.status}`);
+        const j = await r.json();
+        await renderItems(toItems(j));
+      } catch (e) {
+        console.error('loadMemories', e);
+        memStatus.textContent = 'error';
+      }
+    }
+
+    async function addMemory() {
+      memStatus.textContent = '';
+      const text = (memInput.value || '').trim();
+      if (!text) return;
+      try {
+        const r = await safeFetch('/api/memory', {
+          method: 'POST',
+          headers: { 'content-type':'application/json' },
           body: JSON.stringify({ text })
         });
-        await safeJson(r);
-        setText('#memOk', 'Saved.');
-        $('#memNew').value = '';
-        await refreshMemories();
+        if (!r.ok) throw new Error(`POST /api/memory ${r.status}`);
+        await r.json().catch(()=>({}));
+        memInput.value = '';
+        await loadMemories();
       } catch (e) {
-        setText('#memError', e.message);
-      } finally {
-        setText('#memStatus', '');
+        console.error('addMemory', e);
+        memStatus.textContent = 'error';
       }
-    });
-
-    $('#memClear').addEventListener('click', async () => {
-      setText('#memError', ''); setText('#memOk',''); setText('#memStatus','clearing…');
-      try {
-        const r = await fetch('/api/memory', { method: 'DELETE' });
-        await safeJson(r);
-        setText('#memOk','Cleared.');
-        await refreshMemories();
-      } catch (e) {
-        setText('#memError', e.message);
-      } finally {
-        setText('#memStatus', '');
-      }
-    });
-
-    // --- Utilities -----------------------------------------------------------
-    function escapeHtml(s) {
-      return String(s)
-        .replaceAll('&','&amp;')
-        .replaceAll('<','&lt;')
-        .replaceAll('>','&gt;')
-        .replaceAll('"','&quot;')
-        .replaceAll("'",'&#039;');
     }
 
-    // Do not auto-load on page open (to make testing easier).
-    // But DO set up a global error handler so we never white-screen.
-    window.addEventListener('error', (ev) => {
-      try { setText('#memError', String(ev?.error?.message || ev?.message || 'Script error')); } catch {}
-    });
+    async function clearMemories() {
+      memStatus.textContent = '';
+      try {
+        const r = await safeFetch('/api/memory', { method: 'DELETE' });
+        if (!r.ok) throw new Error(`DELETE /api/memory ${r.status}`);
+        await loadMemories();
+      } catch (e) {
+        console.error('clearMemories', e);
+        memStatus.textContent = 'error';
+      }
+    }
 
-    // Dev helpers (you can keep/remove)
-    window._smoke = async () => {
-      console.log('OK', await (await fetch('/health')).text());
-      await refreshMemories();
-    };
+    $('#memLoad').addEventListener('click',  e => { e.preventDefault?.(); loadMemories(); });
+    $('#memAdd').addEventListener('click',   e => { e.preventDefault?.(); addMemory(); });
+    $('#memClear').addEventListener('click', e => { e.preventDefault?.(); clearMemories(); });
+
+    // Initial soft check (does not crash UI)
+    (async () => {
+      try {
+        const r = await safeFetch('/health'); const t = await r.text();
+        console.log('Health:', t);
+      } catch {}
+    })();
   </script>
 </body>
 </html>

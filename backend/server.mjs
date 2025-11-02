@@ -1,5 +1,5 @@
 // backend/server.mjs
-// ESM entry for the Almost Human backend (single-service: serves API + React build)
+// ESM entry for the Almost Human backend (serves API + built frontend)
 
 import 'dotenv/config';
 import express from 'express';
@@ -20,7 +20,7 @@ app.get('/health', (_req, res) => {
   res.status(200).send('OK');
 });
 
-// --- Load respond handler (CJS-friendly, tolerate multiple export shapes) ---
+// --- Load respond handler (CJS-friendly) ---
 let respondHandler;
 try {
   const mod = require('./respondHandler.cjs');
@@ -42,17 +42,13 @@ try {
   };
 }
 
-// --- TEMP STUB: make /api/respond return immediately while we debug the real handler ---
-const respondStub = (req, res) => {
-  const q = (req.body && req.body.question) || '';
-  return res.json({ answer: `(stub) You asked: ${q}` });
-};
+// --- Primary routes ---
+app.post(['/api/respond', '/respond'], respondHandler);
 
-// Use the STUB for now (comment out the real handler line)
-// app.post(['/api/respond', '/respond'], respondHandler);
-app.post(['/api/respond', '/respond'], respondStub);
+// Optional: TTS stub so “Read aloud” doesn’t 404
+app.post(['/api/tts', '/tts'], (_req, res) => res.status(204).end());
 
-// --- Memory API (fallback if your memory module isn't present) ---
+// --- Memory API (fallback if memory module is absent) ---
 let memList, memAdd, memClear;
 try {
   const mod = await import('./memory.cjs');

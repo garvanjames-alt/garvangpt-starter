@@ -1,127 +1,128 @@
-// backend/server.mjs — FULL FILE (Step 85: Simple Auth, static path fix)
-import 'dotenv/config';
-import express from 'express';
-import path from 'path';
-import { fileURLToPath } from 'url';
-import cors from 'cors';
-import bcrypt from 'bcryptjs';
-import cookieParser from 'cookie-parser';
-import jwt from 'jsonwebtoken';
+import express from "express";
+import cors from "cors";
+import cookieParser from "cookie-parser";
+import dotenv from "dotenv";
+import bcrypt from "bcryptjs";
+import jwt from "jsonwebtoken";
+import fs from "fs";
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-
-const PORT = process.env.PORT || 3001;
-const NODE_ENV = process.env.NODE_ENV || 'production';
-
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY || '';
-const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY || '';
-const ELEVEN_MODEL = process.env.ELEVEN_MODEL || 'eleven_turbo_v2_5';
-const ELEVEN_VOICE = process.env.ELEVEN_VOICE || '';
-
-const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'admin';
-const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
-const SESSION_SECRET = process.env.SESSION_SECRET || '';
-
-if (!SESSION_SECRET) {
-  console.warn('[WARN] SESSION_SECRET is not set. Set a strong random string in env.');
-}
-
-const ALLOWED_ORIGINS = (process.env.ALLOWED_ORIGINS || process.env.CORS_ORIGINS || '')
-  .split(',')
-  .map((s) => s.trim())
-  .filter(Boolean);
+dotenv.config();
 
 const app = express();
-app.use(express.json({ limit: '2mb' }));
+app.use(express.json());
+app.use(cors({ origin: true, credentials: true }));
 app.use(cookieParser());
 
-if (ALLOWED_ORIGINS.length > 0) {
-  app.use(
-    cors({
-      origin: (origin, cb) => {
-        if (!origin) return cb(null, true);
-        if (ALLOWED_ORIGINS.includes(origin)) return cb(null, true);
-        return cb(new Error('CORS not allowed'));
-      },
-      credentials: true,
-    })
-  );
-}
+const PORT = process.env.PORT || 10000;
+const SESSION_SECRET = process.env.SESSION_SECRET;
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "garvan";
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH;
 
-const isProd = NODE_ENV === 'production';
-const cookieOpts = { httpOnly: true, secure: isProd, sameSite: 'lax', path: '/' };
-
-function signSession(payload, expiresIn = '2h') {
-  return jwt.sign(payload, SESSION_SECRET, { expiresIn });
-}
-function verifySession(token) {
-  try { return jwt.verify(token, SESSION_SECRET); } catch { return null; }
-}
-function requireAuth(req, res, next) {
-  const token = req.cookies?.gh_session;
-  if (!token) return res.status(401).json({ error: 'unauthorized' });
-  const decoded = verifySession(token);
-  if (!decoded || decoded.sub !== ADMIN_USERNAME) return res.status(401).json({ error: 'unauthorized' });
-  req.user = decoded; next();
-}
-
+// In-memory store for simplicity
 let memory = { items: [] };
 
-app.get('/health', (req, res) => { res.type('text/plain').send('OK'); });
-
-app.post('/api/login', async (req, res) => {
-  try {
-    const { username, password } = req.body || {};
-    if (!username || !password) return res.status(400).json({ error: 'username and password required' });
-    if (username !== ADMIN_USERNAME) return res.status(401).json({ error: 'invalid credentials' });
-    if (!ADMIN_PASSWORD_HASH) return res.status(500).json({ error: 'auth not configured' });
-    const ok = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
-    if (!ok) return res.status(401).json({ error: 'invalid credentials' });
-    const token = signSession({ sub: ADMIN_USERNAME, role: 'admin' }, '2h');
-    res.cookie('gh_session', token, { ...cookieOpts, maxAge: 2 * 60 * 60 * 1000 });
-    res.json({ ok: true, user: { username: ADMIN_USERNAME, role: 'admin' } });
-  } catch (e) {
-    console.error('[AUTH] login error', e); res.status(500).json({ error: 'internal error' });
+// Middleware to verify JWT token (if exists)
+app.use((req, res, next) => {
+  const token = req.cookies?.gh_session;
+  if (token) {
+    try {
+      const decoded = jwt.verify(token, SESSION_SECRET);
+      req.user = decoded;
+    } catch (err) {
+      console.error("Invalid token");
+    }
   }
+  next();
 });
 
-app.post('/api/logout', (req, res) => { res.clearCookie('gh_session', cookieOpts); res.json({ ok: true }); });
+// --- Health check
+app.get("/health", (req, res) => res.send("OK"));
 
-app.get('/api/admin/ping', requireAuth, (req, res) => { res.json({ ok: true, user: req.user, ts: Date.now() }); });
-
-app.post('/api/respond', async (req, res) => {
-  try {
-    const { question } = req.body || {};
-    if (!question) return res.status(400).json({ error: 'question required' });
-    res.json({ answer: `You said: ${question}` });
-  } catch (e) { console.error('[RESPOND] error', e); res.status(500).json({ error: 'internal error' }); }
+// --- Public: List memories
+app.get("/api/memory", (req, res) => {
+  res.json({ items: memory.items });
 });
 
-app.post('/api/tts', async (req, res) => {
-  try {
-    const { text } = req.body || {};
-    if (!text) return res.status(400).json({ error: 'text required' });
-    res.status(204).end();
-  } catch (e) { console.error('[TTS] error', e); res.status(500).json({ error: 'internal error' }); }
+// --- Protected: Add new memory (admin only)
+app.post("/api/memory", (req, res) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+
+  const { text } = req.body;
+  if (!text) return res.status(400).json({ error: "missing text" });
+  memory.items.push(text);
+  res.json({ ok: true, items: memory.items });
 });
 
-app.get('/api/memory', (req, res) => { res.json(memory); });
-app.post('/api/memory', requireAuth, (req, res) => {
-  const { text } = req.body || {}; if (!text) return res.status(400).json({ error: 'text required' });
-  memory.items.push(String(text)); res.json({ ok: true, items: memory.items });
-});
-app.delete('/api/memory', requireAuth, (req, res) => { memory = { items: [] }; res.json({ ok: true, items: memory.items }); });
+// --- Protected: Clear all memories
+app.delete("/api/memory", (req, res) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(401).json({ error: "unauthorized" });
+  }
 
-// ---- Static frontend (Vite build) ----
-// frontend/ is a sibling of backend/, so go up one level
-const distPath = path.join(__dirname, '..', 'frontend', 'dist');
-app.use(express.static(distPath));
-
-// SPA fallback for non-API routes
-app.get('*', (req, res) => {
-  if (req.path.startsWith('/api/')) return res.status(404).json({ error: 'not found' });
-  res.sendFile(path.join(distPath, 'index.html'));
+  memory.items = [];
+  res.json({ ok: true, items: [] });
 });
 
-app.listen(PORT, () => { console.log(`Almost Human server listening on :${PORT}`); });
+// --- Auth: Login (plain password matches ADMIN_PASSWORD_HASH)
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body;
+  if (username !== ADMIN_USERNAME) {
+    return res.status(401).json({ error: "invalid credentials" });
+  }
+
+  const valid = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+  if (!valid) {
+    return res.status(401).json({ error: "invalid credentials" });
+  }
+
+  const token = jwt.sign({ sub: username, role: "admin" }, SESSION_SECRET, {
+    expiresIn: "2h",
+  });
+  res.cookie("gh_session", token, {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    maxAge: 2 * 60 * 60 * 1000,
+  });
+  res.json({ ok: true, user: { username, role: "admin" } });
+});
+
+// --- Protected: /api/admin/ping
+app.get("/api/admin/ping", (req, res) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(401).json({ error: "unauthorized" });
+  }
+  res.json({ ok: true, user: req.user, ts: Date.now() });
+});
+
+// --- Step 86: Simple /admin dashboard route
+app.get("/admin", (req, res) => {
+  if (!req.user || req.user.role !== "admin") {
+    return res.status(401).send("Unauthorized");
+  }
+
+  res.send(`
+    <html>
+      <head><title>Admin Dashboard</title></head>
+      <body style="font-family: system-ui; padding: 20px; max-width: 700px;">
+        <h1>🧠 Almost Human Admin</h1>
+        <p>Welcome, <b>${req.user.sub}</b></p>
+        <p>Memory items:</p>
+        <pre style="background:#f4f4f4;padding:10px;border-radius:8px;">
+${JSON.stringify(memory.items, null, 2)}
+        </pre>
+      </body>
+    </html>
+  `);
+});
+
+// --- Fallback
+app.use((req, res) => {
+  res.status(404).send("Not Found");
+});
+
+app.listen(PORT, () => {
+  console.log(`Almost Human server listening on :${PORT}`);
+});

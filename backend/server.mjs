@@ -42,11 +42,30 @@ try {
   };
 }
 
+// --- Load tts handler (CJS-friendly) ---
+let ttsHandler;
+try {
+  const mod = require('./ttsHandler.cjs');
+  ttsHandler =
+    (typeof mod === 'function' && mod) ||
+    (mod && typeof mod.default === 'function' && mod.default) ||
+    (mod && typeof mod.tts === 'function' && mod.tts) ||
+    (mod && typeof mod.handler === 'function' && mod.handler);
+
+  if (typeof ttsHandler !== 'function') {
+    throw new Error(
+      `ttsHandler.cjs did not export a function. Keys: ${Object.keys(mod || {})}`
+    );
+  }
+} catch (err) {
+  console.error('[server] Could not load a function from ttsHandler.cjs:', err);
+  // Return 204 so UI doesn’t crash, but log the issue
+  ttsHandler = async (_req, res) => res.status(204).end();
+}
+
 // --- Primary routes ---
 app.post(['/api/respond', '/respond'], respondHandler);
-
-// Optional: TTS stub so “Read aloud” doesn’t 404
-app.post(['/api/tts', '/tts'], (_req, res) => res.status(204).end());
+app.post(['/api/tts', '/tts'], ttsHandler);
 
 // --- Memory API (fallback if memory module is absent) ---
 let memList, memAdd, memClear;

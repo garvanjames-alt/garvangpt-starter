@@ -1,12 +1,27 @@
-<!doctype html>
-<html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Almost Human (dev)</title>
-  </head>
-  <body class="bg-gray-50 text-gray-900">
-    <div id="root"></div>
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
-</html>
+<script>
+  // Force backend base at runtime
+  window.__VITE_API_BASE__ = 'https://almosthuman-starter.onrender.com';
+
+  // Hard redirect any relative /api/* request to the backend host
+  (function () {
+    const BACKEND = 'https://almosthuman-starter.onrender.com';
+    const origFetch = window.fetch;
+
+    window.fetch = function (input, init) {
+      try {
+        // Normalize to string URL
+        const urlStr = typeof input === 'string' ? input : (input && input.url) || '';
+
+        // If code calls '/api/...' or './api/...', rewrite to absolute backend URL
+        if (urlStr.startsWith('/api/') || urlStr.startsWith('./api/')) {
+          const newUrl = BACKEND + (urlStr.startsWith('./') ? urlStr.slice(1) : urlStr);
+          console.log('[FETCH PATCH] →', newUrl);
+          return origFetch(newUrl, init);
+        }
+      } catch (e) {
+        console.warn('[FETCH PATCH] error inspecting request', e);
+      }
+      return origFetch(input, init);
+    };
+  })();
+</script>

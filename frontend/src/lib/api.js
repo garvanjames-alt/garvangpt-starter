@@ -10,24 +10,14 @@ async function json(method, path, body) {
     body: body ? JSON.stringify(body) : undefined,
   });
 
-  // Read text first, then try JSON; never crash on parse errors
   const t = await r.text().catch(() => '');
   let data = {};
-  try {
-    data = t ? JSON.parse(t) : {};
-  } catch {
-    data = {};
-  }
+  try { data = t ? JSON.parse(t) : {}; } catch { data = {}; }
 
-  if (!r.ok) {
-    // Include some context if we ever see an error
-    throw new Error(`${method} ${path} ${r.status} ${t}`);
-  }
-
+  if (!r.ok) throw new Error(`${method} ${path} ${r.status} ${t}`);
   return data;
 }
 
-// Public API used by the app
 const api = {
   respond: (question) => json('POST', '/api/respond', { question }),
   memList: () => json('GET', '/api/memory'),

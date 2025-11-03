@@ -3,21 +3,19 @@
 
 import 'dotenv/config';
 import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
 import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
-
-// ✅ Added for Step 87 (Render ↔ Render auth + cookies)
-import cors from 'cors';
-import cookieParser from 'cookie-parser';
 import authRouter from './authRouter.mjs';
 
 const require = createRequire(import.meta.url);
 const app = express();
+
 app.use(express.json());
 
-// ✅ CORS for frontend → backend calls with cookies
-// (Use your exact frontend URL; no trailing slash)
+// CORS for browser → backend with cookies (Render ↔ Render)
 app.use(
   cors({
     origin: 'https://almosthuman-frontend.onrender.com',
@@ -25,22 +23,16 @@ app.use(
   })
 );
 
-// ✅ Parse cookies for authRouter and any future middleware
+// Parse cookies so authRouter can read gh_session
 app.use(cookieParser());
 
-// ✅ Mount auth routes: /api/login and /api/admin/ping
-app.use('/api', authRouter);
+// Health
+app.get('/health', (_req, res) => res.status(200).send('OK'));
 
-// --- Resolve __dirname for ESM ---
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+// Mount auth routes
+app.use(authRouter);
 
-// --- Health check ---
-app.get('/health', (_req, res) => {
-  res.status(200).send('OK');
-});
-
-// --- Load respond handler (CJS-friendly) ---
+// ----- Respond handler (CJS-friendly) -----
 let respondHandler;
 try {
   const mod = require('./respondHandler.cjs');
@@ -49,20 +41,13 @@ try {
     (mod && typeof mod.default === 'function' && mod.default) ||
     (mod && typeof mod.respond === 'function' && mod.respond) ||
     (mod && typeof mod.handler === 'function' && mod.handler);
-
-  if (typeof respondHandler !== 'function') {
-    throw new Error(
-      `respondHandler.cjs did not export a function. Keys: ${Object.keys(mod || {})}`
-    );
-  }
+  if (typeof respondHandler !== 'function') throw new Error('no function export');
 } catch (err) {
-  console.error('[server] Could not load a function from respondHandler.cjs:', err);
-  respondHandler = async (_req, res) => {
-    res.status(500).json({ error: 'respond handler missing or invalid export' });
-  };
+  console.error('[server] respondHandler load error:', err);
+  respondHandler = async (_req, res) => res.status(500).json({ error: 'respond handler missing' });
 }
 
-// --- Load tts handler (CJS-friendly) ---
+// ----- TTS handler (CJS-friendly) -----
 let ttsHandler;
 try {
   const mod = require('./ttsHandler.cjs');
@@ -71,23 +56,17 @@ try {
     (mod && typeof mod.default === 'function' && mod.default) ||
     (mod && typeof mod.tts === 'function' && mod.tts) ||
     (mod && typeof mod.handler === 'function' && mod.handler);
-
-  if (typeof ttsHandler !== 'function') {
-    throw new Error(
-      `ttsHandler.cjs did not export a function. Keys: ${Object.keys(mod || {})}`
-    );
-  }
+  if (typeof ttsHandler !== 'function') throw new Error('no function export');
 } catch (err) {
-  console.error('[server] Could not load a function from ttsHandler.cjs:', err);
-  // Return 204 so UI doesn’t crash, but log the issue
+  console.error('[server] ttsHandler load error:', err);
   ttsHandler = async (_req, res) => res.status(204).end();
 }
 
-// --- Primary routes ---
+// API routes
 app.post(['/api/respond', '/respond'], respondHandler);
 app.post(['/api/tts', '/tts'], ttsHandler);
 
-// --- Memory API (fallback if memory module is absent) ---
+// In-memory fallback memory API (keeps UI working if memory.cjs absent)
 let memList, memAdd, memClear;
 try {
   const mod = await import('./memory.cjs');
@@ -100,12 +79,7 @@ try {
   memAdd = async (text) => store.push({ text, ts: Date.now() });
   memClear = async () => (store.length = 0);
 }
-
-// NOTE: For Step 87, memory endpoints remain open.
-// We can protect them with the session middleware in Step 88.
-app.get(['/api/memory', '/memory'], async (_req, res) => {
-  res.json({ items: await memList() });
-});
+app.get(['/api/memory', '/memory'], async (_req, res) => res.json({ items: await memList() }));
 app.post(['/api/memory', '/memory'], async (req, res) => {
   const { text } = req.body || {};
   if (!text) return res.status(400).json({ error: 'text required' });
@@ -117,18 +91,16 @@ app.delete(['/api/memory', '/memory'], async (_req, res) => {
   res.json({ ok: true });
 });
 
-// --- Serve built frontend (../frontend/dist) ---
+// Serve built frontend if present (for local/dev)
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 const frontendDist = path.resolve(__dirname, '../frontend/dist');
 app.use(express.static(frontendDist));
-
-// SPA fallback: send index.html for non-API routes
 app.get('*', (req, res, next) => {
   if (req.path.startsWith('/api') || req.path.startsWith('/respond')) return next();
   res.sendFile(path.join(frontendDist, 'index.html'));
 });
 
-// --- Start server ---
+// Start
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => {
-  console.log(`[server] listening on ${PORT}`);
-});
+app.listen(PORT, () => console.log(`[server] listening on ${PORT}`));

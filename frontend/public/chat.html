@@ -1,0 +1,99 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>GarvanGPT — Chat</title>
+  <style>
+    :root { --bg:#0b0c10; --panel:#0e1116; --border:#1f2329; --text:#e6edf3; --muted:#9da7b1; --btn:#1f6feb; }
+    *{box-sizing:border-box} body{margin:0;background:var(--bg);color:var(--text);font-family:ui-sans-serif,system-ui,-apple-system,Segoe UI,Roboto,Helvetica,Arial}
+    header{padding:18px 20px;border-bottom:1px solid var(--border);background:var(--panel)}
+    main{max-width:900px;margin:0 auto;padding:20px;display:grid;gap:14px}
+    .card{background:var(--panel);border:1px solid var(--border);border-radius:14px;padding:14px}
+    label{font-size:12px;color:var(--muted);display:block;margin-bottom:6px}
+    input,textarea{width:100%;background:var(--bg);color:var(--text);border:1px solid #30363d;border-radius:10px;padding:10px 12px}
+    button{background:var(--btn);color:#fff;border:0;border-radius:10px;padding:10px 14px;font-weight:600;cursor:pointer}
+    .row{display:grid;grid-template-columns:1fr auto;gap:10px;align-items:center}
+    pre{background:var(--bg);border:1px solid #30363d;border-radius:12px;padding:12px;max-height:360px;overflow:auto}
+    small{color:var(--muted)}
+  </style>
+</head>
+<body>
+  <header><strong>GarvanGPT — Chat</strong></header>
+  <main>
+    <section class="card">
+      <div class="row">
+        <div>
+          <label for="apiBase">Backend Base URL</label>
+          <input id="apiBase" value="https://almosthuman-starter-staging.onrender.com" />
+          <small>Calls use full HTTPS URLs.</small>
+        </div>
+        <div>
+          <label>&nbsp;</label>
+          <button id="btnHealth" type="button">Health</button>
+        </div>
+      </div>
+    </section>
+
+    <section class="card">
+      <label for="q">Ask GarvanGPT</label>
+      <div class="row">
+        <input id="q" placeholder="Ask something…" value="Say hello from the chat page and mention the environment." />
+        <button id="btnSend" type="button">Send</button>
+      </div>
+    </section>
+
+    <section class="card">
+      <div class="row" style="grid-template-columns:auto auto auto; gap:8px">
+        <small>Output</small>
+        <button id="btnClear" type="button">Clear</button>
+        <button id="btnCopy" type="button">Copy</button>
+      </div>
+      <pre id="out">Ready.</pre>
+    </section>
+  </main>
+
+<script>
+const $ = (id)=>document.getElementById(id);
+const out = $('out');
+const log = (label, data) => {
+  const time = new Date().toISOString();
+  const line = `[${time}] ${label}: ${typeof data==='string'?data:JSON.stringify(data,null,2)}`;
+  out.textContent += (out.textContent ? '\n' : '') + line;
+  out.scrollTop = out.scrollHeight;
+};
+
+const api = ()=> $('apiBase').value.replace(/\/$/,'');
+async function go(path, opts={}) {
+  const url = api() + path;
+  const res = await fetch(url, { ...opts });
+  const ct = res.headers.get('content-type')||'';
+  let body;
+  try { body = ct.includes('application/json') ? await res.json() : await res.text(); }
+  catch { body = '<no body>'; }
+  return { ok: res.ok, status: res.status, url, body, headers: Object.fromEntries(res.headers.entries()) };
+}
+
+$('btnHealth').onclick = async ()=>{
+  const r = await go('/health');
+  log('HEALTH', r);
+};
+
+$('btnSend').onclick = async ()=>{
+  const question = $('q').value.trim();
+  const r = await go('/api/respond', {
+    method: 'POST',
+    headers: { 'content-type': 'application/json' },
+    body: JSON.stringify({ question })
+  });
+  log('RESPOND', r);
+};
+
+$('btnClear').onclick = ()=> out.textContent = 'Ready.';
+$('btnCopy').onclick  = async ()=> {
+  try { await navigator.clipboard.writeText(out.textContent); log('COPY', 'Output copied'); }
+  catch { log('COPY', 'Clipboard failed'); }
+};
+</script>
+</body>
+</html>

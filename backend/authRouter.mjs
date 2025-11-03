@@ -1,6 +1,6 @@
 // backend/authRouter.mjs
 import express from "express";
-import bcrypt from "bcrypt";
+import bcrypt from "bcryptjs";
 import cookieParser from "cookie-parser";
 
 const router = express.Router();

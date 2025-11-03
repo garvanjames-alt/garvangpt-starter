@@ -1,3 +1,278 @@
-# from repo root
-cp frontend/index.html frontend/index.backup.html
-pbpaste > frontend/index.html
+cat > frontend/index.html <<'HTML_END'
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Almost Human — Chat</title>
+  <meta name="description" content="Almost Human — Avatar Chat" />
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Ccircle cx='32' cy='32' r='30' fill='%2300d4ff'/%3E%3Cpath d='M20 38c0-6.627 5.373-12 12-12s12 5.373 12 12' fill='none' stroke='%23011' stroke-width='4' stroke-linecap='round'/%3E%3Ccircle cx='24' cy='26' r='3' fill='%23011'/%3E%3Ccircle cx='40' cy='26' r='3' fill='%23011'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --bg: #0b0f14;
+      --panel: #10151c;
+      --panel-2: #0f141b;
+      --text: #e6eef8;
+      --muted: #9fb2c3;
+      --brand: #00d4ff;
+      --accent: #1a2430;
+      --border: #182029;
+      --ok: #00c27a;
+      --warn: #ffb020;
+      --err: #ff5a6a;
+    }
+    * { box-sizing: border-box; }
+    html, body { height: 100%; }
+    body { margin: 0; background: var(--bg); color: var(--text); font: 16px/1.5 system-ui, -apple-system, Segoe UI, Roboto, Ubuntu, Cantarell, Noto Sans, Arial, "Apple Color Emoji", "Segoe UI Emoji"; }
+    a { color: var(--brand); text-decoration: none; }
+
+    /* Header */
+    header {
+      position: sticky; top: 0; z-index: 10;
+      background: linear-gradient(180deg, rgba(16,21,28,0.95), rgba(16,21,28,0.75));
+      backdrop-filter: blur(6px);
+      border-bottom: 1px solid var(--border);
+    }
+    .wrap { max-width: 920px; margin: 0 auto; padding: 16px; }
+    .row { display: flex; align-items: center; gap: 12px; justify-content: space-between; }
+    .brand { display: flex; align-items: center; gap: 10px; font-weight: 700; letter-spacing: 0.2px; }
+    .brand svg { width: 28px; height: 28px; }
+    .cta { font-size: 14px; color: var(--muted); }
+    .env { font: 12px/1 monospace; color: #021017; background: var(--brand); border-radius: 999px; padding: 6px 10px; letter-spacing: 0.5px; text-transform: uppercase; }
+
+    /* Main */
+    main { height: calc(100% - 72px); display: grid; grid-template-rows: 1fr auto; }
+    .chat {
+      max-width: 920px; margin: 0 auto; width: 100%;
+      display: grid; grid-template-rows: 1fr auto; gap: 0; height: 100%;
+    }
+    .msgs {
+      padding: 20px 16px 8px; overflow-y: auto; scroll-behavior: smooth;
+    }
+    .empty {
+      margin: 56px auto; max-width: 620px; background: var(--panel);
+      border: 1px solid var(--border); border-radius: 16px; padding: 22px; color: var(--muted);
+      text-align: center;
+    }
+    .bubble { display: grid; grid-template-columns: auto 1fr auto; gap: 10px; align-items: flex-start; margin: 10px 0; }
+    .avatar { width: 36px; height: 36px; border-radius: 999px; background: var(--accent); display:flex; align-items:center; justify-content:center; color:#9ad7ff; font-weight:700; }
+    .bubble .who { font-size: 12px; color: var(--muted); margin-bottom: 6px; }
+    .bubble .text { background: var(--panel); border: 1px solid var(--border); padding: 12px 14px; border-radius: 14px; white-space: pre-wrap; }
+    .bubble.user .text { background: #0d1218; }
+    .controls { display: flex; align-items: center; gap: 8px; }
+    button.icon { background: transparent; border: 1px solid var(--border); color: var(--muted);
+      padding: 8px 10px; border-radius: 10px; cursor: pointer; }
+    button.icon:hover { background: #0e141b; color: var(--text); }
+
+    /* Composer */
+    .composer { border-top: 1px solid var(--border); background: var(--panel-2); }
+    form { display: grid; grid-template-columns: 1fr auto; gap: 10px; padding: 12px 16px; max-width: 920px; margin: 0 auto; }
+    textarea { width: 100%; min-height: 52px; max-height: 180px; resize: vertical;
+      background: #0c1117; color: var(--text); outline: none; border: 1px solid var(--border); border-radius: 12px; padding: 12px 14px; }
+    .send { background: var(--brand); color: #021017; border: none; border-radius: 12px; padding: 12px 16px; cursor: pointer; font-weight: 700; }
+    .send:disabled { opacity: 0.6; cursor: not-allowed; }
+
+    .sr-only { position: absolute; width: 1px; height: 1px; padding: 0; margin: -1px; overflow: hidden; clip: rect(0, 0, 0, 0); white-space: nowrap; border: 0; }
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="row">
+        <div class="brand" aria-label="Almost Human header">
+          <svg viewBox="0 0 64 64" aria-hidden="true" focusable="false"><circle cx="32" cy="32" r="30" fill="var(--brand)"/><path d="M20 38c0-6.6 5.4-12 12-12s12 5.4 12 12" fill="none" stroke="#011" stroke-width="4" stroke-linecap="round"/><circle cx="24" cy="26" r="3" fill="#011"/><circle cx="40" cy="26" r="3" fill="#011"/></svg>
+          <div>
+            <div>Almost Human</div>
+            <div class="cta">Conversational pharmacist — now in preview</div>
+          </div>
+        </div>
+        <div class="env" aria-label="environment badge">staging</div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="chat" aria-label="Chat section">
+      <div id="msgs" class="msgs" role="log" aria-live="polite" aria-relevant="additions text">
+        <div id="empty" class="empty">
+          <h3 style="margin:8px 0 6px">Welcome to Almost Human</h3>
+          <p style="margin:0 0 12px">Say hello! Your messages will appear here. Tip: <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line.</p>
+          <p style="margin:0">You may need to <a href="/admin-panel.html" target="_blank" rel="noopener">log in</a> first if you see a 401.</p>
+        </div>
+      </div>
+
+      <div class="composer">
+        <form id="composer" aria-label="Message composer">
+          <label class="sr-only" for="message">Message</label>
+          <textarea id="message" name="message" placeholder="Write a message…" autocomplete="off" spellcheck="true"></textarea>
+          <button class="send" id="sendBtn" type="submit" aria-label="Send message">Send</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <template id="tpl-bubble">
+    <div class="bubble">
+      <div class="avatar" aria-hidden="true">AH</div>
+      <div>
+        <div class="who">Assistant</div>
+        <div class="text"></div>
+      </div>
+      <div class="controls">
+        <button class="icon tts" title="Play audio" aria-label="Play audio">▶</button>
+      </div>
+    </div>
+  </template>
+
+  <template id="tpl-bubble-user">
+    <div class="bubble user">
+      <div class="avatar" aria-hidden="true">You</div>
+      <div>
+        <div class="who">You</div>
+        <div class="text"></div>
+      </div>
+      <div style="width:34px"></div>
+    </div>
+  </template>
+
+  <script>
+    // ===== Config =====
+    const BACKEND = 'https://almosthuman-starter-staging.onrender.com'; // full URL avoids CORS mishaps
+    const RESPOND_URL = BACKEND + '/api/respond';
+    const TTS_URL = BACKEND + '/api/tts'; // optional; may not be configured
+
+    // ===== DOM =====
+    const msgs = document.getElementById('msgs');
+    const empty = document.getElementById('empty');
+    const form = document.getElementById('composer');
+    const textarea = document.getElementById('message');
+    const sendBtn = document.getElementById('sendBtn');
+
+    // Accessibility: focus the textarea on load
+    window.addEventListener('load', () => textarea.focus());
+
+    // Keyboard behavior: Enter to send; Shift+Enter for newline
+    textarea.addEventListener('keydown', (e) => {
+      if (e.key === 'Enter' && !e.shiftKey) {
+        e.preventDefault();
+        form.requestSubmit();
+      }
+    });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = textarea.value.trim();
+      if (!text) return;
+
+      sendBtn.disabled = true;
+      addUserBubble(text);
+      textarea.value = '';
+
+      try {
+        const reply = await askBackend(text);
+        addAssistantBubble(reply);
+      } catch (err) {
+        addAssistantBubble('⚠️ ' + (err?.message || 'An error occurred. If this is a 401, please log in via /admin-panel.html and retry.'));
+      } finally {
+        sendBtn.disabled = false;
+        textarea.focus();
+      }
+    });
+
+    function addUserBubble(text) {
+      empty?.remove();
+      const tpl = document.getElementById('tpl-bubble-user');
+      const node = tpl.content.cloneNode(true);
+      node.querySelector('.text').textContent = text;
+      msgs.appendChild(node);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function addAssistantBubble(text) {
+      empty?.remove();
+      const tpl = document.getElementById('tpl-bubble');
+      const node = tpl.content.cloneNode(true);
+      node.querySelector('.text').textContent = text;
+
+      // Wire TTS button (graceful no-op if backend not configured)
+      const btn = node.querySelector('.tts');
+      btn.addEventListener('click', () => speak(text, btn));
+
+      msgs.appendChild(node);
+      msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    async function askBackend(text) {
+      // Try common payload shapes defensively to match existing handler
+      const payloads = [
+        { text },
+        { message: text },
+        { prompt: text }
+      ];
+      let lastErr = null;
+      for (const body of payloads) {
+        try {
+          const res = await fetch(RESPOND_URL, {
+            method: 'POST',
+            credentials: 'include',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify(body)
+          });
+          if (res.status === 401) throw new Error('401 Unauthorized — open /admin-panel.html in a new tab, log in, then retry.');
+          if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + (await res.text()));
+          // The backend returns JSON or text; normalize
+          const ct = res.headers.get('content-type') || '';
+          if (ct.includes('application/json')) {
+            const data = await res.json();
+            return (data.reply || data.response || data.text || JSON.stringify(data));
+          } else {
+            return await res.text();
+          }
+        } catch (e) {
+          lastErr = e;
+        }
+      }
+      throw lastErr || new Error('Unable to reach /api/respond');
+    }
+
+    async function speak(text, btn) {
+      try {
+        btn.disabled = true;
+        const res = await fetch(TTS_URL, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (!res.ok) {
+          // Graceful no-op if route missing or not configured
+          console.warn('TTS unavailable:', res.status);
+          return;
+        }
+        const ct = res.headers.get('content-type') || '';
+        let audioBlob;
+        if (ct.startsWith('audio/')) {
+          audioBlob = await res.blob();
+        } else if (ct.includes('application/json')) {
+          const data = await res.json();
+          if (!data.audioBase64) return; // no-op
+          const b = atob(data.audioBase64);
+          const bytes = new Uint8Array(b.length);
+          for (let i = 0; i < b.length; i++) bytes[i] = b.charCodeAt(i);
+          audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
+        } else {
+          return; // no-op
+        }
+        const url = URL.createObjectURL(audioBlob);
+        const audio = new Audio(url);
+        audio.play().catch(() => {});
+      } catch (_) {
+        // no-op
+      } finally {
+        btn.disabled = false;
+      }
+    }
+  </script>
+</body>
+</html>
+HTML_END

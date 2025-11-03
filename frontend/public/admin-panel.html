@@ -169,12 +169,13 @@ $("btnMemClear").onclick = async () => {
   log('MEMORY DELETE', r);
 };
 
+// ✅ FIX: send {question} instead of {input}
 $("btnRespond").onclick = async () => {
-  const input = $("ask").value || 'Say hello from staging and tell me the environment name.';
+  const question = $("ask").value || 'Say hello from staging and tell me the environment name.';
   const r = await go('/api/respond', {
     method: 'POST',
     headers: { 'content-type': 'application/json' },
-    body: JSON.stringify({ input })
+    body: JSON.stringify({ question })
   });
   log('RESPOND', r);
 };

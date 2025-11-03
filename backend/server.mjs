@@ -1,98 +1,111 @@
-// backend/server.mjs
-import express from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import dotenv from "dotenv";
-import rateLimit from "express-rate-limit";
-import jwt from "jsonwebtoken";
-import bcrypt from "bcryptjs";
+import express from 'express';
+import cors from 'cors';
+import rateLimit from 'express-rate-limit';
+import cookieParser from 'cookie-parser';
+import jwt from 'jsonwebtoken';
+import bcrypt from 'bcryptjs';
+import respondHandler from './respondHandler.cjs';
+import memoryRouter from './memoryRouter.mjs';
+import 'dotenv/config';
 
-// ESM import of CJS module → import the package and destructure
-import respondPkg from "./respondHandler.cjs";
-const { respondHandler } = respondPkg;
+// ---- Env ----
+const PORT = process.env.PORT || 3001;
+const SESSION_SECRET = process.env.SESSION_SECRET || 'dev-secret-change-me';
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || 'garvan';
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || '';
 
-// ESM router
-import { memoryRouter } from "./memoryRouter.mjs";
-
-dotenv.config();
-
-const app  = express();
-const port = process.env.PORT || 10000;
-
-app.use(cors({ origin: true, credentials: true }));
+// ---- App ----
+const app = express();
+app.set('trust proxy', 1); // required for secure cookies on Render behind proxy
 app.use(express.json());
 app.use(cookieParser());
 
-// Health
-app.get("/health", (_req, res) => res.send("OK"));
+// CORS: allow frontend origins + local dev
+const FRONTENDS = [
+  'https://almosthuman-frontend.onrender.com',
+  'https://garvangpt-starter-2.onrender.com', // static smoke page if ever used
+  'http://localhost:5173',
+  'http://127.0.0.1:5173',
+];
+app.use(
+  cors({
+    origin: (origin, cb) => {
+      if (!origin) return cb(null, true); // curl / same-origin
+      if (FRONTENDS.includes(origin)) return cb(null, true);
+      return cb(new Error('CORS blocked: ' + origin));
+    },
+    credentials: true,
+  })
+);
 
-// Global rate limit
-const globalLimiter = rateLimit({
+// ---- Rate limiting ----
+const strictLimiter = rateLimit({
   windowMs: 15 * 60 * 1000,
-  max: 200,
+  max: 100,
   standardHeaders: true,
   legacyHeaders: false,
 });
-app.use(globalLimiter);
 
-// Stricter limit for “expensive” endpoints
-const strictLimiter = rateLimit({
-  windowMs: 60 * 1000,
-  max: 10,
-  message: { error: "Too many requests, please slow down." },
-});
-
-// --- Auth helpers ---
-function signSession(username) {
-  const token = jwt.sign({ sub: username, role: "admin" }, process.env.JWT_SECRET, { expiresIn: "2h" });
-  return token;
+// ---- Helpers ----
+function sign(user) {
+  return jwt.sign(user, SESSION_SECRET, { expiresIn: '2h' });
 }
 function readToken(req) {
-  const bearer = req.headers.authorization?.startsWith("Bearer ")
-    ? req.headers.authorization.slice(7)
-    : null;
-  return req.cookies.gh_session || bearer || "";
+  // cookie name: gh_session
+  return req.cookies?.gh_session || null;
 }
 
-// Login (expects ADMIN_USER and ADMIN_PASSWORD_HASH in env)
-app.post("/api/login", strictLimiter, async (req, res) => {
-  const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: "missing credentials" });
+// ---- Health ----
+app.get('/health', (_req, res) => res.type('text').send('OK'));
 
-  const expectedUser  = process.env.ADMIN_USER || "garvan";
-  const passwordHash  = process.env.ADMIN_PASSWORD_HASH || "";
-
-  const okUser  = username === expectedUser;
-  const okPass  = passwordHash ? await bcrypt.compare(password, passwordHash) : false;
-
-  if (!okUser || !okPass) return res.status(401).json({ error: "invalid credentials" });
-
-  const token = signSession(username);
-  res.cookie("gh_session", token, {
-    httpOnly: false, // matches your earlier browser usage & curl cookie flow
-    sameSite: "lax",
-    secure: true,
-    maxAge: 2 * 60 * 60 * 1000,
-  });
-  res.json({ ok: true, user: { username, role: "admin" } });
-});
-
-// Admin ping (auth via cookie or bearer)
-app.get("/api/admin/ping", (req, res) => {
-  const token = readToken(req);
-  if (!token) return res.status(401).json({ error: "unauthorized" });
+// ---- Auth ----
+app.post('/api/login', strictLimiter, async (req, res) => {
   try {
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
-    res.json({ ok: true, user: decoded, ts: Date.now() });
-  } catch {
-    res.status(401).json({ error: "unauthorized" });
+    const { username, password } = req.body || {};
+    if (!username || !password) {
+      return res.status(400).json({ error: 'missing credentials' });
+    }
+    if (username !== ADMIN_USERNAME) {
+      return res.status(401).json({ error: 'invalid credentials' });
+    }
+    if (!ADMIN_PASSWORD_HASH) {
+      return res.status(500).json({ error: 'server missing ADMIN_PASSWORD_HASH' });
+    }
+    const ok = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+    if (!ok) return res.status(401).json({ error: 'invalid credentials' });
+
+    const token = sign({ sub: username, role: 'admin' });
+    // IMPORTANT: SameSite=None + Secure for cross-site cookie from frontend → backend
+    res.cookie('gh_session', token, {
+      httpOnly: true,
+      sameSite: 'none',
+      secure: true,
+      path: '/',
+      maxAge: 2 * 60 * 60 * 1000, // 2h
+    });
+    return res.json({ ok: true, user: { username, role: 'admin' } });
+  } catch (e) {
+    console.error('login error', e);
+    return res.status(500).json({ error: 'login_failed' });
   }
 });
 
-// Routes
-app.use("/api/respond", strictLimiter, respondHandler); // function handler
-app.use("/api/memory",  strictLimiter, memoryRouter);   // ESM Router
+app.get('/api/admin/ping', strictLimiter, (req, res) => {
+  const token = readToken(req);
+  if (!token) return res.status(401).json({ error: 'unauthorized' });
+  try {
+    const decoded = jwt.verify(token, SESSION_SECRET);
+    return res.json({ ok: true, user: decoded, ts: Date.now() });
+  } catch (e) {
+    return res.status(401).json({ error: 'unauthorized' });
+  }
+});
 
-app.listen(port, () => {
-  console.log(`Almost Human server listening on :${port}`);
+// ---- Feature routes ----
+app.use('/api/memory', strictLimiter, memoryRouter);
+app.use('/api/respond', strictLimiter, respondHandler);
+
+// ---- Start ----
+app.listen(PORT, () => {
+  console.log(`server listening on :${PORT}`);
 });

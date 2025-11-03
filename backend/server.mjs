@@ -7,9 +7,29 @@ import path from 'path';
 import { fileURLToPath } from 'url';
 import { createRequire } from 'module';
 
+// ✅ Added for Step 87 (Render ↔ Render auth + cookies)
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import authRouter from './authRouter.mjs';
+
 const require = createRequire(import.meta.url);
 const app = express();
 app.use(express.json());
+
+// ✅ CORS for frontend → backend calls with cookies
+// (Use your exact frontend URL; no trailing slash)
+app.use(
+  cors({
+    origin: 'https://almosthuman-frontend.onrender.com',
+    credentials: true,
+  })
+);
+
+// ✅ Parse cookies for authRouter and any future middleware
+app.use(cookieParser());
+
+// ✅ Mount auth routes: /api/login and /api/admin/ping
+app.use('/api', authRouter);
 
 // --- Resolve __dirname for ESM ---
 const __filename = fileURLToPath(import.meta.url);
@@ -81,6 +101,8 @@ try {
   memClear = async () => (store.length = 0);
 }
 
+// NOTE: For Step 87, memory endpoints remain open.
+// We can protect them with the session middleware in Step 88.
 app.get(['/api/memory', '/memory'], async (_req, res) => {
   res.json({ items: await memList() });
 });

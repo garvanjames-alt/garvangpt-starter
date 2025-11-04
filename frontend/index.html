@@ -136,9 +136,9 @@
 
   <script>
     // ===== Config =====
-    const BACKEND = 'https://almosthuman-starter-staging.onrender.com'; // full URL avoids CORS mishaps
+    const BACKEND = 'https://almosthuman-starter-staging.onrender.com';
     const RESPOND_URL = BACKEND + '/api/respond';
-    const TTS_URL = BACKEND + '/api/tts'; // optional; may not be configured
+    const TTS_URL = BACKEND + '/api/tts'; // optional
 
     // ===== DOM =====
     const msgs = document.getElementById('msgs');
@@ -147,15 +147,9 @@
     const textarea = document.getElementById('message');
     const sendBtn = document.getElementById('sendBtn');
 
-    // Accessibility: focus the textarea on load
     window.addEventListener('load', () => textarea.focus());
-
-    // Keyboard behavior: Enter to send; Shift+Enter for newline
     textarea.addEventListener('keydown', (e) => {
-      if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        form.requestSubmit();
-      }
+      if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); }
     });
 
     form.addEventListener('submit', async (e) => {
@@ -192,25 +186,36 @@
       const tpl = document.getElementById('tpl-bubble');
       const node = tpl.content.cloneNode(true);
       node.querySelector('.text').textContent = text;
-
-      // Wire TTS button (graceful no-op if backend not configured)
       const btn = node.querySelector('.tts');
       btn.addEventListener('click', () => speak(text, btn));
-
       msgs.appendChild(node);
       msgs.scrollTop = msgs.scrollHeight;
     }
 
     async function askBackend(text) {
-      // Try the backend's preferred shape first, then fallbacks
+      let lastErr = null;
+
+      // 1) Try URL-encoded form (backend likely expects this)
+      try {
+        const res = await fetch(RESPOND_URL, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type': 'application/x-www-form-urlencoded;charset=UTF-8' },
+          body: 'question=' + encodeURIComponent(text)
+        });
+        if (res.status === 401) throw new Error('401 Unauthorized — open /admin-panel.html, log in, then retry.');
+        if (res.ok) return await normalizeResponse(res);
+        lastErr = new Error('HTTP ' + res.status + ' — ' + (await res.text()));
+      } catch (e) { lastErr = e; }
+
+      // 2) Fallbacks (JSON)
       const payloads = [
-        { question: text },   // ✅ backend expects this
-        { text },             // fallbacks
+        { question: text },
+        { text },
         { message: text },
         { prompt: text },
         { q: text }
       ];
-      let lastErr = null;
       for (const body of payloads) {
         try {
           const res = await fetch(RESPOND_URL, {
@@ -219,21 +224,21 @@
             headers: { 'Content-Type': 'application/json' },
             body: JSON.stringify(body)
           });
-          if (res.status === 401) throw new Error('401 Unauthorized — open /admin-panel.html in a new tab, log in, then retry.');
-          if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + (await res.text()));
-          // The backend returns JSON or text; normalize
-          const ct = res.headers.get('content-type') || '';
-          if (ct.includes('application/json')) {
-            const data = await res.json();
-            return (data.reply || data.response || data.text || data.message || JSON.stringify(data));
-          } else {
-            return await res.text();
-          }
-        } catch (e) {
-          lastErr = e;
-        }
+          if (res.status === 401) throw new Error('401 Unauthorized — open /admin-panel.html, log in, then retry.');
+          if (res.ok) return await normalizeResponse(res);
+          lastErr = new Error('HTTP ' + res.status + ' — ' + (await res.text()));
+        } catch (e) { lastErr = e; }
       }
       throw lastErr || new Error('Unable to reach /api/respond');
+    }
+
+    async function normalizeResponse(res) {
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        return (data.reply || data.response || data.text || data.message || JSON.stringify(data));
+      }
+      return await res.text();
     }
 
     async function speak(text, btn) {
@@ -245,30 +250,24 @@
           headers: { 'Content-Type': 'application/json' },
           body: JSON.stringify({ text })
         });
-        if (!res.ok) {
-          // Graceful no-op if route missing or not configured
-          console.warn('TTS unavailable:', res.status);
-          return;
-        }
+        if (!res.ok) return; // graceful no-op
         const ct = res.headers.get('content-type') || '';
         let audioBlob;
         if (ct.startsWith('audio/')) {
           audioBlob = await res.blob();
         } else if (ct.includes('application/json')) {
           const data = await res.json();
-          if (!data.audioBase64) return; // no-op
+          if (!data.audioBase64) return;
           const b = atob(data.audioBase64);
           const bytes = new Uint8Array(b.length);
           for (let i = 0; i < b.length; i++) bytes[i] = b.charCodeAt(i);
           audioBlob = new Blob([bytes], { type: 'audio/mpeg' });
         } else {
-          return; // no-op
+          return;
         }
         const url = URL.createObjectURL(audioBlob);
         const audio = new Audio(url);
         audio.play().catch(() => {});
-      } catch (_) {
-        // no-op
       } finally {
         btn.disabled = false;
       }

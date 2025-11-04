@@ -29,7 +29,7 @@ cat > frontend/index.html <<'HTML_END'
     .bubble .text{background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:14px;white-space:pre-wrap}
     .bubble.user .text{background:#0d1218}
     .controls{display:flex;align-items:center;gap:8px}
-    button.icon{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 10px;border-radius:10px;cursor:pointer}
+    button.icon{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 10px;border-radius:10px;cursor:pointer;min-width:38px}
     button.icon:hover{background:#0e141b;color:var(--text)}
     button.icon[disabled]{opacity:.6;cursor:not-allowed}
     .composer{border-top:1px solid var(--border);background:var(--panel-2)}
@@ -117,7 +117,7 @@ cat > frontend/index.html <<'HTML_END'
     // Keep one Audio per assistant bubble
     const audioMap = new WeakMap();
     let audioUnlocked = false;
-    let currentBubble = null; // ensure single-play at a time
+    let currentBubble = null; // single-play at a time
 
     // 🔓 Unlock audio on first interaction
     function ensureAudioUnlocked() {
@@ -257,8 +257,25 @@ cat > frontend/index.html <<'HTML_END'
       const play = bubble.querySelector('button.tts');
       const stop = bubble.querySelector('button.stop');
       if (!play || !stop) return;
-      play.disabled = !!loading;
-      stop.style.display = playing ? '' : 'none';
+
+      // Visible loading & ARIA
+      if (loading) {
+        play.textContent = '…';
+        play.setAttribute('aria-busy','true');
+        play.disabled = true;
+        stop.style.display = 'none';
+        return;
+      }
+      play.removeAttribute('aria-busy');
+      play.disabled = false;
+
+      if (playing) {
+        play.textContent = '▶';
+        stop.style.display = '';
+      } else {
+        play.textContent = '▶';
+        stop.style.display = 'none';
+      }
     }
 
     function hint(msg){

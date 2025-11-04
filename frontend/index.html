@@ -1,5 +1,3 @@
-cp frontend/index.html frontend/index.backup.step95-5.html
-pbpaste > frontend/index.html
 <!doctype html>
 <html lang="en">
 <head>
@@ -125,13 +123,11 @@ pbpaste > frontend/index.html
     const volInput = document.getElementById('vol');
     const volPct   = document.getElementById('volpct');
 
-    // Keep one Audio per assistant bubble
     const audioMap = new WeakMap();
     let audioUnlocked = false;
     let currentBubble = null; // single-play at a time
     let outputVolume = 1.0;   // 0.0 – 1.0
 
-    // 🔊 Volume: load + persist
     function setVolumeFromStorage(){
       const saved = Number(localStorage.getItem('ah_volume') ?? '100');
       const clamped = Number.isFinite(saved) ? Math.min(100, Math.max(0, saved)) : 100;
@@ -152,7 +148,6 @@ pbpaste > frontend/index.html
       }
     });
 
-    // 🔓 Unlock audio on first interaction
     function ensureAudioUnlocked() {
       if (audioUnlocked) return;
       audioUnlocked = true;
@@ -165,7 +160,6 @@ pbpaste > frontend/index.html
     window.addEventListener('pointerdown', ensureAudioUnlocked, { once:true });
     window.addEventListener('keydown', ensureAudioUnlocked, { once:true });
 
-    // Ping auth on load
     window.addEventListener('load', async () => {
       textarea.focus();
       try {
@@ -210,7 +204,6 @@ pbpaste > frontend/index.html
       msgs.appendChild(frag); msgs.scrollTop = msgs.scrollHeight;
     }
 
-    // Event delegation for TTS controls
     msgs.addEventListener('click', async (e) => {
       const btn = e.target.closest('button');
       if (!btn) return;
@@ -225,7 +218,6 @@ pbpaste > frontend/index.html
         bubble.classList.remove('speaking');
         toggleButtons(bubble, { playing: false, loading: false });
         if (currentBubble === bubble) currentBubble = null;
-        // 🔁 return focus to ▶
         const playBtn = bubble.querySelector('button.tts');
         if (playBtn) playBtn.focus();
       }
@@ -233,11 +225,8 @@ pbpaste > frontend/index.html
 
     async function playBubble(bubble, triggerBtn){
       ensureAudioUnlocked();
-
-      // 🔄 ensure visible
       bubble.scrollIntoView({ behavior:'smooth', block:'center' });
 
-      // stop previously playing bubble first
       if (currentBubble && currentBubble !== bubble) {
         const prevAudio = audioMap.get(currentBubble);
         if (prevAudio) { prevAudio.pause(); prevAudio.currentTime = 0; }
@@ -330,6 +319,25 @@ pbpaste > frontend/index.html
       document.body.appendChild(el);
       setTimeout(() => el.remove(), 2200);
     }
+
+    // 95.6: Keyboard P toggles play/stop on the most recent assistant reply
+    document.addEventListener('keydown', async (e) => {
+      if (e.key.toLowerCase() !== 'p') return;
+      if (document.activeElement === textarea) return; // don't hijack typing
+      const as = msgs.querySelectorAll('.bubble[data-role="assistant"]');
+      const last = as[as.length - 1];
+      if (!last) { hint('No assistant reply to play.'); return; }
+      const a = audioMap.get(last);
+      if (currentBubble === last && a && !a.paused) {
+        a.pause(); a.currentTime = 0; last.classList.remove('speaking');
+        toggleButtons(last, { playing:false, loading:false });
+        currentBubble = null; hint('Stopped audio.');
+        const playBtn = last.querySelector('button.tts'); if (playBtn) playBtn.focus();
+      } else {
+        hint('Playing last reply…');
+        await playBubble(last);
+      }
+    });
 
     async function askBackend(text){
       const res = await fetch(RESPOND_URL, {

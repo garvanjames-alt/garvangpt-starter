@@ -1,4 +1,3 @@
-cat > frontend/index.html <<'HTML_END'
 <!doctype html>
 <html lang="en">
 <head>
@@ -203,11 +202,13 @@ cat > frontend/index.html <<'HTML_END'
     }
 
     async function askBackend(text) {
-      // Try common payload shapes defensively to match existing handler
+      // Try the backend's preferred shape first, then fallbacks
       const payloads = [
-        { text },
+        { question: text },   // ✅ backend expects this
+        { text },             // fallbacks
         { message: text },
-        { prompt: text }
+        { prompt: text },
+        { q: text }
       ];
       let lastErr = null;
       for (const body of payloads) {
@@ -224,7 +225,7 @@ cat > frontend/index.html <<'HTML_END'
           const ct = res.headers.get('content-type') || '';
           if (ct.includes('application/json')) {
             const data = await res.json();
-            return (data.reply || data.response || data.text || JSON.stringify(data));
+            return (data.reply || data.response || data.text || data.message || JSON.stringify(data));
           } else {
             return await res.text();
           }
@@ -275,4 +276,3 @@ cat > frontend/index.html <<'HTML_END'
   </script>
 </body>
 </html>
-HTML_END

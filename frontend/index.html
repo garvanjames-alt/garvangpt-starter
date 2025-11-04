@@ -1,3 +1,5 @@
+cp frontend/index.html frontend/index.backup.step95-5.html
+pbpaste > frontend/index.html
 <!doctype html>
 <html lang="en">
 <head>
@@ -144,7 +146,6 @@
       volPct.textContent = v + '%';
       outputVolume = v / 100;
       localStorage.setItem('ah_volume', String(v));
-      // also update any currently playing audio
       if (currentBubble) {
         const a = audioMap.get(currentBubble);
         if (a) a.volume = outputVolume;
@@ -217,18 +218,24 @@
       if (!bubble || bubble.dataset.role !== 'assistant') return;
 
       if (btn.classList.contains('tts')) {
-        await playBubble(bubble);
+        await playBubble(bubble, btn);
       } else if (btn.classList.contains('stop')) {
         const audio = audioMap.get(bubble);
         if (audio) { audio.pause(); audio.currentTime = 0; }
         bubble.classList.remove('speaking');
         toggleButtons(bubble, { playing: false, loading: false });
-        if (currentBubble === bubble) currentBubble = null; // clear current
+        if (currentBubble === bubble) currentBubble = null;
+        // 🔁 return focus to ▶
+        const playBtn = bubble.querySelector('button.tts');
+        if (playBtn) playBtn.focus();
       }
     });
 
-    async function playBubble(bubble){
+    async function playBubble(bubble, triggerBtn){
       ensureAudioUnlocked();
+
+      // 🔄 ensure visible
+      bubble.scrollIntoView({ behavior:'smooth', block:'center' });
 
       // stop previously playing bubble first
       if (currentBubble && currentBubble !== bubble) {
@@ -265,24 +272,30 @@
           audio.addEventListener('ended', () => {
             bubble.classList.remove('speaking');
             toggleButtons(bubble, { playing:false, loading:false });
-            if (currentBubble === bubble) currentBubble = null; // clear on end
+            if (currentBubble === bubble) currentBubble = null;
+            const playBtn = bubble.querySelector('button.tts');
+            if (playBtn) playBtn.focus();
           });
           audio.addEventListener('error', () =>  {
             bubble.classList.remove('speaking');
             toggleButtons(bubble, { playing:false, loading:false });
-            if (currentBubble === bubble) currentBubble = null; // clear on error
+            if (currentBubble === bubble) currentBubble = null;
             hint('Audio playback error.');
+            const playBtn = bubble.querySelector('button.tts');
+            if (playBtn) playBtn.focus();
           });
         }
         audio.src = url;
-        audio.volume = outputVolume; // apply volume
+        audio.volume = outputVolume;
         await audio.play().catch(err => { throw new Error('play() blocked — click once on the page, then try again. ('+ (err?.name||'') +')'); });
         bubble.classList.add('speaking');
         toggleButtons(bubble, { playing:true, loading:false });
       } catch (err){
         hint(err?.message || 'TTS play failed');
         toggleButtons(bubble, { playing:false, loading:false });
-        if (currentBubble === bubble) currentBubble = null; // clear on failure
+        if (currentBubble === bubble) currentBubble = null;
+        const playBtn = bubble.querySelector('button.tts');
+        if (playBtn) playBtn.focus();
       }
     }
 

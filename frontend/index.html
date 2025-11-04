@@ -472,3 +472,26 @@
     update();
   })();
 </script>
+<!-- Step 95.8c: make header avatar larger + stronger glow -->
+<style>
+  /* Override earlier sizes */
+  .header-avatar{
+    width: 40px; height: 40px;           /* was 28px */
+    font-size: 14px;                      /* AH letters larger */
+    border-width: 2px;                    /* stronger edge */
+    margin-right: 10px;
+  }
+  body.speaking-any .header-avatar{
+    /* thicker, brighter pulse */
+    box-shadow:
+      0 0 0 2px rgba(0,212,255,.55),
+      0 0 0 10px rgba(0,212,255,0.25);
+  }
+</style>
+<script>
+  // Add a tooltip so it’s discoverable
+  (function titleHeaderAvatar(){
+    const el = document.getElementById('headerAvatar');
+    if (el && !el.title) el.title = 'Assistant voice — glows while speaking';
+  })();
+</script>

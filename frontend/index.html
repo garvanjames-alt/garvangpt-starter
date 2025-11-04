@@ -495,3 +495,62 @@
     if (el && !el.title) el.title = 'Assistant voice — glows while speaking';
   })();
 </script>
+<!-- Step 95.9: Larger avatar badge + "Voice" label -->
+<style>
+  .header-avatar {
+    width: 56px; height: 56px;            /* bigger */
+    border-radius: 999px;
+    background: #0c1218;
+    border: 2px solid var(--border);
+    display: inline-flex; align-items: center; justify-content: center;
+    color: #cceeff; font-weight: 800; font-size: 18px;
+    margin-left: 12px; margin-right: 10px;
+    vertical-align: middle;
+    transition: box-shadow .25s ease, transform .15s ease;
+  }
+  .header-avatar-label{
+    display: inline-block;
+    margin-right: 16px;
+    font-size: 13px; letter-spacing: .2px;
+    color: var(--muted);
+    vertical-align: middle;
+    transform: translateY(2px);
+    user-select: none;
+  }
+  body.speaking-any .header-avatar{
+    box-shadow:
+      0 0 0 2px rgba(0,212,255,.55),
+      0 0 0 14px rgba(0,212,255,.18);
+  }
+</style>
+
+<script>
+  // Ensure the avatar sits after the brand and has a label
+  (function placeBigAvatar(){
+    const row   = document.querySelector('header .wrap .row');
+    const brand = row ? row.querySelector('.brand') : null;
+    if (!row || !brand) return;
+
+    // existing avatar (created earlier)
+    let avatar = document.getElementById('headerAvatar');
+    if (!avatar){
+      avatar = document.createElement('div');
+      avatar.id = 'headerAvatar';
+      avatar.className = 'header-avatar';
+      avatar.textContent = 'AH';
+    }
+
+    // label right after avatar
+    let label = document.getElementById('headerAvatarLabel');
+    if (!label){
+      label = document.createElement('span');
+      label.id = 'headerAvatarLabel';
+      label.className = 'header-avatar-label';
+      label.textContent = 'Voice';
+    }
+
+    // insert avatar + label after brand
+    brand.after(avatar);
+    avatar.after(label);
+  })();
+</script>

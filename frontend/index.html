@@ -378,3 +378,97 @@
   }, { capture: true });
 })();
 </script>
+<!-- Step 95.8: Header avatar glow while speaking -->
+<style>
+  .header-avatar{
+    position:absolute; /* sits inside header */
+    right: 148px;       /* just before badges */
+    top: 14px;
+    width: 28px; height: 28px;
+    border-radius: 999px;
+    background: #0c1218;
+    border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color:#9ad7ff; font-weight:700; font-size:12px;
+    transition: box-shadow .25s ease, transform .2s ease;
+    pointer-events:none; /* decorative */
+  }
+  body.speaking-any .header-avatar{
+    box-shadow: 0 0 0 0 rgba(0,212,255,.7);
+    animation: headerPulse 1.2s ease-out infinite;
+    transform: translateZ(0);
+  }
+  @keyframes headerPulse{
+    0%   { box-shadow: 0 0 0 0 rgba(0,212,255,.7) }
+    70%  { box-shadow: 0 0 0 10px rgba(0,212,255,0) }
+    100% { box-shadow: 0 0 0 0 rgba(0,212,255,0) }
+  }
+</style>
+
+<script>
+  // Inject the header avatar into the existing header row (non-destructive)
+  (function addHeaderAvatar(){
+    const header = document.querySelector('header .wrap .row');
+    if (!header || document.getElementById('headerAvatar')) return;
+    const el = document.createElement('div');
+    el.id = 'headerAvatar';
+    el.className = 'header-avatar';
+    el.textContent = 'AH';
+    header.insertBefore(el, header.lastElementChild); // place before the badges block
+  })();
+
+  // Global "is any bubble speaking?" toggle without changing existing code
+  (function watchSpeaking(){
+    const update = () => {
+      const any = document.querySelector('.bubble.speaking');
+      document.body.classList.toggle('speaking-any', !!any);
+    };
+    const mo = new MutationObserver(update);
+    mo.observe(document.body, { attributes:true, subtree:true, attributeFilter:['class'] });
+    // also run once on load
+    update();
+  })();
+</script>
+<!-- Step 95.8b: Header avatar glow while speaking (inside badges block) -->
+<style>
+  .header-avatar{
+    width: 28px; height: 28px; border-radius: 999px;
+    background: #0c1218; border: 1px solid var(--border);
+    display:flex; align-items:center; justify-content:center;
+    color:#9ad7ff; font-weight:700; font-size:12px;
+    margin-right: 8px; pointer-events:none;
+    transition: box-shadow .25s ease;
+  }
+  body.speaking-any .header-avatar{
+    box-shadow: 0 0 0 0 rgba(0,212,255,.7);
+    animation: headerPulse 1.2s ease-out infinite;
+  }
+  @keyframes headerPulse{
+    0%   { box-shadow: 0 0 0 0 rgba(0,212,255,.7) }
+    70%  { box-shadow: 0 0 0 10px rgba(0,212,255,0) }
+    100% { box-shadow: 0 0 0 0 rgba(0,212,255,0) }
+  }
+</style>
+<script>
+  // Insert the avatar at the start of the badges row
+  (function addHeaderAvatar(){
+    const badges = document.querySelector('header .badges');
+    if (!badges || document.getElementById('headerAvatar')) return;
+    const el = document.createElement('div');
+    el.id = 'headerAvatar';
+    el.className = 'header-avatar';
+    el.textContent = 'AH';
+    badges.prepend(el);
+  })();
+
+  // Toggle body.speaking-any whenever any bubble has .speaking
+  (function watchSpeaking(){
+    const update = () => {
+      const any = document.querySelector('.bubble.speaking');
+      document.body.classList.toggle('speaking-any', !!any);
+    };
+    const mo = new MutationObserver(update);
+    mo.observe(document.body, { attributes:true, subtree:true, attributeFilter:['class'] });
+    update();
+  })();
+</script>

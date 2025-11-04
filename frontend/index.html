@@ -358,3 +358,23 @@
   </script>
 </body>
 </html>
+<!-- Step 95.7: bind "P" to play/stop latest assistant reply (works even while typing) -->
+<script>
+(() => {
+  if (window.__ahBindP) return; // avoid double-binding on hot reloads
+  window.__ahBindP = true;
+  document.addEventListener('keydown', (e) => {
+    // Only care about the "p" key (ignore modifiers like Ctrl/Cmd)
+    if (e.key && e.key.toLowerCase() === 'p') {
+      try {
+        const list = document.querySelectorAll('.bubble[data-role="assistant"]');
+        const last = list[list.length - 1];
+        if (!last) return;
+        // If currently speaking, click STOP; otherwise, click PLAY
+        const btn = last.querySelector(last.classList.contains('speaking') ? 'button.stop' : 'button.tts');
+        if (btn) btn.click();
+      } catch (_) {}
+    }
+  }, { capture: true });
+})();
+</script>

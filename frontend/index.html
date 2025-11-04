@@ -14,7 +14,11 @@ cat > frontend/index.html <<'HTML_END'
     header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(16,21,28,.95),rgba(16,21,28,.75));backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
     .wrap{max-width:920px;margin:0 auto;padding:16px}.row{display:flex;align-items:center;gap:12px;justify-content:space-between}
     .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+    .badges{display:flex;align-items:center;gap:8px}
     .env{font:12px/1 monospace;color:#021017;background:var(--brand);border-radius:999px;padding:6px 10px;letter-spacing:.5px;text-transform:uppercase}
+    .auth{font:12px/1 monospace;border-radius:999px;padding:6px 10px;letter-spacing:.2px}
+    .auth.ok{background:rgba(0,194,122,.18);border:1px solid rgba(0,194,122,.5);color:#9af6c9}
+    .auth.warn{background:rgba(255,176,32,.18);border:1px solid rgba(255,176,32,.55);color:#ffd79a}
     main{height:calc(100% - 72px);display:grid;grid-template-rows:1fr auto}
     .chat{max-width:920px;margin:0 auto;width:100%;display:grid;grid-template-rows:1fr auto;gap:0;height:100%}
     .msgs{padding:20px 16px 8px;overflow-y:auto;scroll-behavior:smooth}
@@ -43,7 +47,10 @@ cat > frontend/index.html <<'HTML_END'
     <div class="wrap">
       <div class="row">
         <div class="brand"><span>Almost Human</span><span style="font-weight:400;color:var(--muted)">— now in preview</span></div>
-        <div class="env" aria-label="environment badge">staging</div>
+        <div class="badges">
+          <div class="env" aria-label="environment badge">staging</div>
+          <a id="authBadge" class="auth warn" href="/admin-panel.html" title="Open admin panel" rel="noopener">Login required</a>
+        </div>
       </div>
     </div>
   </header>
@@ -99,31 +106,46 @@ cat > frontend/index.html <<'HTML_END'
     const BACKEND   = 'https://almosthuman-starter-staging.onrender.com';
     const RESPOND_URL = BACKEND + '/api/respond';
     const TTS_URL     = BACKEND + '/api/tts';
+    const PING_URL    = BACKEND + '/api/admin/ping';
 
     const msgs     = document.getElementById('msgs');
     const form     = document.getElementById('composer');
     const textarea = document.getElementById('message');
     const sendBtn  = document.getElementById('sendBtn');
+    const authBadge= document.getElementById('authBadge');
 
     // Keep one Audio per assistant bubble
     const audioMap = new WeakMap();
     let audioUnlocked = false;
 
-    // 🔓 Ensure audio is unlocked on first interaction (satisfies strict autoplay)
+    // 🔓 Unlock audio on first interaction
     function ensureAudioUnlocked() {
       if (audioUnlocked) return;
       audioUnlocked = true;
       try {
         const a = new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQ...');
-        // ^ super-short silent MP3 header; enough to satisfy gesture requirement
         a.volume = 0.0;
-        a.play().catch(() => { /* ignore */ });
+        a.play().catch(() => {});
       } catch(_) {}
     }
     window.addEventListener('pointerdown', ensureAudioUnlocked, { once:true });
     window.addEventListener('keydown', ensureAudioUnlocked, { once:true });
 
-    window.addEventListener('load', () => textarea.focus());
+    // Ping auth on load
+    window.addEventListener('load', async () => {
+      textarea.focus();
+      try {
+        const r = await fetch(PING_URL, { credentials:'include' });
+        const ok = r.ok;
+        authBadge.classList.toggle('ok', ok);
+        authBadge.classList.toggle('warn', !ok);
+        authBadge.textContent = ok ? 'Logged in' : 'Login required';
+      } catch {
+        authBadge.classList.add('warn');
+        authBadge.textContent = 'Login required';
+      }
+    });
+
     textarea.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
 
     form.addEventListener('submit', async (e) => {
@@ -154,7 +176,7 @@ cat > frontend/index.html <<'HTML_END'
       msgs.appendChild(frag); msgs.scrollTop = msgs.scrollHeight;
     }
 
-    // Event delegation for .tts and .stop
+    // Event delegation for TTS controls
     msgs.addEventListener('click', async (e) => {
       const btn = e.target.closest('button');
       if (!btn) return;
@@ -171,7 +193,7 @@ cat > frontend/index.html <<'HTML_END'
       }
     });
 
-    async function playBubble(bubble, btn){
+    async function playBubble(bubble){
       ensureAudioUnlocked();
       const text = bubble.dataset.speech || bubble.querySelector('.text')?.textContent || '';
       if (!text) return;
@@ -204,7 +226,7 @@ cat > frontend/index.html <<'HTML_END'
         bubble.classList.add('speaking');
         toggleButtons(bubble, { playing:true, loading:false });
       } catch (err){
-        hint(err?.message || 'TTS play failed'); // small on-page hint
+        hint(err?.message || 'TTS play failed');
         toggleButtons(bubble, { playing:false, loading:false });
       }
     }

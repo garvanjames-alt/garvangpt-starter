@@ -35,6 +35,7 @@ cat > frontend/index.html <<'HTML_END'
     .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
     .speaking .avatar{box-shadow:0 0 0 0 rgba(0,212,255,.7);animation:pulse 1.2s ease-out infinite}
     @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,212,255,.7)}70%{box-shadow:0 0 0 10px rgba(0,212,255,0)}100%{box-shadow:0 0 0 0 rgba(0,212,255,0)}}
+    .hint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0c1218;border:1px solid var(--border);color:var(--muted);padding:10px 12px;border-radius:10px}
   </style>
 </head>
 <body>
@@ -106,6 +107,21 @@ cat > frontend/index.html <<'HTML_END'
 
     // Keep one Audio per assistant bubble
     const audioMap = new WeakMap();
+    let audioUnlocked = false;
+
+    // 🔓 Ensure audio is unlocked on first interaction (satisfies strict autoplay)
+    function ensureAudioUnlocked() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      try {
+        const a = new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQ...');
+        // ^ super-short silent MP3 header; enough to satisfy gesture requirement
+        a.volume = 0.0;
+        a.play().catch(() => { /* ignore */ });
+      } catch(_) {}
+    }
+    window.addEventListener('pointerdown', ensureAudioUnlocked, { once:true });
+    window.addEventListener('keydown', ensureAudioUnlocked, { once:true });
 
     window.addEventListener('load', () => textarea.focus());
     textarea.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
@@ -133,16 +149,15 @@ cat > frontend/index.html <<'HTML_END'
       document.getElementById('empty')?.remove();
       const frag = document.getElementById('tpl-bubble').content.cloneNode(true);
       const node = frag.querySelector('.bubble');
-      node.dataset.speech = text; // store the text on the bubble
+      node.dataset.speech = text;
       node.querySelector('.text').textContent = text;
       msgs.appendChild(frag); msgs.scrollTop = msgs.scrollHeight;
     }
 
-    // ✅ Robust: event delegation for all .tts and .stop buttons
+    // Event delegation for .tts and .stop
     msgs.addEventListener('click', async (e) => {
       const btn = e.target.closest('button');
       if (!btn) return;
-
       const bubble = btn.closest('.bubble');
       if (!bubble || bubble.dataset.role !== 'assistant') return;
 
@@ -157,6 +172,7 @@ cat > frontend/index.html <<'HTML_END'
     });
 
     async function playBubble(bubble, btn){
+      ensureAudioUnlocked();
       const text = bubble.dataset.speech || bubble.querySelector('.text')?.textContent || '';
       if (!text) return;
       toggleButtons(bubble, { loading: true });
@@ -180,22 +196,15 @@ cat > frontend/index.html <<'HTML_END'
         if (!audio) {
           audio = new Audio();
           audioMap.set(bubble, audio);
-          audio.addEventListener('ended', () => {
-            bubble.classList.remove('speaking');
-            toggleButtons(bubble, { playing:false, loading:false });
-          });
-          audio.addEventListener('error', () => {
-            bubble.classList.remove('speaking');
-            toggleButtons(bubble, { playing:false, loading:false });
-            console.warn('Audio error on play button');
-          });
+          audio.addEventListener('ended', () => { bubble.classList.remove('speaking'); toggleButtons(bubble, { playing:false, loading:false }); });
+          audio.addEventListener('error', () =>  { bubble.classList.remove('speaking'); toggleButtons(bubble, { playing:false, loading:false }); hint('Audio playback error.'); });
         }
         audio.src = url;
-        await audio.play();
+        await audio.play().catch(err => { throw new Error('play() blocked — click once on the page, then try again. ('+ (err?.name||'') +')'); });
         bubble.classList.add('speaking');
         toggleButtons(bubble, { playing:true, loading:false });
       } catch (err){
-        console.warn('TTS play failed:', err?.message || err);
+        hint(err?.message || 'TTS play failed'); // small on-page hint
         toggleButtons(bubble, { playing:false, loading:false });
       }
     }
@@ -208,7 +217,14 @@ cat > frontend/index.html <<'HTML_END'
       stop.style.display = playing ? '' : 'none';
     }
 
-    // Backend ask
+    function hint(msg){
+      const el = document.createElement('div');
+      el.className = 'hint';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2200);
+    }
+
     async function askBackend(text){
       const res = await fetch(RESPOND_URL, {
         method:'POST',

@@ -2,22 +2,15 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover" />
+    <meta
+      name="viewport"
+      content="width=device-width, initial-scale=1, viewport-fit=cover"
+    />
     <meta name="color-scheme" content="dark light" />
     <title>Almost Human — Chat</title>
-
-    <!-- DEV: Tailwind CDN so utilities work even if the build pipeline isn't running -->
-    <script src="https://cdn.tailwindcss.com"></script>
-    <script>
-      // keep dark mode by default (optional)
-      document.documentElement.classList.add('dark');
-    </script>
   </head>
-  <body class="bg-zinc-950 text-zinc-100">
-    <!-- React mounts here -->
+  <body class="dark">
     <div id="root"></div>
-
-    <!-- Vite entry: points to your React entry -->
     <script type="module" src="/src/main.jsx"></script>
   </body>
 </html>

@@ -1,4 +1,4 @@
-import avatarUrl from "../assets/avatar.png";
+const avatarUrl = new URL("../assets/avatar.png", import.meta.url).href;
 
 export default function AgentStage({ listening = false, speaking = false }) {
   return (
@@ -23,11 +23,8 @@ export default function AgentStage({ listening = false, speaking = false }) {
               {speaking ? "Speaking…" : listening ? "Listening…" : "Idle"}
             </div>
           </div>
-
           <div className="min-w-0">
-            <h1 className="text-2xl md:text-3xl font-bold leading-tight">
-              Talk to Almost Human
-            </h1>
+            <h1 className="text-2xl md:text-3xl font-bold leading-tight">Talk to Almost Human</h1>
             <p className="text-sm md:text-base text-zinc-400">
               Press “Start mic”, ask anything about health & medicines.
             </p>
@@ -37,7 +34,6 @@ export default function AgentStage({ listening = false, speaking = false }) {
           </div>
         </div>
       </div>
-
       <style>{`
         @keyframes pulse {
           0%, 100% { transform: scale(1); filter: drop-shadow(0 0 0 rgba(59,130,246,0)); }

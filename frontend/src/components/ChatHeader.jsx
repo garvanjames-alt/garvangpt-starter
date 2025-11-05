@@ -1,4 +1,4 @@
-import avatarUrl from "../assets/avatar.png";
+const avatarUrl = new URL("../assets/avatar.png", import.meta.url).href;
 
 export default function ChatHeader() {
   return (

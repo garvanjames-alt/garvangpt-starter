@@ -1,4 +1,6 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
+import ChatHeader from "./components/ChatHeader";
+import AgentStage from "./components/AgentStage";
 
 export default function App() {
   // --- Top question box ---
@@ -17,7 +19,7 @@ export default function App() {
 
   // --- Memories ---
   const [memInput, setMemInput] = useState('');
-  const [mems, setMems] = useState([]);       // displayed slice (newest → oldest)
+  const [mems, setMems] = useState([]);        // displayed slice (newest → oldest)
   const [memTotal, setMemTotal] = useState(0); // total items in store
 
   // Helpers
@@ -171,79 +173,86 @@ export default function App() {
   }
 
   return (
-    <div style={{ maxWidth: 900, margin: '2rem auto', padding: 16 }}>
-      <h1>GarvanGPT — “Almost Human” (Local MVP)</h1>
-      <p>Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>. API base via Vite proxy.</p>
-
-      {/* Question (dev-only) */}
-      <h3>Question (dev-only)</h3>
-      <textarea
-        rows={3}
-        value={q}
-        onChange={(e) => setQ(e.target.value)}
-        style={{ width: '100%', padding: 12, marginBottom: 8 }}
-        placeholder="what is amoxicillin"
+    <>
+      {/* Header and big agent stage */}
+      <ChatHeader />
+      <AgentStage
+        listening={micReady}
+        speaking={isLoading || (!!answer && speak)}
       />
-      <div style={{ display: 'flex', gap: 12, alignItems: 'center', marginBottom: 20 }}>
-        <button onClick={onAsk} disabled={isLoading} style={{ padding: '8px 14px' }}>
-          {isLoading ? 'Thinking…' : 'Ask'}
-        </button>
-        <label style={{ display: 'inline-flex', alignItems: 'center', gap: 6 }}>
-          <input type="checkbox" checked={speak} onChange={e => setSpeak(e.target.checked)} /> Read aloud (ElevenLabs)
-        </label>
-      </div>
 
-      {/* Prototype */}
-      <h3>Talk to the prototype</h3>
-      <textarea
-        rows={3}
-        value={proto}
-        onChange={(e) => setProto(e.target.value)}
-        style={{ width: '100%', padding: 12, marginBottom: 8 }}
-        placeholder="Speak or type here…"
-      />
-      <div style={{ display: 'flex', gap: 8, alignItems: 'center', marginBottom: 24 }}>
-        <button onClick={onStartMic} disabled={!micReady} style={{ padding: '8px 12px' }}>Start mic</button>
-        <button onClick={onSendProto} disabled={isLoading} style={{ padding: '8px 14px' }}>
-          {isLoading ? 'Thinking…' : 'Send to prototype'}
-        </button>
-      </div>
+      {/* Existing UI */}
+      <div className="max-w-[900px] mx-auto p-4 md:p-6">
+        <h1 className="text-2xl font-bold mb-2">GarvanGPT — “Almost Human” (Local MVP)</h1>
+        <p className="text-sm text-zinc-400 mb-6">
+          Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>. API base via Vite proxy.
+        </p>
 
-      {/* Assistant */}
-      <h3>Assistant</h3>
-      <textarea
-        readOnly
-        rows={6}
-        value={answer}
-        style={{ width: '100%', padding: 12, marginBottom: 12 }}
-        placeholder="The answer will appear here…"
-      />
-      {err && <div style={{ color: 'crimson', marginBottom: 16 }}>Error: {err}</div>}
-
-      {/* Share */}
-      <div style={{ display: 'flex', gap: 8, marginBottom: 28 }}>
-        <button onClick={copyTranscript}>Copy answer/transcript</button>
-        <button onClick={downloadTranscript}>Download .txt</button>
-      </div>
-
-      {/* Memories */}
-      <h3>Memories (count: {memTotal})</h3>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-        <button onClick={loadMemories}>Load</button>
-        <button onClick={clearMemories}>Clear all</button>
-      </div>
-      <div style={{ display: 'flex', gap: 8, marginBottom: 10 }}>
-        <input
-          value={memInput}
-          onChange={(e) => setMemInput(e.target.value)}
-          placeholder="Add a new memory…"
-          style={{ flex: 1, padding: 8 }}
+        <h3 className="font-semibold mb-2">Question (dev-only)</h3>
+        <textarea
+          rows={3}
+          value={q}
+          onChange={(e) => setQ(e.target.value)}
+          className="w-full p-3 mb-2 rounded-lg bg-zinc-900 border border-zinc-800"
+          placeholder="what is amoxicillin"
         />
-        <button onClick={addMemory}>Add</button>
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={onAsk} disabled={isLoading} className="px-4 py-2 rounded-lg bg-blue-600 disabled:opacity-50">
+            {isLoading ? 'Thinking…' : 'Ask'}
+          </button>
+          <label className="inline-flex items-center gap-2 text-sm text-zinc-400">
+            <input type="checkbox" checked={speak} onChange={e => setSpeak(e.target.checked)} /> Read aloud (ElevenLabs)
+          </label>
+        </div>
+
+        <h3 className="font-semibold mb-2">Talk to the prototype</h3>
+        <textarea
+          rows={3}
+          value={proto}
+          onChange={(e) => setProto(e.target.value)}
+          className="w-full p-3 mb-2 rounded-lg bg-zinc-900 border border-zinc-800"
+          placeholder="Speak or type here…"
+        />
+        <div className="flex items-center gap-3 mb-6">
+          <button onClick={onStartMic} disabled={!micReady} className="px-3 py-2 rounded-lg bg-zinc-800 disabled:opacity-50">Start mic</button>
+          <button onClick={onSendProto} disabled={isLoading} className="px-4 py-2 rounded-lg bg-blue-600 disabled:opacity-50">
+            {isLoading ? 'Thinking…' : 'Send to prototype'}
+          </button>
+        </div>
+
+        <h3 className="font-semibold mb-2">Assistant</h3>
+        <textarea
+          readOnly
+          rows={6}
+          value={answer}
+          className="w-full p-3 mb-3 rounded-lg bg-zinc-900 border border-zinc-800"
+          placeholder="The answer will appear here…"
+        />
+        {err && <div className="text-red-400 mb-4">Error: {err}</div>}
+
+        <div className="flex gap-3 mb-7">
+          <button onClick={copyTranscript} className="px-3 py-2 rounded-lg bg-zinc-800">Copy answer/transcript</button>
+          <button onClick={downloadTranscript} className="px-3 py-2 rounded-lg bg-zinc-800">Download .txt</button>
+        </div>
+
+        <h3 className="font-semibold mb-2">Memories (count: {memTotal})</h3>
+        <div className="flex gap-3 mb-3">
+          <button onClick={loadMemories} className="px-3 py-2 rounded-lg bg-zinc-800">Load</button>
+          <button onClick={clearMemories} className="px-3 py-2 rounded-lg bg-zinc-800">Clear all</button>
+        </div>
+        <div className="flex gap-3 mb-3">
+          <input
+            value={memInput}
+            onChange={(e) => setMemInput(e.target.value)}
+            placeholder="Add a new memory…"
+            className="flex-1 p-2 rounded-lg bg-zinc-900 border border-zinc-800"
+          />
+          <button onClick={addMemory} className="px-3 py-2 rounded-lg bg-blue-600">Add</button>
+        </div>
+        <ul className="list-disc pl-6 space-y-1 text-zinc-300">
+          {mems.map((m, i) => (<li key={i}>{m}</li>))}
+        </ul>
       </div>
-      <ul style={{ paddingLeft: 18 }}>
-        {mems.map((m, i) => (<li key={i}>{m}</li>))}
-      </ul>
-    </div>
+    </>
   );
 }

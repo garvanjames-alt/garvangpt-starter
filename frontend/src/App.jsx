@@ -1,6 +1,7 @@
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import ChatHeader from "./components/ChatHeader";
 import AgentStage from "./components/AgentStage";
+import MessagePreview from "./components/MessagePreview";
 
 export default function App() {
   // --- Top question box ---
@@ -181,13 +182,17 @@ export default function App() {
         speaking={isLoading || (!!answer && speak)}
       />
 
-      {/* Existing UI */}
-      <div className="max-w-[900px] mx-auto p-4 md:p-6">
+      {/* Preview a couple of bubbles so you can see the avatar-in-bubble */}
+      <MessagePreview />
+
+      {/* --- Developer console, hidden in production later --- */}
+      <div className="max-w-[900px] mx-auto p-4 md:p-6 border-t border-zinc-800 mt-6">
         <h1 className="text-2xl font-bold mb-2">GarvanGPT — “Almost Human” (Local MVP)</h1>
         <p className="text-sm text-zinc-400 mb-6">
           Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>. API base via Vite proxy.
         </p>
 
+        {/* Question (dev-only) */}
         <h3 className="font-semibold mb-2">Question (dev-only)</h3>
         <textarea
           rows={3}
@@ -205,6 +210,7 @@ export default function App() {
           </label>
         </div>
 
+        {/* Prototype */}
         <h3 className="font-semibold mb-2">Talk to the prototype</h3>
         <textarea
           rows={3}
@@ -220,6 +226,7 @@ export default function App() {
           </button>
         </div>
 
+        {/* Assistant */}
         <h3 className="font-semibold mb-2">Assistant</h3>
         <textarea
           readOnly
@@ -230,11 +237,13 @@ export default function App() {
         />
         {err && <div className="text-red-400 mb-4">Error: {err}</div>}
 
+        {/* Share */}
         <div className="flex gap-3 mb-7">
           <button onClick={copyTranscript} className="px-3 py-2 rounded-lg bg-zinc-800">Copy answer/transcript</button>
           <button onClick={downloadTranscript} className="px-3 py-2 rounded-lg bg-zinc-800">Download .txt</button>
         </div>
 
+        {/* Memories */}
         <h3 className="font-semibold mb-2">Memories (count: {memTotal})</h3>
         <div className="flex gap-3 mb-3">
           <button onClick={loadMemories} className="px-3 py-2 rounded-lg bg-zinc-800">Load</button>

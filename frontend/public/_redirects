@@ -1,1 +1,6 @@
-/api/*  https://almosthuman-starter.onrender.com/api/:splat  200
+# === API proxy to the staging backend ===
+/api/*     https://almosthuman-starter-staging.onrender.com/api/:splat 200
+/memory*   https://almosthuman-starter-staging.onrender.com/memory:splat 200
+
+# === Single Page App fallback ===
+/*         /index.html 200

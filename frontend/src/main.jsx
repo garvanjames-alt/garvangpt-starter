@@ -1,13 +1,15 @@
-import React from 'react'
-import ReactDOM from 'react-dom/client'
-import App from './App'
+import React from "react";
+import ReactDOM from "react-dom/client";
 
-// Tailwind (if you enabled it) stays in index.css; our custom tweaks go in content.css
-import './index.css'
-import './content.css'
+// Render the whole app (App includes the header + big stage at the top)
+import App from "./App.jsx";
 
-ReactDOM.createRoot(document.getElementById('root')).render(
+// Load your global CSS so any custom styles still apply
+import "./index.css";
+import "./content.css";
+
+ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
     <App />
   </React.StrictMode>
-)
+);

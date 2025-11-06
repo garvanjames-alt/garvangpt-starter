@@ -1,108 +1,72 @@
 // backend/server.mjs
 import express from "express";
+import cors from "cors";
 
 const app = express();
-app.use(express.json());
+const PORT = process.env.PORT || 3001;
 
-// --- tiny util: generate a 3 kHz WAV "beep" so we can prove audio plumbing works ---
-function waveBeepBuffer({ ms = 1200, freq = 3000 } = {}) {
-  const sampleRate = 48000;
-  const channels = 1;
-  const samples = Math.floor((ms / 1000) * sampleRate);
-  const headerSize = 44;
-  const bytesPerSample = 2;
-  const byteRate = sampleRate * channels * bytesPerSample;
-  const blockAlign = channels * bytesPerSample;
-  const dataSize = samples * bytesPerSample;
-  const buffer = new ArrayBuffer(headerSize + dataSize);
-  const view = new DataView(buffer);
+// middleware
+app.use(cors());                  // safe even if we front it with rewrites
+app.use(express.json({ limit: "1mb" }));
 
-  // RIFF header
-  let p = 0;
-  const writeStr = (s) => { for (let i = 0; i < s.length; i++) view.setUint8(p++, s.charCodeAt(i)); };
-  const writeU32 = (v) => { view.setUint32(p, v, true); p += 4; };
-  const writeU16 = (v) => { view.setUint16(p, v, true); p += 2; };
-
-  writeStr("RIFF");
-  writeU32(36 + dataSize);         // chunk size
-  writeStr("WAVE");
-
-  // fmt  subchunk
-  writeStr("fmt ");
-  writeU32(16);                    // subchunk1 size (PCM)
-  writeU16(1);                     // audio format = PCM
-  writeU16(channels);
-  writeU32(sampleRate);
-  writeU32(byteRate);
-  writeU16(blockAlign);
-  writeU16(16);                    // bits per sample
-
-  // data subchunk
-  writeStr("data");
-  writeU32(dataSize);
-
-  // sine wave
-  for (let i = 0; i < samples; i++) {
-    const t = i / sampleRate;
-    const amp = Math.sin(2 * Math.PI * freq * t);
-    const s = Math.max(-1, Math.min(1, amp));       // clamp
-    view.setInt16(p, s * 0x7fff, true);
-    p += 2;
-  }
-
-  return Buffer.from(buffer);
-}
-
-// --- health / ping ---
+// health
 app.get("/api/ping", (_req, res) => {
   res.json({ ok: true, service: "backend" });
 });
 
-// --- TTS endpoint (stub: returns a WAV beep so the browser can play audio) ---
+// ---- NEW: answer endpoint ----
+app.post("/api/respond", (req, res) => {
+  const question = (req.body && req.body.question) || "";
+  // minimal stub answer so the UI can render something
+  const answer =
+    question
+      ? `Stub answer: "${question}" is an antibiotic in the penicillin family.`
+      : "Hello from /api/respond (stub).";
+
+  res.json({ ok: true, echoed: question, answer });
+});
+
+// ---- TTS stub: returns a tiny WAV so audio can play ----
 app.post("/api/tts", async (req, res) => {
-  try {
-    // const { text } = req.body ?? {}; // currently unused by the stub
-    const wav = waveBeepBuffer({ ms: 2000, freq: 1500 });
-    res.setHeader("Content-Type", "audio/wav");
-    res.setHeader("Cache-Control", "no-store");
-    res.status(200).send(wav);
-  } catch (err) {
-    console.error("[/api/tts] error:", err);
-    res.status(500).json({ error: "TTS error" });
+  // generate a tiny 0.35s 440Hz beep @ 8000Hz mono, 16-bit PCM
+  const sampleRate = 8000;
+  const durationSec = 0.35;
+  const freq = 440;
+  const samples = Math.floor(sampleRate * durationSec);
+  const pcm = new Int16Array(samples);
+  for (let i = 0; i < samples; i++) {
+    pcm[i] = Math.floor(0.25 * 32767 * Math.sin((2 * Math.PI * freq * i) / sampleRate));
   }
-});
 
-// (optional) GET helper to test quickly in a browser tab
-app.get("/api/tts", (_req, res) => {
-  const wav = waveBeepBuffer({ ms: 1200, freq: 1200 });
+  // build WAV header + data
+  const byteRate = sampleRate * 2; // mono * 16-bit
+  const blockAlign = 2;
+  const dataBytes = pcm.length * 2;
+  const buffer = Buffer.alloc(44 + dataBytes);
+
+  // RIFF/WAVE header
+  buffer.write("RIFF", 0);
+  buffer.writeUInt32LE(36 + dataBytes, 4);
+  buffer.write("WAVE", 8);
+  buffer.write("fmt ", 12);
+  buffer.writeUInt32LE(16, 16);          // PCM chunk size
+  buffer.writeUInt16LE(1, 20);           // PCM format
+  buffer.writeUInt16LE(1, 22);           // mono
+  buffer.writeUInt32LE(sampleRate, 24);
+  buffer.writeUInt32LE(byteRate, 28);
+  buffer.writeUInt16LE(blockAlign, 32);
+  buffer.writeUInt16LE(16, 34);          // bits per sample
+  buffer.write("data", 36);
+  buffer.writeUInt32LE(dataBytes, 40);
+  for (let i = 0; i < pcm.length; i++) {
+    buffer.writeInt16LE(pcm[i], 44 + i * 2);
+  }
+
   res.setHeader("Content-Type", "audio/wav");
-  res.setHeader("Cache-Control", "no-store");
-  res.status(200).send(wav);
+  res.status(200).send(buffer);
 });
 
-// --- Respond: turn a question into an answer (stub that returns {answer}) ---
-app.post("/respond", async (req, res) => {
-  try {
-    const question = (req.body?.question || "").trim();
-    if (!question) return res.status(400).json({ error: "Missing question" });
-
-    let answer;
-    if (/amoxicillin/i.test(question)) {
-      answer =
-        "Amoxicillin is a penicillin-type antibiotic used for bacterial infections such as ear, sinus, throat, chest and urinary infections.";
-    } else {
-      answer = `You asked: "${question}". This is a stub response proving the pipeline is wired end-to-end.`;
-    }
-
-    res.json({ answer });
-  } catch (err) {
-    console.error("[/respond] error:", err);
-    res.status(500).json({ error: "Server error" });
-  }
-});
-
-// --- start server ---
-const PORT = process.env.PORT || 3001;
+// start
 app.listen(PORT, () => {
   console.log(`[boot] backend listening on :${PORT}`);
 });

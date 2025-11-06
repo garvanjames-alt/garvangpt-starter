@@ -1,0 +1,361 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1" />
+  <title>Almost Human — Chat</title>
+  <meta name="description" content="Almost Human — Avatar Chat" />
+  <style>
+    :root { --bg:#0b0f14; --panel:#10151c; --panel-2:#0f141b; --text:#e6eef8; --muted:#9fb2c3; --brand:#00d4ff; --accent:#1a2430; --border:#182029; --ok:#00c27a; --warn:#ffb020; --err:#ff5a6a; }
+    *{box-sizing:border-box} html,body{height:100%}
+    body{margin:0;background:var(--bg);color:var(--text);font:16px/1.5 system-ui,-apple-system,Segoe UI,Roboto,Ubuntu,Cantarell,Noto Sans,Arial,"Apple Color Emoji","Segoe UI Emoji"}
+    a{color:var(--brand);text-decoration:none}
+    header{position:sticky;top:0;z-index:10;background:linear-gradient(180deg,rgba(16,21,28,.95),rgba(16,21,28,.75));backdrop-filter:blur(6px);border-bottom:1px solid var(--border)}
+    .wrap{max-width:920px;margin:0 auto;padding:16px}.row{display:flex;align-items:center;gap:12px;justify-content:space-between}
+    .brand{display:flex;align-items:center;gap:10px;font-weight:700;letter-spacing:.2px}
+    .badges{display:flex;align-items:center;gap:10px}
+    .env{font:12px/1 monospace;color:#021017;background:var(--brand);border-radius:999px;padding:6px 10px;letter-spacing:.5px;text-transform:uppercase}
+    .auth{font:12px/1 monospace;border-radius:999px;padding:6px 10px;letter-spacing:.2px}
+    .auth.ok{background:rgba(0,194,122,.18);border:1px solid rgba(0,194,122,.5);color:#9af6c9}
+    .auth.warn{background:rgba(255,176,32,.18);border:1px solid rgba(255,176,32,.55);color:#ffd79a}
+    .vol{display:flex;align-items:center;gap:8px;color:var(--muted);font:12px/1 system-ui}
+    .vol input[type="range"]{width:120px;accent-color:var(--brand)}
+    main{height:calc(100% - 84px);display:grid;grid-template-rows:1fr auto}
+    .chat{max-width:920px;margin:0 auto;width:100%;display:grid;grid-template-rows:1fr auto;gap:0;height:100%}
+    .msgs{padding:20px 16px 8px;overflow-y:auto;scroll-behavior:smooth}
+    .empty{margin:56px auto;max-width:620px;background:var(--panel);border:1px solid var(--border);border-radius:16px;padding:22px;color:var(--muted);text-align:center}
+    .bubble{display:grid;grid-template-columns:auto 1fr auto;gap:10px;align-items:flex-start;margin:10px 0}
+    .avatar{width:36px;height:36px;border-radius:999px;background:var(--accent);display:flex;align-items:center;justify-content:center;color:#9ad7ff;font-weight:700}
+    .bubble .who{font-size:12px;color:var(--muted);margin-bottom:6px}
+    .bubble .text{background:var(--panel);border:1px solid var(--border);padding:12px 14px;border-radius:14px;white-space:pre-wrap}
+    .bubble.user .text{background:#0d1218}
+    .controls{display:flex;align-items:center;gap:8px}
+    button.icon{background:transparent;border:1px solid var(--border);color:var(--muted);padding:8px 10px;border-radius:10px;cursor:pointer;min-width:38px}
+    button.icon:hover{background:#0e141b;color:var(--text)}
+    button.icon[disabled]{opacity:.6;cursor:not-allowed}
+    .composer{border-top:1px solid var(--border);background:var(--panel-2)}
+    form{display:grid;grid-template-columns:1fr auto;gap:10px;padding:12px 16px;max-width:920px;margin:0 auto}
+    textarea{width:100%;min-height:52px;max-height:180px;resize:vertical;background:#0c1117;color:var(--text);outline:none;border:1px solid var(--border);border-radius:12px;padding:12px 14px}
+    .send{background:var(--brand);color:#021017;border:none;border-radius:12px;padding:12px 16px;cursor:pointer;font-weight:700}
+    .sr-only{position:absolute;width:1px;height:1px;padding:0;margin:-1px;overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0}
+    .speaking .avatar{box-shadow:0 0 0 0 rgba(0,212,255,.7);animation:pulse 1.2s ease-out infinite}
+    @keyframes pulse{0%{box-shadow:0 0 0 0 rgba(0,212,255,.7)}70%{box-shadow:0 0 0 10px rgba(0,212,255,0)}100%{box-shadow:0 0 0 0 rgba(0,212,255,0)}}
+    .hint{position:fixed;left:50%;bottom:16px;transform:translateX(-50%);background:#0c1218;border:1px solid var(--border);color:#9fb2c3;padding:10px 12px;border-radius:10px}
+  </style>
+</head>
+<body>
+  <header>
+    <div class="wrap">
+      <div class="row">
+        <div class="brand"><span>Almost Human</span><span style="font-weight:400;color:var(--muted)">— now in preview</span></div>
+        <div class="badges">
+          <div class="env" aria-label="environment badge">staging</div>
+          <a id="authBadge" class="auth warn" href="/admin-panel.html" title="Open admin panel" rel="noopener">Login required</a>
+          <div class="vol" title="Output volume">
+            <span aria-hidden="true">🔊</span>
+            <label class="sr-only" for="vol">Volume</label>
+            <input id="vol" type="range" min="0" max="100" step="1" value="100" />
+            <span id="volpct" aria-live="polite" aria-atomic="true">100%</span>
+          </div>
+        </div>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="chat" aria-label="Chat section">
+      <div id="msgs" class="msgs" role="log" aria-live="polite" aria-relevant="additions text">
+        <div id="empty" class="empty">
+          <h3 style="margin:8px 0 6px">Welcome to Almost Human</h3>
+          <p style="margin:0 0 12px">Say hello! <kbd>Enter</kbd> to send, <kbd>Shift</kbd>+<kbd>Enter</kbd> for a new line.</p>
+          <p style="margin:0">You may need to <a href="/admin-panel.html" target="_blank" rel="noopener">log in</a> first if you see a 401.</p>
+        </div>
+      </div>
+
+      <div class="composer">
+        <form id="composer" aria-label="Message composer">
+          <label class="sr-only" for="message">Message</label>
+          <textarea id="message" name="message" placeholder="Write a message…" autocomplete="off" spellcheck="true"></textarea>
+          <button class="send" id="sendBtn" type="submit" aria-label="Send message">Send</button>
+        </form>
+      </div>
+    </section>
+  </main>
+
+  <!-- Assistant bubble -->
+  <template id="tpl-bubble">
+    <div class="bubble" data-role="assistant">
+      <div class="avatar" aria-hidden="true">AH</div>
+      <div>
+        <div class="who">Assistant</div>
+        <div class="text"></div>
+      </div>
+      <div class="controls">
+        <button class="icon tts" title="Play audio" aria-label="Play audio">▶</button>
+        <button class="icon stop" title="Stop audio" aria-label="Stop audio" style="display:none">■</button>
+      </div>
+    </div>
+  </template>
+
+  <!-- User bubble -->
+  <template id="tpl-bubble-user">
+    <div class="bubble user" data-role="user">
+      <div class="avatar" aria-hidden="true">You</div>
+      <div>
+        <div class="who">You</div>
+        <div class="text"></div>
+      </div>
+      <div style="width:34px"></div>
+    </div>
+  </template>
+
+  <script>
+    const BACKEND   = 'https://almosthuman-starter-staging.onrender.com';
+    const RESPOND_URL = BACKEND + '/api/respond';
+    const TTS_URL     = BACKEND + '/api/tts';
+    const PING_URL    = BACKEND + '/api/admin/ping';
+
+    const msgs     = document.getElementById('msgs');
+    const form     = document.getElementById('composer');
+    const textarea = document.getElementById('message');
+    const sendBtn  = document.getElementById('sendBtn');
+    const authBadge= document.getElementById('authBadge');
+    const volInput = document.getElementById('vol');
+    const volPct   = document.getElementById('volpct');
+
+    const audioMap = new WeakMap();
+    let audioUnlocked = false;
+    let currentBubble = null; // single-play at a time
+    let outputVolume = 1.0;   // 0.0 – 1.0
+
+    function setVolumeFromStorage(){
+      const saved = Number(localStorage.getItem('ah_volume') ?? '100');
+      const clamped = Number.isFinite(saved) ? Math.min(100, Math.max(0, saved)) : 100;
+      volInput.value = String(clamped);
+      volPct.textContent = clamped + '%';
+      outputVolume = clamped / 100;
+    }
+    setVolumeFromStorage();
+
+    volInput.addEventListener('input', () => {
+      const v = Math.min(100, Math.max(0, Number(volInput.value)||0));
+      volPct.textContent = v + '%';
+      outputVolume = v / 100;
+      localStorage.setItem('ah_volume', String(v));
+      if (currentBubble) {
+        const a = audioMap.get(currentBubble);
+        if (a) a.volume = outputVolume;
+      }
+    });
+
+    function ensureAudioUnlocked() {
+      if (audioUnlocked) return;
+      audioUnlocked = true;
+      try {
+        const a = new Audio('data:audio/mp3;base64,//uQZAAAAAAAAAAAAAAAAAAAAAAAWGluZwAAAA8AAAACAAACcQ...');
+        a.volume = 0.0;
+        a.play().catch(() => {});
+      } catch(_) {}
+    }
+    window.addEventListener('pointerdown', ensureAudioUnlocked, { once:true });
+    window.addEventListener('keydown', ensureAudioUnlocked, { once:true });
+
+    window.addEventListener('load', async () => {
+      textarea.focus();
+      try {
+        const r = await fetch(PING_URL, { credentials:'include' });
+        const ok = r.ok;
+        authBadge.classList.toggle('ok', ok);
+        authBadge.classList.toggle('warn', !ok);
+        authBadge.textContent = ok ? 'Logged in' : 'Login required';
+      } catch {
+        authBadge.classList.add('warn');
+        authBadge.textContent = 'Login required';
+      }
+    });
+
+    textarea.addEventListener('keydown', (e) => { if (e.key === 'Enter' && !e.shiftKey) { e.preventDefault(); form.requestSubmit(); } });
+
+    form.addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const text = textarea.value.trim();
+      if (!text) return;
+      sendBtn.disabled = true;
+      addUserBubble(text);
+      textarea.value = '';
+      try { addAssistantBubble(await askBackend(text)); }
+      catch (err) { addAssistantBubble('⚠️ ' + (err?.message || 'An error occurred. If 401, log in via /admin-panel.html.')); }
+      finally { sendBtn.disabled = false; textarea.focus(); }
+    });
+
+    function addUserBubble(text){
+      document.getElementById('empty')?.remove();
+      const n = document.getElementById('tpl-bubble-user').content.cloneNode(true);
+      n.querySelector('.text').textContent = text;
+      msgs.appendChild(n); msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    function addAssistantBubble(text){
+      document.getElementById('empty')?.remove();
+      const frag = document.getElementById('tpl-bubble').content.cloneNode(true);
+      const node = frag.querySelector('.bubble');
+      node.dataset.speech = text;
+      node.querySelector('.text').textContent = text;
+      msgs.appendChild(frag); msgs.scrollTop = msgs.scrollHeight;
+    }
+
+    msgs.addEventListener('click', async (e) => {
+      const btn = e.target.closest('button');
+      if (!btn) return;
+      const bubble = btn.closest('.bubble');
+      if (!bubble || bubble.dataset.role !== 'assistant') return;
+
+      if (btn.classList.contains('tts')) {
+        await playBubble(bubble, btn);
+      } else if (btn.classList.contains('stop')) {
+        const audio = audioMap.get(bubble);
+        if (audio) { audio.pause(); audio.currentTime = 0; }
+        bubble.classList.remove('speaking');
+        toggleButtons(bubble, { playing: false, loading: false });
+        if (currentBubble === bubble) currentBubble = null;
+        const playBtn = bubble.querySelector('button.tts');
+        if (playBtn) playBtn.focus();
+      }
+    });
+
+    async function playBubble(bubble, triggerBtn){
+      ensureAudioUnlocked();
+      bubble.scrollIntoView({ behavior:'smooth', block:'center' });
+
+      if (currentBubble && currentBubble !== bubble) {
+        const prevAudio = audioMap.get(currentBubble);
+        if (prevAudio) { prevAudio.pause(); prevAudio.currentTime = 0; }
+        currentBubble.classList.remove('speaking');
+        toggleButtons(currentBubble, { playing:false, loading:false });
+      }
+      currentBubble = bubble;
+
+      const text = bubble.dataset.speech || bubble.querySelector('.text')?.textContent || '';
+      if (!text) return;
+      toggleButtons(bubble, { loading: true });
+
+      try{
+        const res = await fetch(TTS_URL, {
+          method: 'POST',
+          credentials: 'include',
+          headers: { 'Content-Type':'application/json' },
+          body: JSON.stringify({ text })
+        });
+        if (res.status === 401) throw new Error('401 Unauthorized — open /admin-panel.html and log in.');
+        if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + (await res.text()).slice(0,200));
+
+        const ct = res.headers.get('content-type') || '';
+        if (!ct.startsWith('audio/')) throw new Error('TTS did not return audio (' + ct + ')');
+
+        const blob = await res.blob();
+        const url  = URL.createObjectURL(blob);
+        let audio  = audioMap.get(bubble);
+        if (!audio) {
+          audio = new Audio();
+          audioMap.set(bubble, audio);
+          audio.addEventListener('ended', () => {
+            bubble.classList.remove('speaking');
+            toggleButtons(bubble, { playing:false, loading:false });
+            if (currentBubble === bubble) currentBubble = null;
+            const playBtn = bubble.querySelector('button.tts');
+            if (playBtn) playBtn.focus();
+          });
+          audio.addEventListener('error', () =>  {
+            bubble.classList.remove('speaking');
+            toggleButtons(bubble, { playing:false, loading:false });
+            if (currentBubble === bubble) currentBubble = null;
+            hint('Audio playback error.');
+            const playBtn = bubble.querySelector('button.tts');
+            if (playBtn) playBtn.focus();
+          });
+        }
+        audio.src = url;
+        audio.volume = outputVolume;
+        await audio.play().catch(err => { throw new Error('play() blocked — click once on the page, then try again. ('+ (err?.name||'') +')'); });
+        bubble.classList.add('speaking');
+        toggleButtons(bubble, { playing:true, loading:false });
+      } catch (err){
+        hint(err?.message || 'TTS play failed');
+        toggleButtons(bubble, { playing:false, loading:false });
+        if (currentBubble === bubble) currentBubble = null;
+        const playBtn = bubble.querySelector('button.tts');
+        if (playBtn) playBtn.focus();
+      }
+    }
+
+    function toggleButtons(bubble, { playing, loading }){
+      const play = bubble.querySelector('button.tts');
+      const stop = bubble.querySelector('button.stop');
+      if (!play || !stop) return;
+
+      if (loading) {
+        play.textContent = '…';
+        play.setAttribute('aria-busy','true');
+        play.disabled = true;
+        stop.style.display = 'none';
+        return;
+      }
+      play.removeAttribute('aria-busy');
+      play.disabled = false;
+
+      if (playing) {
+        play.textContent = '▶';
+        stop.style.display = '';
+      } else {
+        play.textContent = '▶';
+        stop.style.display = 'none';
+      }
+    }
+
+    function hint(msg){
+      const el = document.createElement('div');
+      el.className = 'hint';
+      el.textContent = msg;
+      document.body.appendChild(el);
+      setTimeout(() => el.remove(), 2200);
+    }
+
+    // 🔑 95.6: Keyboard P toggles play/stop on the most recent assistant reply
+    document.addEventListener('keydown', async (e) => {
+      if (e.key.toLowerCase() !== 'p') return;
+      // don't hijack when typing in textarea
+      if (document.activeElement === textarea) return;
+      const as = msgs.querySelectorAll('.bubble[data-role="assistant"]');
+      const last = as[as.length - 1];
+      if (!last) { hint('No assistant reply to play.'); return; }
+      const a = audioMap.get(last);
+      if (currentBubble === last && a && !a.paused) {
+        a.pause(); a.currentTime = 0; last.classList.remove('speaking');
+        toggleButtons(last, { playing:false, loading:false });
+        currentBubble = null; hint('Stopped audio.');
+        const playBtn = last.querySelector('button.tts'); if (playBtn) playBtn.focus();
+      } else {
+        hint('Playing last reply…');
+        await playBubble(last);
+      }
+    });
+
+    async function askBackend(text){
+      const res = await fetch(RESPOND_URL, {
+        method:'POST',
+        credentials:'include',
+        headers:{ 'Content-Type':'application/json' },
+        body: JSON.stringify({ question: text })
+      });
+      if (res.status === 401) throw new Error('401 Unauthorized — log in via /admin-panel.html then retry.');
+      if (!res.ok) throw new Error('HTTP ' + res.status + ' — ' + (await res.text()));
+      const ct = res.headers.get('content-type') || '';
+      if (ct.includes('application/json')) {
+        const data = await res.json();
+        return (data.reply || data.response || data.answer || data.text || data.message || JSON.stringify(data));
+      }
+      return await res.text();
+    }
+  </script>
+</body>
+</html>

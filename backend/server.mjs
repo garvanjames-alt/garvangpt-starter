@@ -72,19 +72,31 @@ function wavBeepBuffer({
   return buf;
 }
 
+import OpenAI from "openai";
+const openai = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+// --- real TTS endpoint (Australian voice) ---
 app.post("/api/tts", async (req, res) => {
   try {
-    const text = (req.body?.text || "").slice(0, 200);
+    const text = (req.body?.text || "").slice(0, 400);
     console.log(`[tts] ${new Date().toISOString()} text="${text}"`);
-    const audio = wavBeepBuffer(); // placeholder beep
+
+    const speech = await openai.audio.speech.create({
+      model: "gpt-4o-mini-tts",
+      voice: "verse", // "verse" has a natural Australian accent variant
+      input: text,
+      format: "wav"
+    });
+
     res.setHeader("Content-Type", "audio/wav");
     res.setHeader("Cache-Control", "no-store");
-    res.status(200).send(audio);
+    speech.pipe(res);
   } catch (err) {
     console.error("[tts] error", err);
     res.status(500).json({ error: "TTS error" });
   }
 });
+
 
 // Convenience GET to test in a browser
 app.get("/api/tts", (req, res) => {

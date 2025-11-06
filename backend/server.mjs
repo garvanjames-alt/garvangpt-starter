@@ -1,111 +1,86 @@
 // backend/server.mjs
-// ESM entry for the Almost Human backend (serves API + built frontend)
+// ESM entry for the Almost Human backend (serves API)
 
-import "dotenv/config";
-import express from "express";
-import cors from "cors";
-import cookieParser from "cookie-parser";
-import path from "path";
-import { fileURLToPath } from "url";
-import { createRequire } from "module";
-import authRouter from "./authRouter.mjs";
+import 'dotenv/config';
+import express from 'express';
+import cors from 'cors';
+import cookieParser from 'cookie-parser';
+import path from 'path';
+import { fileURLToPath } from 'url';
+import { createRequire } from 'module';
+
+import authRouter from './authRouter.mjs';
 
 const require = createRequire(import.meta.url);
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
 const app = express();
 
-// JSON body
+// ---- JSON body ----
 app.use(express.json());
 
-// CORS (Render frontend → Render backend) with cookies
+// ---- CORS (frontend Render + localhost) ----
+const allowedOrigins = [
+  'http://localhost:5173',
+  'https://almosthuman-frontend.onrender.com',
+  'https://almosthuman-frontend-staging.onrender.com',
+];
+
 app.use(
   cors({
-    origin: "https://almosthuman-frontend.onrender.com",
+    origin(origin, cb) {
+      // allow same-origin & tools (no Origin header)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`CORS blocked for origin: ${origin}`));
+    },
     credentials: true,
   })
 );
 
-// Parse cookies so auth middleware can read gh_session
+// ---- Cookies so auth middleware can read gh_session ----
 app.use(cookieParser());
 
-// Health
-app.get("/health", (_req, res) => res.status(200).send("OK"));
+// ---- Health ----
+app.get('/health', (_req, res) => res.status(200).send('OK'));
 
-// Mount auth routes: /api/login, /api/admin/ping
-app.use(authRouter);
+// ---- Auth & other API routes (e.g., /api/login) ----
+app.use('/api', authRouter);
 
-// ----- Respond handler (CJS-friendly) -----
-let respondHandler;
-try {
-  const mod = require("./respondHandler.cjs");
-  respondHandler =
-    (typeof mod === "function" && mod) ||
-    (mod && typeof mod.default === "function" && mod.default) ||
-    (mod && typeof mod.respond === "function" && mod.respond) ||
-    (mod && typeof mod.handler === "function" && mod.handler);
-  if (typeof respondHandler !== "function") throw new Error("no function export");
-} catch (err) {
-  console.error("[server] respondHandler load error:", err);
-  respondHandler = async (_req, res) =>
-    res.status(500).json({ error: "respond handler missing" });
-}
-
-// ----- TTS handler (CJS-friendly) -----
+// ---- TTS route (CJS-friendly import) ----
 let ttsHandler;
 try {
-  const mod = require("./ttsHandler.cjs");
+  const mod = require('./ttsHandler.cjs');
   ttsHandler =
-    (typeof mod === "function" && mod) ||
-    (mod && typeof mod.default === "function" && mod.default) ||
-    (mod && typeof mod.tts === "function" && mod.tts) ||
-    (mod && typeof mod.handler === "function" && mod.handler);
-  if (typeof ttsHandler !== "function") throw new Error("no function export");
+    (typeof mod === 'function' && mod) ||
+    (mod && typeof mod.default === 'function' && mod.default) ||
+    (mod && typeof mod.respond === 'function' && mod.respond) ||
+    (mod && typeof mod.handler === 'function' && mod.handler);
 } catch (err) {
-  console.error("[server] ttsHandler load error:", err);
-  ttsHandler = async (_req, res) => res.status(204).end();
+  console.error('[TTS] Failed to load ttsHandler.cjs', err);
 }
 
-// API routes
-app.post(["/api/respond", "/respond"], respondHandler);
-app.post(["/api/tts", "/tts"], ttsHandler);
-
-// In-memory fallback memory API (keeps UI working if memory.cjs absent)
-let memList, memAdd, memClear;
-try {
-  const mod = await import("./memory.cjs");
-  memList = mod.listMemory;
-  memAdd = mod.addMemory;
-  memClear = mod.clearMemory;
-} catch {
-  const store = [];
-  memList = async () => store;
-  memAdd = async (text) => store.push({ text, ts: Date.now() });
-  memClear = async () => (store.length = 0);
+if (ttsHandler) {
+  app.post('/api/tts', ttsHandler);
+} else {
+  // Gracefully no-op if handler missing/misloaded
+  app.post('/api/tts', (_req, res) => res.status(204).send());
 }
 
-app.get(["/api/memory", "/memory"], async (_req, res) =>
-  res.json({ items: await memList() })
-);
-app.post(["/api/memory", "/memory"], async (req, res) => {
-  const { text } = req.body || {};
-  if (!text) return res.status(400).json({ error: "text required" });
-  await memAdd(text);
-  res.json({ ok: true });
-});
-app.delete(["/api/memory", "/memory"], async (_req, res) => {
-  await memClear();
-  res.json({ ok: true });
-});
+// ---- 404 fallback for /api ----
+app.use('/api', (_req, res) => res.status(404).json({ error: 'Not found' }));
 
-// Serve built frontend if present (local/dev)
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
-const frontendDist = path.resolve(__dirname, "../frontend/dist");
-app.use(express.static(frontendDist));
-app.get("*", (req, res, next) => {
-  if (req.path.startsWith("/api") || req.path.startsWith("/respond")) return next();
-  res.sendFile(path.join(frontendDist, "index.html"));
-});
+// ---- Optional: serve built frontend locally if you want ----
+// set SERVE_FRONTEND=true in your env to enable
+if (process.env.SERVE_FRONTEND === 'true') {
+  const dist = path.join(__dirname, '../frontend/dist');
+  app.use(express.static(dist));
+  app.get('*', (_req, res) => res.sendFile(path.join(dist, 'index.html')));
+}
 
-// Start
+// ---- Start server ----
 const PORT = process.env.PORT || 3001;
-app.listen(PORT, () => console.log(`[server] listening on ${PORT}`));
+app.listen(PORT, () => {
+  console.log(`[server] listening on ${PORT}`);
+});

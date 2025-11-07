@@ -1,54 +1,62 @@
 // backend/respondHandler.cjs
-// Minimal, fast OpenAI Chat Completion call with a safe timeout.
+const OpenAI = require("openai");
 
-const API_URL = 'https://api.openai.com/v1/chat/completions';
-const MODEL = process.env.OPENAI_MODEL || 'gpt-4o-mini';
-const TIMEOUT_MS = 20000;
+// Lazily import the ESM retriever
+async function retrieve(q, k = 5) {
+  const { search } = await import("./retriever/retriever.mjs");
+  const res = await search(q, k);
+  return res.hits || [];
+}
 
-module.exports = async function respondHandler(req, res) {
+function buildSystem(hits) {
+  const src = hits
+    .map((h, i) => `[#${i + 1}] ${h.source}\n${h.text}`)
+    .join("\n\n");
+  return [
+    "You are GarvanGPT, a pharmacist educator.",
+    "Answer ONLY using the SOURCES below. If the sources don't contain the answer, say so and suggest the next question.",
+    "Cite sources inline like [#1], [#2]. Be clear and patient-friendly.",
+    "",
+    "SOURCES:",
+    src || "(none)"
+  ].join("\n");
+}
+
+const client = new OpenAI({ apiKey: process.env.OPENAI_API_KEY });
+
+async function handler(req, res) {
   try {
-    const apiKey = process.env.OPENAI_API_KEY;
-    if (!apiKey) return res.status(500).json({ error: 'OPENAI_API_KEY missing' });
+    const prompt = (req.body?.prompt || req.body?.question || "").toString().trim();
+    if (!prompt) return res.status(400).json({ error: "missing_prompt" });
 
-    const q = (req.body && req.body.question) || '';
-    if (!q) return res.status(400).json({ error: 'question required' });
+    // 1) Retrieve
+    const hits = await retrieve(prompt, 5);
 
-    const messages = [
-      { role: 'system', content: 'You are a concise, accurate medical information assistant.' },
-      { role: 'user', content: q }
-    ];
+    // 2) Build grounded system prompt
+    const system = buildSystem(hits);
 
-    const ac = new AbortController();
-    const timeout = setTimeout(() => ac.abort(), TIMEOUT_MS);
-
-    const r = await fetch(API_URL, {
-      method: 'POST',
-      headers: {
-        authorization: `Bearer ${apiKey}`,
-        'content-type': 'application/json',
-      },
-      signal: ac.signal,
-      body: JSON.stringify({
-        model: MODEL,
-        messages,
-        temperature: 0.2,
-      }),
-    }).catch(err => {
-      throw (err.name === 'AbortError')
-        ? new Error(`OpenAI request timed out after ${TIMEOUT_MS}ms`)
-        : err;
+    // 3) Generate
+    const chat = await client.chat.completions.create({
+      model: "gpt-4o-mini",
+      temperature: 0.2,
+      messages: [
+        { role: "system", content: system },
+        { role: "user", content: prompt }
+      ],
     });
-    clearTimeout(timeout);
 
-    if (!r.ok) {
-      const text = await r.text().catch(() => '');
-      return res.status(r.status).json({ error: `OpenAI ${r.status}`, detail: text.slice(0, 500) });
-    }
+    const answer = chat.choices?.[0]?.message?.content || "Sorry, I couldn't generate a response.";
+    const sources = hits.map((h, i) => ({
+      id: i + 1,
+      source: h.source,
+      score: Number(h.score?.toFixed?.(4) ?? 0),
+    }));
 
-    const data = await r.json();
-    const answer = data?.choices?.[0]?.message?.content?.trim() || '(no answer)';
-    return res.json({ answer });
-  } catch (err) {
-    return res.status(502).json({ error: 'respond failed', detail: String(err && err.message || err) });
+    return res.json({ ok: true, answer, sources });
+  } catch (e) {
+    console.error("respond_error", e?.status || "", e?.message || e);
+    return res.status(500).json({ error: "respond_failed" });
   }
-};
+}
+
+module.exports = { handler };

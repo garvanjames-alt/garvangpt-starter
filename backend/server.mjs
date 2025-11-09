@@ -2,6 +2,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
+import * as statusModule from "./routes/status.mjs";          // ← added
 import { fileURLToPath } from "url";
 import "dotenv/config";
 import { createRequire } from "module";
@@ -13,6 +14,7 @@ const __dirname = path.dirname(__filename);
 // --- Robustly import the search router (default or named) ---
 import * as searchModule from "./routes/search.mjs";
 const searchRouter = searchModule.default || searchModule.router;
+const statusRouter = statusModule.default || statusModule.router;  // ← added
 
 // --- Robustly load the respond handler from CJS ---
 const require = createRequire(import.meta.url);
@@ -46,6 +48,7 @@ if (!searchRouter) {
   );
 }
 app.use("/api", searchRouter);
+app.use("/api", statusRouter);                                     // ← added
 
 // Respond endpoint (groundable later)
 app.post("/api/respond", respondHandler);

@@ -1,0 +1,41 @@
+<!doctype html>
+<html>
+  <head>
+    <meta charset="utf-8" />
+    <title>Admin: Search Expand</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <style>
+      body{font-family:system-ui,-apple-system,Segoe UI,Roboto,Inter,Arial,sans-serif;margin:2rem;max-width:720px}
+      input,button{font-size:16px}
+      #out{white-space:pre-wrap;background:#f6f8fa;border:1px solid #e5e7eb;border-radius:8px;padding:12px;margin-top:12px}
+    </style>
+  </head>
+  <body>
+    <h1>Admin: Search &rarr; Expand</h1>
+    <p>Try: <code>panadol</code>, <code>acyclovir</code>, <code>amoxil</code>, <code>ibuprofen</code>, <code>omeprazole</code></p>
+    <form id="f">
+      <input id="q" placeholder="enter term…" required />
+      <button>Expand</button>
+    </form>
+    <div id="out">result will appear here…</div>
+
+    <script>
+      const f = document.getElementById('f');
+      const q = document.getElementById('q');
+      const out = document.getElementById('out');
+
+      f.addEventListener('submit', async (e) => {
+        e.preventDefault();
+        out.textContent = 'Loading…';
+        try {
+          const url = `/api/admin/search/expand?q=${encodeURIComponent(q.value.trim())}`;
+          const res = await fetch(url, { credentials: 'include' });
+          const data = await res.json();
+          out.textContent = JSON.stringify(data, null, 2);
+        } catch (err) {
+          out.textContent = 'Error: ' + (err && err.message || err);
+        }
+      });
+    </script>
+  </body>
+</html>

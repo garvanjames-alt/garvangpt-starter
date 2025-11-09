@@ -3,22 +3,28 @@ import express from "express";
 import cors from "cors";
 import path from "path";
 import { fileURLToPath } from "url";
-import dotenv from "dotenv";
+import "dotenv/config";
 import { createRequire } from "module";
-import { searchRouter } from "./routes/search.mjs";
 
+// Resolve __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
-dotenv.config({ path: path.join(__dirname, ".env") });
 
+// --- Robustly import the search router (default or named) ---
+import * as searchModule from "./routes/search.mjs";
+const searchRouter = searchModule.default || searchModule.router;
+
+// --- Robustly load the respond handler from CJS ---
 const require = createRequire(import.meta.url);
-// Support either `module.exports = { handler }` OR `module.exports = (req,res)=>{}`
 const respondMod = require("./respondHandler.cjs");
-const respondHandler = respondMod.handler || respondMod.default?.handler || respondMod.default || respondMod;
+const respondHandler =
+  respondMod?.default?.handler || respondMod?.handler || respondMod;
 
+// App
 const app = express();
 const PORT = Number(process.env.PORT || 3001);
 
+// CORS + JSON
 app.use(
   cors({
     origin: true,
@@ -27,19 +33,29 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-app.get("/health", (req, res) => {
+// Health
+app.get("/health", (_req, res) => {
   res.json({ ok: true, env: process.env.NODE_ENV || "local" });
 });
 
-// RAG search route
+// Mount search API
+if (!searchRouter) {
+  // Fail fast with a clear message if import shape changes again
+  throw new Error(
+    "searchRouter is undefined. Ensure backend/routes/search.mjs exports either `export default router` or `export const router = ...`."
+  );
+}
 app.use("/api", searchRouter);
 
-// Chat respond route (groundable later)
+// Respond endpoint (groundable later)
 app.post("/api/respond", respondHandler);
 
-// (optional) serve static frontend
+// Serve static admin pages from backend/public (e.g., /admin-search.html)
+app.use(express.static(path.join(__dirname, "public")));
+
+// (optional) serve built frontend if present
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 app.listen(PORT, () => {
-  console.log(`Backend listening on http://localhost:${PORT}`);
+  console.log(`[server] listening on http://localhost:${PORT}`);
 });

@@ -1,0 +1,38 @@
+[
+  {
+    "terms": [
+      "acyclovir",
+      "aciclovir",
+      "zovirax"
+    ]
+  },
+  {
+    "terms": [
+      "amoxicillin",
+      "amoxycillin",
+      "amoxil"
+    ]
+  },
+  {
+    "terms": [
+      "ibuprofen",
+      "nurofen",
+      "advil"
+    ]
+  },
+  {
+    "terms": [
+      "paracetamol",
+      "acetaminophen",
+      "tylenol",
+      "panadol"
+    ]
+  },
+  {
+    "terms": [
+      "omeprazole",
+      "prilosec",
+      "losec"
+    ]
+  }
+]

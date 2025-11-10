@@ -2,7 +2,7 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
-import * as statusModule from "./routes/status.mjs";          // ← added
+import * as statusModule from "./routes/status.mjs";
 import { fileURLToPath } from "url";
 import "dotenv/config";
 import { createRequire } from "module";
@@ -11,16 +11,21 @@ import { createRequire } from "module";
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- Robustly import the search router (default or named) ---
+// --- Import routers/handlers ---
 import * as searchModule from "./routes/search.mjs";
 const searchRouter = searchModule.default || searchModule.router;
-const statusRouter = statusModule.default || statusModule.router;  // ← added
+const statusRouter = statusModule.default || statusModule.router;
 
-// --- Robustly load the respond handler from CJS ---
+// Use createRequire to load CJS handlers
 const require = createRequire(import.meta.url);
+
+// Respond handler (CJS)
 const respondMod = require("./respondHandler.cjs");
 const respondHandler =
   respondMod?.default?.handler || respondMod?.handler || respondMod;
+
+// TTS handler (CJS)  ← NEW
+const ttsHandler = require("./ttsHandler.cjs");
 
 // App
 const app = express();
@@ -40,23 +45,23 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, env: process.env.NODE_ENV || "local" });
 });
 
-// Mount search API
+// Mount APIs
 if (!searchRouter) {
-  // Fail fast with a clear message if import shape changes again
   throw new Error(
     "searchRouter is undefined. Ensure backend/routes/search.mjs exports either `export default router` or `export const router = ...`."
   );
 }
 app.use("/api", searchRouter);
-app.use("/api", statusRouter);                                     // ← added
+app.use("/api", statusRouter);
 
-// Respond endpoint (groundable later)
+// Core endpoints
 app.post("/api/respond", respondHandler);
+app.post("/api/tts", ttsHandler); // ← NEW
 
-// Serve static admin pages from backend/public (e.g., /admin-search.html)
+// Static admin page(s) from backend/public
 app.use(express.static(path.join(__dirname, "public")));
 
-// (optional) serve built frontend if present
+// Optionally serve built frontend (if present)
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 app.listen(PORT, () => {

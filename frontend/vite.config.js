@@ -1,6 +1,8 @@
 import { defineConfig } from 'vite';
 import react from '@vitejs/plugin-react';
 
+const ALLOWED_HOSTS = ['almosthuman-frontend.onrender.com'];
+
 export default defineConfig({
   plugins: [react()],
   server: {
@@ -15,9 +17,11 @@ export default defineConfig({
         changeOrigin: true,
       },
     },
+    // Local dev host allow-list
+    allowedHosts: ALLOWED_HOSTS,
   },
+  // Preview (what Render uses) host allow-list
   preview: {
-    // 👇 This is the key bit Vite is asking for
-    allowedHosts: ['almosthuman-frontend.onrender.com'],
+    allowedHosts: ALLOWED_HOSTS,
   },
 });

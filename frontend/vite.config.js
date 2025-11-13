@@ -17,7 +17,7 @@ export default defineConfig({
     },
   },
   preview: {
-    // Allow Render frontend domain
+    // 👇 This is the key bit Vite is asking for
     allowedHosts: ['almosthuman-frontend.onrender.com'],
   },
 });

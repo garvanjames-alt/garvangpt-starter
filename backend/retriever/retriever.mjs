@@ -16,8 +16,8 @@ const __dirname = path.dirname(__filename);
 // Path to your mini Lynch's Pharmacy corpus index
 const INDEX_PATH = path.join(__dirname, "..", "data", "embeddings.json");
 
-// In-memory index
-let _docs = null; // [{ id, text, source, embedding, norm }]
+// In-memory index: [{ id, text, source, embedding, norm }]
+let _docs = null;
 let _loaded = false;
 
 function l2Norm(vec) {
@@ -38,8 +38,10 @@ function cosineSimilarity(a, b) {
   return dot;
 }
 
+// ----- INDEX LOADING -----
 async function loadIndex() {
   if (_loaded) return;
+
   const raw = await fs.readFile(INDEX_PATH, "utf8");
   const parsed = JSON.parse(raw);
 
@@ -77,6 +79,7 @@ async function loadIndex() {
   );
 }
 
+// ----- QUERY EMBEDDING -----
 async function embedQuery(query) {
   const model =
     process.env.EMBEDDING_MODEL || "text-embedding-3-small";
@@ -93,11 +96,8 @@ async function embedQuery(query) {
   };
 }
 
-/**
- * Main semantic search function.
- * Returns { query, hits: [{ text, source, score }] }
- */
-export async function search(query, limit = 5) {
+// ----- MAIN SEARCH API -----
+async function search(query, limit = 5) {
   if (!_loaded) {
     await loadIndex();
   }
@@ -128,7 +128,12 @@ export async function search(query, limit = 5) {
   };
 }
 
-// Aliases so existing imports keep working
+// ----- EXPORTS (keep old names working) -----
+
+// What status.mjs expects:
+export { loadIndex, search };
+
+// Aliases so other imports keep working:
 export const initRetriever = loadIndex;
 export const init = loadIndex;
 export const searchIndex = search;
@@ -136,6 +141,7 @@ export const searchDocuments = search;
 
 // Default export for `import retriever from ...`
 const retriever = {
+  loadIndex,
   initRetriever: loadIndex,
   init: loadIndex,
   search,

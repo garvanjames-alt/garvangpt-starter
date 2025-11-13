@@ -2,18 +2,21 @@
 import express from "express";
 import cors from "cors";
 import path from "path";
-import * as statusModule from "./routes/status.mjs";
 import { fileURLToPath } from "url";
 import "dotenv/config";
 import { createRequire } from "module";
+
+// Status router (optional)
+import * as statusModule from "./routes/status.mjs";
+
+// Vector search from retriever
+import { search as vectorSearch } from "./retriever/retriever.mjs";
 
 // Resolve __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// --- Import routers/handlers ---
-import * as searchModule from "./routes/search.mjs";
-const searchRouter = searchModule.default || searchModule.router;
+// Status router (if provided)
 const statusRouter = statusModule.default || statusModule.router;
 
 // Use createRequire to load CJS handlers
@@ -24,7 +27,7 @@ const respondMod = require("./respondHandler.cjs");
 const respondHandler =
   respondMod?.default?.handler || respondMod?.handler || respondMod;
 
-// TTS handler (CJS)  ← NEW
+// TTS handler (CJS)
 const ttsHandler = require("./ttsHandler.cjs");
 
 // App
@@ -45,18 +48,44 @@ app.get("/health", (_req, res) => {
   res.json({ ok: true, env: process.env.NODE_ENV || "local" });
 });
 
-// Mount APIs
-if (!searchRouter) {
-  throw new Error(
-    "searchRouter is undefined. Ensure backend/routes/search.mjs exports either `export default router` or `export const router = ...`."
-  );
+// Optional status router under /api
+if (statusRouter) {
+  app.use("/api", statusRouter);
 }
-app.use("/api", searchRouter);
-app.use("/api", statusRouter);
+
+// --- DIRECT /api/search ENDPOINT ---
+// This bypasses routes/search.mjs and talks straight to the retriever.
+app.get("/api/search", async (req, res) => {
+  try {
+    const q = String(req.query.q || "").trim();
+    const limitRaw = req.query.limit ?? "5";
+    const limit = Number(limitRaw) || 5;
+
+    if (!q) {
+      return res.status(400).json({ error: "missing_query" });
+    }
+
+    const hits = await vectorSearch(q, { limit });
+
+    res.json({
+      query: q,
+      hits,
+    });
+  } catch (err) {
+    console.error("Search error on /api/search:", err);
+    res.status(500).json({
+      error: "search_failed",
+      message:
+        process.env.NODE_ENV === "production"
+          ? "Search failed"
+          : String(err?.message || err),
+    });
+  }
+});
 
 // Core endpoints
 app.post("/api/respond", respondHandler);
-app.post("/api/tts", ttsHandler); // ← NEW
+app.post("/api/tts", ttsHandler);
 
 // Static admin page(s) from backend/public
 app.use(express.static(path.join(__dirname, "public")));

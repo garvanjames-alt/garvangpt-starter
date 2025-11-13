@@ -1,183 +1,278 @@
 // backend/retriever/retriever.mjs
-// Mini cosine-similarity retriever over backend/data/embeddings.json
+// Mini retriever for Lynch's Pharmacy corpus (Render + local)
+//
+// - Reads backend/data/embeddings.json
+// - Supports multiple index shapes (old + new)
+// - Uses OpenAI embeddings for query vector
+// - Exports: loadIndex, reloadIfChanged, search, getIndexInfo
 
 import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
 import OpenAI from "openai";
 
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
+
+const INDEX_PATH =
+  process.env.RETRIEVER_INDEX_PATH ||
+  path.join(__dirname, "..", "data", "embeddings.json");
+
 const openai = new OpenAI({
   apiKey: process.env.OPENAI_API_KEY,
 });
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+let cache = {
+  index: null,
+  mtimeMs: 0,
+};
 
-// This is where buildIndex.lite.mjs writes your Lynch's Pharmacy index
-const INDEX_PATH = path.join(__dirname, "..", "data", "embeddings.json");
+/**
+ * Try to normalise whatever JSON format we find on disk into:
+ * { documents: [{ text, source }], embeddings: number[][], dim: number }
+ */
+function normalizeIndex(raw) {
+  let documents = [];
+  let embeddings = [];
+  let dim = 0;
 
-// In-memory index: [{ id, text, source, embedding, norm }]
-let _docs = null;
-let _loaded = false;
-let _dim = 0;
-
-function l2Norm(vec) {
-  let sum = 0;
-  for (let i = 0; i < vec.length; i++) {
-    const v = vec[i];
-    sum += v * v;
+  if (!raw) {
+    throw new Error("Empty embeddings.json");
   }
-  return Math.sqrt(sum) || 1e-8;
-}
 
-function cosineSimilarity(a, b) {
-  const len = Math.min(a.length, b.length);
-  let dot = 0;
-  for (let i = 0; i < len; i++) {
-    dot += a[i] * b[i];
+  // Case 1: Array of rows
+  if (Array.isArray(raw)) {
+    if (raw.length === 0) {
+      throw new Error("Empty index array");
+    }
+
+    const first = raw[0];
+
+    // 1a) [{ embedding: [...], text, source }]
+    if (typeof first === "object" && !Array.isArray(first)) {
+      if (Array.isArray(first.embedding) || Array.isArray(first.vector)) {
+        embeddings = raw.map((r) => r.embedding || r.vector);
+        documents = raw.map((r, i) => ({
+          text: r.text || r.content || r.chunk || "",
+          source:
+            r.source ||
+            r.path ||
+            r.id ||
+            (r.metadata && (r.metadata.source || r.metadata.path)) ||
+            `doc_${i}`,
+        }));
+      } else {
+        throw new Error(
+          "Unexpected array index format: objects missing embedding/vector"
+        );
+      }
+    }
+
+    // 1b) [[...embedding..., text, source]]
+    else if (Array.isArray(first)) {
+      const rowLen = first.length;
+      if (rowLen < 3) {
+        throw new Error("Array row too short to contain embedding + payload");
+      }
+      const payloadCols = 2; // text, source
+      const embedLen = rowLen - payloadCols;
+
+      embeddings = raw.map((row) => row.slice(0, embedLen));
+      documents = raw.map((row, i) => ({
+        text: row[embedLen] ?? "",
+        source: row[embedLen + 1] ?? `doc_${i}`,
+      }));
+    } else {
+      throw new Error(
+        "Unexpected embeddings.json format: array elements not recognised"
+      );
+    }
   }
-  return dot;
-}
 
-// ---------------- INDEX LOADING ----------------
+  // Case 2: Object wrapper
+  else if (typeof raw === "object") {
+    // 2a) { documents: [...], embeddings: [...], dim?, metadata? }
+    if (Array.isArray(raw.documents) && Array.isArray(raw.embeddings)) {
+      embeddings = raw.embeddings;
+      const docs = raw.documents;
+
+      documents = docs.map((d, i) => {
+        if (typeof d === "string") {
+          return {
+            text: d,
+            source:
+              (raw.sources && raw.sources[i]) ||
+              (raw.metadata &&
+                raw.metadata[i] &&
+                (raw.metadata[i].source || raw.metadata[i].path)) ||
+              `doc_${i}`,
+          };
+        }
+
+        // object-ish
+        return {
+          text: d.text || d.content || d.chunk || "",
+          source:
+            d.source ||
+            d.path ||
+            d.id ||
+            (d.metadata && (d.metadata.source || d.metadata.path)) ||
+            `doc_${i}`,
+        };
+      });
+
+      dim = raw.dim || (embeddings[0] ? embeddings[0].length : 0);
+    }
+
+    // 2b) { items: [...] } – older or experimental shapes
+    else if (Array.isArray(raw.items)) {
+      const first = raw.items[0];
+      if (
+        first &&
+        typeof first === "object" &&
+        (Array.isArray(first.embedding) || Array.isArray(first.vector))
+      ) {
+        embeddings = raw.items.map((r) => r.embedding || r.vector);
+        documents = raw.items.map((r, i) => ({
+          text: r.text || r.content || r.chunk || "",
+          source:
+            r.source ||
+            r.path ||
+            r.id ||
+            (r.metadata && (r.metadata.source || r.metadata.path)) ||
+            `doc_${i}`,
+        }));
+      } else {
+        throw new Error(
+          "Unexpected { items: [] } format: objects missing embedding/vector"
+        );
+      }
+    } else {
+      console.error(
+        "[retriever] Unknown embeddings.json object keys:",
+        Object.keys(raw)
+      );
+      throw new Error(
+        "Unexpected embeddings.json format: expected array or { documents: [] }"
+      );
+    }
+  } else {
+    throw new Error("Unexpected embeddings.json root type");
+  }
+
+  if (!embeddings.length || !documents.length) {
+    throw new Error("Index has no documents or embeddings");
+  }
+
+  dim = dim || (embeddings[0] ? embeddings[0].length : 0);
+
+  return { documents, embeddings, dim };
+}
 
 async function loadIndex() {
-  if (_loaded) return;
+  const stat = await fs.stat(INDEX_PATH);
+  const mtimeMs = stat.mtimeMs;
 
-  const raw = await fs.readFile(INDEX_PATH, "utf8");
-  const parsed = JSON.parse(raw);
-
-  let docsRaw;
-  if (Array.isArray(parsed)) {
-    docsRaw = parsed;
-  } else if (Array.isArray(parsed.documents)) {
-    docsRaw = parsed.documents;
-  } else {
-    throw new Error(
-      "Unexpected embeddings.json format: expected array or { documents: [] }"
-    );
+  if (cache.index && cache.mtimeMs === mtimeMs) {
+    return cache.index;
   }
 
-  _docs = docsRaw.map((doc, idx) => {
-    const embedding =
-      doc.embedding || doc.vector || doc.embedding_vector || [];
-    const text = doc.text || doc.content || "";
-    const source =
-      doc.source ||
-      (doc.meta && (doc.meta.source || doc.meta.path || doc.meta.url)) ||
-      "";
-    return {
-      id: doc.id ?? idx,
-      text,
-      source,
-      embedding,
-      norm: l2Norm(embedding),
-    };
-  });
+  const jsonText = await fs.readFile(INDEX_PATH, "utf8");
+  const raw = JSON.parse(jsonText);
 
-  _dim = _docs[0]?.embedding?.length ?? 0;
-  _loaded = true;
+  const { documents, embeddings, dim } = normalizeIndex(raw);
+
+  const index = { documents, embeddings, dim };
+  cache = { index, mtimeMs };
 
   console.log(
-    `[retriever] Loaded ${_docs.length} docs (dim=${_dim}) from ${INDEX_PATH}`
+    `[retriever] Loaded index from ${INDEX_PATH} – ${documents.length} docs, dim=${dim}`
   );
+
+  return index;
 }
 
-// Basic info used by /api/search and /health routes
-async function getIndexInfo() {
-  if (!_loaded) {
-    await loadIndex();
-  }
-  return {
-    ok: true,
-    count: _docs.length,
-    dim: _dim,
-    path: INDEX_PATH,
-  };
-}
-
-// On Render we don't watch the filesystem; just ensure it's loaded.
-// This keeps the old API shape without complexity.
 async function reloadIfChanged() {
-  if (!_loaded) {
+  try {
     await loadIndex();
-    return { reloaded: true };
+  } catch (err) {
+    console.error("[retriever] reloadIfChanged failed:", err.message);
   }
-  return { reloaded: false };
 }
-
-// ---------------- QUERY EMBEDDING ----------------
 
 async function embedQuery(query) {
-  const model =
-    process.env.EMBEDDING_MODEL || "text-embedding-3-small";
+  const trimmed = (query || "").trim();
+  if (!trimmed) {
+    throw new Error("Cannot embed empty query");
+  }
 
   const res = await openai.embeddings.create({
-    model,
-    input: query,
+    model: "text-embedding-3-small",
+    input: trimmed,
   });
 
-  const embedding = res.data[0].embedding;
-  return {
-    embedding,
-    norm: l2Norm(embedding),
-  };
+  const vec = res.data[0]?.embedding;
+  if (!Array.isArray(vec)) {
+    throw new Error("Failed to get query embedding");
+  }
+  return vec;
 }
 
-// ---------------- MAIN SEARCH API ----------------
+function cosineSim(a, b) {
+  let dot = 0;
+  let na = 0;
+  let nb = 0;
+  const len = Math.min(a.length, b.length);
+
+  for (let i = 0; i < len; i++) {
+    const va = a[i];
+    const vb = b[i];
+    dot += va * vb;
+    na += va * va;
+    nb += vb * vb;
+  }
+
+  if (!na || !nb) return 0;
+  return dot / (Math.sqrt(na) * Math.sqrt(nb));
+}
 
 async function search(query, limit = 5) {
-  if (!_loaded) {
-    await loadIndex();
-  }
+  const index = await loadIndex();
+  const q = await embedQuery(query);
 
-  if (!query || typeof query !== "string") {
-    return { query: query ?? "", hits: [] };
-  }
+  const scores = index.embeddings.map((vec, i) => ({
+    i,
+    score: cosineSim(q, vec),
+  }));
 
-  const { embedding: qVec, norm: qNorm } = await embedQuery(query);
+  scores.sort((a, b) => b.score - a.score);
 
-  const scored = _docs.map((d) => {
-    const dot = cosineSimilarity(qVec, d.embedding);
-    const score = dot / (qNorm * d.norm || 1e-8);
+  const top = scores.slice(0, limit).map(({ i, score }) => {
+    const doc = index.documents[i] || {};
     return {
-      text: d.text,
-      source: d.source,
+      text: doc.text || "",
+      source: doc.source || `doc_${i}`,
       score,
     };
   });
 
-  scored.sort((a, b) => b.score - a.score);
+  return top;
+}
 
-  const hits = scored.slice(0, limit);
+function getIndexInfo() {
+  if (!cache.index) {
+    return {
+      loaded: false,
+      documents: 0,
+      dim: 0,
+    };
+  }
 
   return {
-    query,
-    hits,
+    loaded: true,
+    documents: cache.index.documents.length,
+    dim: cache.index.dim,
   };
 }
 
-// ---------------- EXPORTS ----------------
-
-// Named exports expected around the codebase:
-export { search, loadIndex, getIndexInfo, reloadIfChanged };
-
-// Aliases in case other modules use older names
-export const initRetriever = loadIndex;
-export const init = loadIndex;
-export const searchIndex = search;
-export const searchDocuments = search;
-
-// Default export for `import retriever from ...`
-const retriever = {
-  search,
-  loadIndex,
-  getIndexInfo,
-  reloadIfChanged,
-  initRetriever: loadIndex,
-  init: loadIndex,
-  searchIndex: search,
-  searchDocuments: search,
-};
-
-export default retriever;
+export { loadIndex, reloadIfChanged, search, getIndexInfo };

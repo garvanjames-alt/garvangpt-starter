@@ -1,79 +1,146 @@
 // backend/retriever/retriever.mjs
-// Transparent, reloadable retriever.
+// Simple cosine-similarity retriever over backend/data/embeddings.json
 
-import fs from "fs";
+import fs from "fs/promises";
 import path from "path";
 import { fileURLToPath } from "url";
-import { embedBatch } from "./embeddings.mjs";
+import OpenAI from "openai";
+
+const openai = new OpenAI({
+  apiKey: process.env.OPENAI_API_KEY,
+});
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Allow override via env; default to the existing embeddings.json
-const DEFAULT_FILE = process.env.EMBEDDINGS_FILE ||
-  path.join(__dirname, "..", "data", "embeddings.json");
+// Path to your mini Lynch's Pharmacy corpus index
+const INDEX_PATH = path.join(__dirname, "..", "data", "embeddings.json");
 
-let INDEX = null;
-let LOADED_PATH = null;
-let LOADED_MTIME = 0;
+// In-memory index
+let _docs = null; // [{ id, text, source, embedding, norm }]
+let _loaded = false;
 
-function cosine(a, b) {
-  let dot = 0, na = 0, nb = 0;
-  for (let i = 0; i < a.length; i++) {
-    const x = a[i], y = b[i];
-    dot += x * y; na += x * x; nb += y * y;
+function l2Norm(vec) {
+  let sum = 0;
+  for (let i = 0; i < vec.length; i++) {
+    const v = vec[i];
+    sum += v * v;
   }
-  return dot / (Math.sqrt(na) * Math.sqrt(nb) + 1e-9);
+  return Math.sqrt(sum) || 1e-8;
 }
 
-export function loadIndex(filePath = DEFAULT_FILE) {
-  const p = path.resolve(filePath);
-  if (!fs.existsSync(p)) return null;
-
-  const stat = fs.statSync(p);
-  const raw = fs.readFileSync(p, "utf8");
-  INDEX = JSON.parse(raw);
-  LOADED_PATH = p;
-  LOADED_MTIME = stat.mtimeMs;
-  return INDEX;
+function cosineSimilarity(a, b) {
+  const len = Math.min(a.length, b.length);
+  let dot = 0;
+  for (let i = 0; i < len; i++) {
+    dot += a[i] * b[i];
+  }
+  return dot;
 }
 
-export function reloadIfChanged() {
-  const p = LOADED_PATH || DEFAULT_FILE;
-  if (!fs.existsSync(p)) return false;
-  const stat = fs.statSync(p);
-  if (!INDEX || stat.mtimeMs !== LOADED_MTIME) {
-    loadIndex(p);
-    return true;
+async function loadIndex() {
+  if (_loaded) return;
+  const raw = await fs.readFile(INDEX_PATH, "utf8");
+  const parsed = JSON.parse(raw);
+
+  let docsRaw;
+  if (Array.isArray(parsed)) {
+    docsRaw = parsed;
+  } else if (Array.isArray(parsed.documents)) {
+    docsRaw = parsed.documents;
+  } else {
+    throw new Error(
+      "Unexpected embeddings.json format: expected array or { documents: [] }"
+    );
   }
-  return false;
+
+  _docs = docsRaw.map((doc, idx) => {
+    const embedding =
+      doc.embedding || doc.vector || doc.embedding_vector || [];
+    const text = doc.text || doc.content || "";
+    const source =
+      doc.source ||
+      (doc.meta && (doc.meta.source || doc.meta.path || doc.meta.url)) ||
+      "";
+    return {
+      id: doc.id ?? idx,
+      text,
+      source,
+      embedding,
+      norm: l2Norm(embedding),
+    };
+  });
+
+  _loaded = true;
+  console.log(
+    `[retriever] Loaded ${_docs.length} docs from ${INDEX_PATH}`
+  );
 }
 
-export function getIndexInfo() {
-  const p = LOADED_PATH || DEFAULT_FILE;
-  let count = 0, model = "unknown", createdAt = null, sampleSources = [];
-  if (INDEX?.items?.length) {
-    count = INDEX.items.length;
-    model = INDEX.model || model;
-    createdAt = INDEX.createdAt || null;
-    const uniq = new Set(INDEX.items.map(it => it.source));
-    sampleSources = Array.from(uniq).slice(0, 8);
-  }
-  return { file: p, count, model, createdAt, sampleSources, loadedMtime: LOADED_MTIME };
+async function embedQuery(query) {
+  const model =
+    process.env.EMBEDDING_MODEL || "text-embedding-3-small";
+
+  const res = await openai.embeddings.create({
+    model,
+    input: query,
+  });
+
+  const embedding = res.data[0].embedding;
+  return {
+    embedding,
+    norm: l2Norm(embedding),
+  };
 }
 
-export async function search(query, topK = 5) {
-  if (!INDEX) loadIndex();           // initial load
-  reloadIfChanged();                 // hot-reload if file changed
-  if (!INDEX || !INDEX.items?.length) {
-    return { query, hits: [] };
+/**
+ * Main semantic search function.
+ * Returns { query, hits: [{ text, source, score }] }
+ */
+export async function search(query, limit = 5) {
+  if (!_loaded) {
+    await loadIndex();
   }
-  const [qv] = await embedBatch([query], 1);
-  const scored = INDEX.items.map(it => ({
-    text: it.text,
-    source: it.source,
-    score: cosine(qv, it.vector),
-  }));
+
+  if (!query || typeof query !== "string") {
+    return { query: query ?? "", hits: [] };
+  }
+
+  const { embedding: qVec, norm: qNorm } = await embedQuery(query);
+
+  const scored = _docs.map((d) => {
+    const dot = cosineSimilarity(qVec, d.embedding);
+    const score = dot / (qNorm * d.norm || 1e-8);
+    return {
+      text: d.text,
+      source: d.source,
+      score,
+    };
+  });
+
   scored.sort((a, b) => b.score - a.score);
-  return { query, hits: scored.slice(0, topK) };
+
+  const hits = scored.slice(0, limit);
+
+  return {
+    query,
+    hits,
+  };
 }
+
+// Aliases so existing imports keep working
+export const initRetriever = loadIndex;
+export const init = loadIndex;
+export const searchIndex = search;
+export const searchDocuments = search;
+
+// Default export for `import retriever from ...`
+const retriever = {
+  initRetriever: loadIndex,
+  init: loadIndex,
+  search,
+  searchIndex: search,
+  searchDocuments: search,
+};
+
+export default retriever;

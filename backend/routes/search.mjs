@@ -1,39 +1,54 @@
 // backend/routes/search.mjs
 import express from "express";
-import { search, getIndexInfo, loadIndex, reloadIfChanged } from "../retriever/retriever.mjs";
+import {
+  search,
+  getIndexInfo,
+  loadIndex,
+  reloadIfChanged,
+} from "../retriever/retriever.mjs";
 
 const router = express.Router();
 
-// GET /api/search?q=...&k=5
-router.get("/search", async (req, res) => {
-  const q = String(req.query.q || "");
-  const k = Math.max(1, Math.min(20, Number(req.query.k || 5)));
+// GET /api/search?q=...&limit=...
+router.get("/", async (req, res) => {
+  const q = (req.query.q || "").toString();
+  const limitParam = parseInt(req.query.limit ?? "5", 10);
+  const limit =
+    Number.isFinite(limitParam) && limitParam > 0 ? limitParam : 5;
+
+  if (!q) {
+    return res.json({ query: "", hits: [] });
+  }
+
   try {
-    const out = await search(q, k);
-    res.json(out);
+    // Make sure index is loaded (and reloaded if needed)
+    await reloadIfChanged();
+    await loadIndex();
+
+    const result = await search(q, limit);
+    return res.json(result);
   } catch (err) {
-    console.error("[/api/search] error:", err);
-    res.status(500).json({ error: "search_failed" });
+    console.error("[/api/search] Error during search:", err);
+    return res.status(500).json({
+      error: "search_failed",
+      message: err.message || "Unknown error",
+      // stack is useful in local dev; on Render you’ll at least get message
+    });
   }
 });
 
-// GET /api/status → show retriever file, count, sources
-router.get("/status", (_req, res) => {
+// Optional: GET /api/search/info for debugging
+router.get("/info", async (req, res) => {
   try {
-    const info = getIndexInfo();
-    res.json({ ok: true, retriever: info });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: "status_failed" });
-  }
-});
-
-// POST /api/reload → force reload
-router.post("/reload", (_req, res) => {
-  try {
-    const changed = reloadIfChanged() || (!getIndexInfo().count && !!loadIndex());
-    res.json({ ok: true, reloaded: changed, info: getIndexInfo() });
-  } catch (e) {
-    res.status(500).json({ ok: false, error: "reload_failed" });
+    await loadIndex();
+    const info = await getIndexInfo();
+    return res.json(info);
+  } catch (err) {
+    console.error("[/api/search/info] Error:", err);
+    return res.status(500).json({
+      error: "info_failed",
+      message: err.message || "Unknown error",
+    });
   }
 });
 

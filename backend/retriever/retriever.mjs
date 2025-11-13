@@ -1,5 +1,5 @@
 // backend/retriever/retriever.mjs
-// Simple cosine-similarity retriever over backend/data/embeddings.json
+// Mini cosine-similarity retriever over backend/data/embeddings.json
 
 import fs from "fs/promises";
 import path from "path";
@@ -13,12 +13,13 @@ const openai = new OpenAI({
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
-// Path to your mini Lynch's Pharmacy corpus index
+// This is where buildIndex.lite.mjs writes your Lynch's Pharmacy index
 const INDEX_PATH = path.join(__dirname, "..", "data", "embeddings.json");
 
 // In-memory index: [{ id, text, source, embedding, norm }]
 let _docs = null;
 let _loaded = false;
+let _dim = 0;
 
 function l2Norm(vec) {
   let sum = 0;
@@ -38,7 +39,8 @@ function cosineSimilarity(a, b) {
   return dot;
 }
 
-// ----- INDEX LOADING -----
+// ---------------- INDEX LOADING ----------------
+
 async function loadIndex() {
   if (_loaded) return;
 
@@ -73,13 +75,39 @@ async function loadIndex() {
     };
   });
 
+  _dim = _docs[0]?.embedding?.length ?? 0;
   _loaded = true;
+
   console.log(
-    `[retriever] Loaded ${_docs.length} docs from ${INDEX_PATH}`
+    `[retriever] Loaded ${_docs.length} docs (dim=${_dim}) from ${INDEX_PATH}`
   );
 }
 
-// ----- QUERY EMBEDDING -----
+// Basic info used by /api/search and /health routes
+async function getIndexInfo() {
+  if (!_loaded) {
+    await loadIndex();
+  }
+  return {
+    ok: true,
+    count: _docs.length,
+    dim: _dim,
+    path: INDEX_PATH,
+  };
+}
+
+// On Render we don't watch the filesystem; just ensure it's loaded.
+// This keeps the old API shape without complexity.
+async function reloadIfChanged() {
+  if (!_loaded) {
+    await loadIndex();
+    return { reloaded: true };
+  }
+  return { reloaded: false };
+}
+
+// ---------------- QUERY EMBEDDING ----------------
+
 async function embedQuery(query) {
   const model =
     process.env.EMBEDDING_MODEL || "text-embedding-3-small";
@@ -96,7 +124,8 @@ async function embedQuery(query) {
   };
 }
 
-// ----- MAIN SEARCH API -----
+// ---------------- MAIN SEARCH API ----------------
+
 async function search(query, limit = 5) {
   if (!_loaded) {
     await loadIndex();
@@ -128,12 +157,12 @@ async function search(query, limit = 5) {
   };
 }
 
-// ----- EXPORTS (keep old names working) -----
+// ---------------- EXPORTS ----------------
 
-// What status.mjs expects:
-export { loadIndex, search };
+// Named exports expected around the codebase:
+export { search, loadIndex, getIndexInfo, reloadIfChanged };
 
-// Aliases so other imports keep working:
+// Aliases in case other modules use older names
 export const initRetriever = loadIndex;
 export const init = loadIndex;
 export const searchIndex = search;
@@ -141,10 +170,12 @@ export const searchDocuments = search;
 
 // Default export for `import retriever from ...`
 const retriever = {
+  search,
   loadIndex,
+  getIndexInfo,
+  reloadIfChanged,
   initRetriever: loadIndex,
   init: loadIndex,
-  search,
   searchIndex: search,
   searchDocuments: search,
 };

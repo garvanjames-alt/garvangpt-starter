@@ -13,3 +13,4 @@ backend/.env
 # Local env snapshots (never commit)
 snapshots/*.local
 .env*
+backend/data/embeddings.json

@@ -16,4 +16,8 @@ export default defineConfig({
       },
     },
   },
+  preview: {
+    // Allow Render frontend domain
+    allowedHosts: ['almosthuman-frontend.onrender.com'],
+  },
 });

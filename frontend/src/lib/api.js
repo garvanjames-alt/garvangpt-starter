@@ -1,7 +1,7 @@
 // frontend/src/lib/api.js
-// Small helper for calling the backend API from both local dev and Render.
+// Helper for calling the backend API from both local dev and Render.
 
-// Detect if we're in the browser (Vite build runs in Node)
+// Detect if we're in the browser
 const isBrowser = typeof window !== "undefined";
 
 // When running on Render (static site), talk to the Render backend.
@@ -39,13 +39,13 @@ async function json(method, path, body) {
 
 export const api = {
   // Core chat endpoint
-  respond: async (prompt) => {
-    const data = await json("POST", "/api/respond", { prompt });
-    // Expected shape: { ok: true, answer, sources? }
-    return data;
+  respond: async (question) => {
+    // backend expects { prompt: "..." }
+    const data = await json("POST", "/api/respond", { prompt: question });
+    return data; // { ok, answer, sources? }
   },
 
-  // Text-to-speech – returns a Blob URL you can play with new Audio(url)
+  // TTS endpoint – returns a blob URL you can play in <audio>
   tts: async (text) => {
     const res = await fetch(API_BASE + "/api/tts", {
       method: "POST",
@@ -56,10 +56,8 @@ export const api = {
     });
 
     if (!res.ok) {
-      const t = await res.text().catch(() => "");
-      throw new Error(
-        t || `TTS failed with status ${res.status} ${res.statusText}`
-      );
+      const msg = `TTS HTTP ${res.status}`;
+      throw new Error(msg);
     }
 
     const blob = await res.blob();

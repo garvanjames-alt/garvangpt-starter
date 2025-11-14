@@ -1,162 +1,162 @@
-import React, { useEffect, useRef, useState } from "react";
+// frontend/src/VoiceChat.jsx
+import React, { useState, useRef } from "react";
 import { api } from "./lib/api";
 
-// Simple voice chat component:
-// - "Start mic" uses Web Speech API to capture speech -> text
-// - "Send to prototype" sends text to backend via api.respond()
-// - If "Read aloud" is checked, we call api.ttsUrl() and play audio
-
-const hasBrowserSpeech =
-  typeof window !== "undefined" &&
-  (window.SpeechRecognition || window.webkitSpeechRecognition);
+// Helper so we don't touch `window` on the server
+function createRecognition() {
+  if (typeof window === "undefined") return null;
+  const SR =
+    window.SpeechRecognition || window.webkitSpeechRecognition || null;
+  return SR ? new SR() : null;
+}
 
 export default function VoiceChat() {
-  const [input, setInput] = useState("");
+  const [question, setQuestion] = useState("");
   const [assistant, setAssistant] = useState("");
-  const [listening, setListening] = useState(false);
   const [readAloud, setReadAloud] = useState(true);
+  const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
 
   const audioRef = useRef(null);
   const recognitionRef = useRef(null);
 
-  // Set up speech recognition if available
-  useEffect(() => {
-    if (!hasBrowserSpeech) return;
+  async function handleAsk() {
+    const q = question.trim();
+    if (!q) return;
 
-    const SR = window.SpeechRecognition || window.webkitSpeechRecognition;
-    const rec = new SR();
-    rec.lang = "en-US";
-    rec.continuous = false;
-    rec.interimResults = false;
-
-    rec.onstart = () => {
-      setListening(true);
-      setError("");
-    };
-
-    rec.onend = () => {
-      setListening(false);
-    };
-
-    rec.onerror = (event) => {
-      console.error("Speech recognition error:", event);
-      setError("Mic error: " + (event.error || "unknown"));
-      setListening(false);
-    };
-
-    rec.onresult = (event) => {
-      const transcript = Array.from(event.results)
-        .map((r) => r[0].transcript)
-        .join(" ");
-      setInput((prev) =>
-        prev ? prev + " " + transcript.trim() : transcript.trim()
-      );
-    };
-
-    recognitionRef.current = rec;
-
-    return () => {
-      rec.onstart = null;
-      rec.onend = null;
-      rec.onerror = null;
-      rec.onresult = null;
-      rec.stop();
-    };
-  }, []);
-
-  const handleStartMic = () => {
-    if (!recognitionRef.current) {
-      setError("Your browser doesn't support voice input here.");
-      return;
-    }
-
-    try {
-      recognitionRef.current.start();
-    } catch (e) {
-      // start() will throw if it's already running; ignore
-      console.warn("SpeechRecognition start error:", e);
-    }
-  };
-
-  const handleSend = async () => {
-    if (!input.trim()) return;
     setError("");
     setAssistant("Thinking…");
 
     try {
-      const answer = await api.respond(input.trim());
-      setAssistant(answer || "");
+      const data = await api.respond(q);
+      const answer = data.answer || "(no answer returned)";
+      setAssistant(answer);
 
       if (readAloud && answer) {
-        // Ask backend for TTS audio
-        const url = await api.ttsUrl(answer);
-        if (audioRef.current) {
-          audioRef.current.src = url;
-          audioRef.current.play().catch((e) => {
-            console.warn("Audio play error:", e);
-          });
+        try {
+          const url = await api.tts(answer);
+          if (audioRef.current) {
+            audioRef.current.src = url;
+            await audioRef.current.play();
+          }
+        } catch (ttsErr) {
+          console.error("TTS error:", ttsErr);
+          setError("TTS error: " + (ttsErr.message || String(ttsErr)));
         }
       }
     } catch (err) {
-      console.error("VoiceChat send error:", err);
+      console.error("respond error:", err);
       setAssistant("");
-      setError(
-        err instanceof Error
-          ? err.message || "Request failed"
-          : "Request failed"
-      );
+      setError(err.message || "Request failed");
     }
-  };
+  }
+
+  function handleStartMic() {
+    // If already listening, stop.
+    if (isListening && recognitionRef.current) {
+      recognitionRef.current.stop();
+      return;
+    }
+
+    const recognition = createRecognition();
+    if (!recognition) {
+      setError("Your browser does not support speech recognition.");
+      return;
+    }
+
+    recognitionRef.current = recognition;
+    recognition.lang = "en-US";
+    recognition.continuous = false;
+    recognition.interimResults = false;
+
+    recognition.onresult = (event) => {
+      try {
+        const text = event.results[0][0].transcript;
+        setQuestion(text);
+      } catch (e) {
+        console.error("onresult error:", e);
+      } finally {
+        setIsListening(false);
+        recognitionRef.current = null;
+      }
+    };
+
+    recognition.onerror = (event) => {
+      console.error("Speech error:", event.error);
+      setError("Mic error: " + event.error);
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.onend = () => {
+      setIsListening(false);
+      recognitionRef.current = null;
+    };
+
+    recognition.start();
+    setIsListening(true);
+  }
 
   return (
-    <section className="space-y-2">
-      <h3 className="font-semibold text-lg">Talk to the prototype</h3>
+    <main className="min-h-screen bg-black text-white p-4 md:p-8 space-y-6">
+      <header>
+        <h1 className="text-2xl md:text-3xl font-bold">
+          GarvanGPT — “Almost Human” (Local MVP)
+        </h1>
+        <p className="text-sm text-gray-300 mt-1">
+          Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>.
+          API base via Vite proxy or Render static site.
+        </p>
+      </header>
 
-      <textarea
-        className="w-full min-h-[80px] p-2 bg-[#222] text-sm text-white border border-[#444] rounded"
-        placeholder="Speak or type here…"
-        value={input}
-        onChange={(e) => setInput(e.target.value)}
-      />
-
-      <div className="flex items-center gap-2 flex-wrap">
-        <button
-          type="button"
-          onClick={handleStartMic}
-          disabled={!hasBrowserSpeech}
-          className="px-3 py-1 text-sm rounded bg-[#333] border border-[#555]"
-        >
-          {listening ? "Listening…" : "Start mic"}
-        </button>
-
-        <button
-          type="button"
-          onClick={handleSend}
-          className="px-3 py-1 text-sm rounded bg-[#0b5] text-black font-semibold"
-        >
-          Send to prototype
-        </button>
-
-        <label className="flex items-center gap-1 text-xs">
-          <input
-            type="checkbox"
-            checked={readAloud}
-            onChange={(e) => setReadAloud(e.target.checked)}
-          />
-          Read aloud
-        </label>
-      </div>
-
-      <div className="mt-4">
-        <h3 className="font-semibold text-lg mb-1">Assistant</h3>
+      <section className="space-y-3">
+        <h2 className="text-xl font-semibold">Talk to the prototype</h2>
         <textarea
-          className="w-full min-h-[120px] p-2 bg-[#111] text-sm text-white border border-[#444] rounded"
+          className="w-full min-h-[80px] p-2 bg-[#111] text-sm text-white border border-[#444] rounded"
+          placeholder="Speak with the mic or type your question here…"
+          value={question}
+          onChange={(e) => setQuestion(e.target.value)}
+        />
+
+        <div className="flex flex-wrap items-center gap-3">
+          <button
+            type="button"
+            onClick={handleStartMic}
+            className={`px-4 py-1 rounded font-semibold ${
+              isListening ? "bg-red-600" : "bg-gray-700"
+            }`}
+          >
+            {isListening ? "Stop mic" : "Start mic"}
+          </button>
+
+          <button
+            type="button"
+            onClick={handleAsk}
+            className="px-4 py-1 rounded font-semibold bg-blue-600"
+          >
+            Send to prototype
+          </button>
+
+          <label className="flex items-center gap-2 text-sm">
+            <input
+              type="checkbox"
+              checked={readAloud}
+              onChange={(e) => setReadAloud(e.target.checked)}
+            />
+            Read aloud
+          </label>
+        </div>
+      </section>
+
+      <section className="space-y-2">
+        <h2 className="text-xl font-semibold">Assistant</h2>
+        <textarea
+          className="w-full min-h-[140px] p-2 bg-[#111] text-sm text-white border border-[#444] rounded"
           value={assistant}
           readOnly
           placeholder="The answer will appear here…"
         />
-      </div>
+      </section>
 
       {error && (
         <p className="text-xs text-red-400 mt-1">
@@ -165,6 +165,6 @@ export default function VoiceChat() {
       )}
 
       <audio ref={audioRef} hidden />
-    </section>
+    </main>
   );
 }

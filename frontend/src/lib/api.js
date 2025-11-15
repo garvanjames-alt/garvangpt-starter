@@ -1,13 +1,18 @@
 // frontend/src/lib/api.js
-// Helper for calling the backend API from both local dev and Render.
+// Small helper for calling the backend API from both local dev and Render.
 
-// Detect if we're in the browser
+// Detect if we're in the browser (Vite build runs in Node)
 const isBrowser = typeof window !== "undefined";
 
-// When running on Render (static site), talk to the Render backend.
+// When running on Render (static site) OR on our custom domain,
+// talk to the Render backend.
 // When running locally (`npm run dev`), keep relative `/api/...` so Vite proxy works.
 export const API_BASE =
-  isBrowser && window.location.hostname.includes("onrender.com")
+  isBrowser &&
+  (
+    window.location.hostname.includes("onrender.com") ||
+    window.location.hostname.endsWith("almosthumanlabs.ai")
+  )
     ? "https://almosthuman-starter-staging.onrender.com"
     : "";
 
@@ -38,14 +43,12 @@ async function json(method, path, body) {
 }
 
 export const api = {
-  // Core chat endpoint
+  // Main chat answer
   respond: async (question) => {
-    // backend expects { prompt: "..." }
-    const data = await json("POST", "/api/respond", { prompt: question });
-    return data; // { ok, answer, sources? }
+    return json("POST", "/api/respond", { question });
   },
 
-  // TTS endpoint – returns a blob URL you can play in <audio>
+  // Text-to-speech: returns an object URL for an audio blob
   tts: async (text) => {
     const res = await fetch(API_BASE + "/api/tts", {
       method: "POST",
@@ -56,8 +59,8 @@ export const api = {
     });
 
     if (!res.ok) {
-      const msg = `TTS HTTP ${res.status}`;
-      throw new Error(msg);
+      const msg = await res.text();
+      throw new Error(msg || `TTS HTTP ${res.status}`);
     }
 
     const blob = await res.blob();

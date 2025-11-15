@@ -921,6 +921,7 @@ function App() {
           padding: "14px 20px 20px 20px",
           fontSize: 12,
           color: "#6b7280",
+          background: "#f9fafb",
         }}
       >
         <div
@@ -929,10 +930,55 @@ function App() {
             margin: "0 auto",
             display: "flex",
             flexDirection: "column",
-            gap: 4,
+            gap: 6,
           }}
         >
-          <div>© 2025 Almost Human Labs.</div>
+          <div
+            style={{
+              display: "flex",
+              alignItems: "center",
+              justifyContent: "space-between",
+              flexWrap: "wrap",
+              gap: 8,
+            }}
+          >
+            <div>© 2025 Almost Human Labs.</div>
+            <div
+              style={{
+                display: "flex",
+                gap: 12,
+                flexWrap: "wrap",
+              }}
+            >
+              <a
+                href="#"
+                style={{
+                  textDecoration: "none",
+                  color: "#4b5563",
+                }}
+              >
+                Privacy
+              </a>
+              <a
+                href="#"
+                style={{
+                  textDecoration: "none",
+                  color: "#4b5563",
+                }}
+              >
+                Terms
+              </a>
+              <a
+                href="mailto:hello@almosthumanlabs.ai"
+                style={{
+                  textDecoration: "none",
+                  color: "#4b5563",
+                }}
+              >
+                Contact
+              </a>
+            </div>
+          </div>
           <div>
             This is an educational prototype only — not a substitute for
             professional medical advice.

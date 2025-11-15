@@ -1,5 +1,4 @@
 import React, { useState, useRef } from "react";
-import "./App.css";
 import { api } from "./lib/api";
 
 function App() {

@@ -1,6 +1,12 @@
 import React, { useState, useRef } from "react";
 import { api } from "./lib/api";
 
+// Decide which backend to talk to for TTS (local vs Render)
+const API_BASE_URL =
+  window.location.hostname === "localhost"
+    ? "http://localhost:3001"
+    : "https://almosthuman-starter-staging.onrender.com";
+
 function App() {
   // Chat state
   const [prompt, setPrompt] = useState("");
@@ -26,10 +32,36 @@ function App() {
       const text = res?.answer || res?.message || "(no answer returned)";
       setAnswer(text);
 
+      // Clear any previous audio URL
+      if (audioUrl) {
+        URL.revokeObjectURL(audioUrl);
+        setAudioUrl(null);
+      }
+
       if (readAloud && text && text !== "(no answer returned)") {
         try {
-          const url = await api.getTtsAudioUrl(text);
+          // Call TTS directly against the correct backend base URL
+          const ttsRes = await fetch(`${API_BASE_URL}/api/tts`, {
+            method: "POST",
+            headers: {
+              "Content-Type": "application/json",
+            },
+            body: JSON.stringify({ text }),
+          });
+
+          if (!ttsRes.ok) {
+            console.error(
+              "TTS request failed",
+              ttsRes.status,
+              ttsRes.statusText
+            );
+            return;
+          }
+
+          const blob = await ttsRes.blob();
+          const url = URL.createObjectURL(blob);
           setAudioUrl(url);
+
           setTimeout(() => {
             if (audioRef.current) {
               audioRef.current
@@ -260,7 +292,9 @@ function App() {
           >
             Help support the development of pharmacist-led AI healthcare tools.
           </p>
-          <div style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 6 }}>
+          <div
+            style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 6 }}
+          >
             <a
               href="https://buy.stripe.com/cNi6oHdjjaX5bii5kA67S00"
               target="_blank"
@@ -461,7 +495,9 @@ function App() {
             >
               <li>Ask medicine questions in plain English.</li>
               <li>Hear answers read aloud with clear disclaimers.</li>
-              <li>See how pharmacist-written content feels when powered by AI.</li>
+              <li>
+                See how pharmacist-written content feels when powered by AI.
+              </li>
             </ul>
             <button
               type="button"
@@ -511,7 +547,6 @@ function App() {
           <h2
             id="what-heading"
             style={{ fontSize: 22, marginBottom: 12, marginTop: 0 }}
-          
           >
             What We Do
           </h2>
@@ -581,8 +616,12 @@ function App() {
                 }}
               >
                 <li>Deeper integrations with pharmacy and primary care.</li>
-                <li>Personalised education journeys for long-term conditions.</li>
-                <li>Tools that help clinicians communicate risk in plain language.</li>
+                <li>
+                  Personalised education journeys for long-term conditions.
+                </li>
+                <li>
+                  Tools that help clinicians communicate risk in plain language.
+                </li>
               </ul>
             </div>
           </div>
@@ -613,9 +652,9 @@ function App() {
             >
               I built my first health website over 20 years ago, writing
               pharmacist-created content to help people understand their
-              medicines. Almost Human is the next step — turning that
-              experience into AI tools that speak clearly, stay grounded in
-              real-world pharmacy practice, and always put safety first.
+              medicines. Almost Human is the next step — turning that experience
+              into AI tools that speak clearly, stay grounded in real-world
+              pharmacy practice, and always put safety first.
             </p>
 
             <div
@@ -667,7 +706,8 @@ function App() {
                         marginLeft: 3,
                         borderStyle: "solid",
                         borderWidth: "9px 0 9px 16px",
-                        borderColor: "transparent transparent transparent #4f46e5",
+                        borderColor:
+                          "transparent transparent transparent #4f46e5",
                       }}
                     />
                   </button>
@@ -728,7 +768,12 @@ function App() {
               GarvanGPT — "Almost Human" (Local MVP)
             </h3>
             <p
-              style={{ marginTop: 0, marginBottom: 12, fontSize: 13, color: "#6b7280" }}
+              style={{
+                marginTop: 0,
+                marginBottom: 12,
+                fontSize: 13,
+                color: "#6b7280",
+              }}
             >
               Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>.
               API base via Vite proxy or Render static site.

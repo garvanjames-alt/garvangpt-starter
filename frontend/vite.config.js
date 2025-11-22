@@ -1,27 +1,27 @@
-import { defineConfig } from 'vite';
-import react from '@vitejs/plugin-react';
+import { defineConfig } from "vite";
+import react from "@vitejs/plugin-react";
 
-const ALLOWED_HOSTS = ['almosthuman-frontend.onrender.com'];
+// Vite config for GarvanGPT / Almost Human frontend
+// Key fix: allow Render hostnames when running `vite preview` on Render.
+// Without this, requests to /robots.txt or /sitemap.xml on the live site
+// can be blocked with: "This host is not allowed. Add to preview.allowedHosts".
 
 export default defineConfig({
   plugins: [react()],
+
   server: {
     port: 5173,
-    proxy: {
-      '/api': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-      '/memory': {
-        target: 'http://localhost:3001',
-        changeOrigin: true,
-      },
-    },
-    // Local dev host allow-list
-    allowedHosts: ALLOWED_HOSTS,
+    // If you ever open the dev server to LAN/tunnels, uncomment:
+    // host: true,
   },
-  // Preview (what Render uses) host allow-list
+
   preview: {
-    allowedHosts: ALLOWED_HOSTS,
+    port: 5173,
+    // Allow your Render frontend domain + any subdomain on onrender.com.
+    // You can add your future custom domain here too.
+    allowedHosts: [
+      "almosthuman-frontend.onrender.com",
+      ".onrender.com",
+    ],
   },
 });

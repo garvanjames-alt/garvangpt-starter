@@ -1,5 +1,6 @@
+# Allow all well-behaved crawlers
 User-agent: *
 Allow: /
 
-
-Sitemap: https://almosthuman-frontend.onrender.com/sitemap.xml
+# Point crawlers to sitemap
+Sitemap: https://almosthumanlabs.ai/sitemap.xml

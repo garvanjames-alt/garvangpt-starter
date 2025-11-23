@@ -17,7 +17,16 @@ function App() {
   const [isPlaying, setIsPlaying] = useState(false);
 
   const audioRef = useRef(null);
+
+  // Refs for in‑page nav
+  const headerRef = useRef(null);
+  const healthRef = useRef(null);
+  const medicineRef = useRef(null);
+  const whoRef = useRef(null);
+  const whatRef = useRef(null);
+  const journeyRef = useRef(null);
   const prototypeRef = useRef(null);
+
   const recognitionRef = useRef(null);
 
   const handleSubmit = async (e) => {
@@ -123,10 +132,12 @@ function App() {
     setIsPlaying(false);
   };
 
-  const scrollToPrototype = () => {
-    if (prototypeRef.current) {
-      prototypeRef.current.scrollIntoView({ behavior: "smooth" });
-    }
+  // Smooth scroll to the *start* of the section, accounting for sticky header
+  const scrollToSection = (ref) => {
+    if (!ref?.current) return;
+    const headerH = headerRef.current?.offsetHeight || 72;
+    const y = ref.current.getBoundingClientRect().top + window.scrollY;
+    window.scrollTo({ top: Math.max(0, y - headerH - 12), behavior: "smooth" });
   };
 
   return (
@@ -141,6 +152,7 @@ function App() {
     >
       {/* Top navigation */}
       <header
+        ref={headerRef}
         style={{
           position: "sticky",
           top: 0,
@@ -162,22 +174,27 @@ function App() {
           }}
         >
           <div style={{ display: "flex", alignItems: "center", gap: 10 }}>
+            {/* Brand badge with your face */}
             <div
               style={{
-                width: 32,
-                height: 32,
+                width: 36,
+                height: 36,
                 borderRadius: "999px",
-                background:
-                  "radial-gradient(circle at 30% 30%, #e5f2ff, #0f766e)",
+                border: "2px solid #0f766e",
+                overflow: "hidden",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                color: "white",
-                fontWeight: 700,
-                fontSize: 16,
+                background: "white",
+                flexShrink: 0,
               }}
+              title="Almost Human"
             >
-              AH
+              <img
+                src="/avatar-garvan.png"
+                alt="Garvan avatar"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
             <div>
               <div style={{ fontWeight: 600 }}>Almost Human</div>
@@ -192,54 +209,88 @@ function App() {
               display: "flex",
               gap: 12,
               fontSize: 14,
-              color: "#4b5563",
+              color: "#111827",
               flexWrap: "wrap",
               justifyContent: "flex-end",
             }}
           >
             <button
               type="button"
+              onClick={() => scrollToSection(healthRef)}
               style={{
                 background: "transparent",
                 border: "none",
                 padding: "4px 8px",
-                cursor: "default",
+                cursor: "pointer",
+                fontWeight: 500,
               }}
             >
               Health A–Z
             </button>
             <button
               type="button"
+              onClick={() => scrollToSection(medicineRef)}
               style={{
                 background: "transparent",
                 border: "none",
                 padding: "4px 8px",
-                cursor: "default",
+                cursor: "pointer",
+                fontWeight: 500,
               }}
             >
               Medicine A–Z
             </button>
             <button
               type="button"
+              onClick={() => scrollToSection(whoRef)}
               style={{
                 background: "transparent",
                 border: "none",
                 padding: "4px 8px",
-                cursor: "default",
+                cursor: "pointer",
+                fontWeight: 500,
               }}
             >
               Who We Are
             </button>
             <button
               type="button"
+              onClick={() => scrollToSection(whatRef)}
               style={{
                 background: "transparent",
                 border: "none",
                 padding: "4px 8px",
-                cursor: "default",
+                cursor: "pointer",
+                fontWeight: 500,
               }}
             >
               What We Do
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection(journeyRef)}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: "4px 8px",
+                cursor: "pointer",
+                fontWeight: 500,
+              }}
+            >
+              My Journey
+            </button>
+            <button
+              type="button"
+              onClick={() => scrollToSection(prototypeRef)}
+              style={{
+                background: "transparent",
+                border: "none",
+                padding: "4px 8px",
+                cursor: "pointer",
+                fontWeight: 500,
+              }}
+            >
+              Talk to prototype
             </button>
           </nav>
         </div>
@@ -400,18 +451,23 @@ function App() {
           >
             <div
               style={{
-                width: 40,
-                height: 40,
-                borderRadius: "50%",
-                background:
-                  "radial-gradient(circle at 30% 20%, #fef9c3, #0f766e)",
+                width: 44,
+                height: 44,
+                borderRadius: "999px",
+                border: "2px solid #0f766e",
+                overflow: "hidden",
+                flexShrink: 0,
+                background: "white",
                 display: "flex",
                 alignItems: "center",
                 justifyContent: "center",
-                fontSize: 22,
               }}
             >
-              🧑‍⚕️
+              <img
+                src="/avatar-garvan.png"
+                alt="Garvan avatar"
+                style={{ width: "100%", height: "100%", objectFit: "cover" }}
+              />
             </div>
             <div>
               <div style={{ fontWeight: 600, fontSize: 15 }}>
@@ -501,7 +557,7 @@ function App() {
             </ul>
             <button
               type="button"
-              onClick={scrollToPrototype}
+              onClick={() => scrollToSection(prototypeRef)}
               style={{
                 marginTop: 12,
                 padding: "9px 16px",
@@ -519,8 +575,54 @@ function App() {
           </div>
         </section>
 
+        {/* Health A–Z placeholder */}
+        <section ref={healthRef} aria-labelledby="health-heading">
+          <h2
+            id="health-heading"
+            style={{ fontSize: 22, marginBottom: 10, marginTop: 0 }}
+          >
+            Health A–Z
+          </h2>
+          <div
+            style={{
+              background: "white",
+              borderRadius: 14,
+              padding: "14px 16px",
+              border: "1px solid rgba(148, 163, 184, 0.4)",
+              fontSize: 15,
+              color: "#4b5563",
+            }}
+          >
+            Coming soon. This section will contain pharmacist‑written health
+            explainers and safety notes.
+          </div>
+        </section>
+
+        {/* Medicine A–Z placeholder */}
+        <section ref={medicineRef} aria-labelledby="medicine-heading">
+          <h2
+            id="medicine-heading"
+            style={{ fontSize: 22, marginBottom: 10, marginTop: 0 }}
+          >
+            Medicine A–Z
+          </h2>
+          <div
+            style={{
+              background: "white",
+              borderRadius: 14,
+              padding: "14px 16px",
+              border: "1px solid rgba(148, 163, 184, 0.4)",
+              fontSize: 15,
+              color: "#4b5563",
+            }}
+          >
+            Coming soon. This section will contain pharmacist‑written medicine
+            explainers and safety notes.
+          </div>
+        </section>
+
         {/* Who we are / What we do */}
-        <section aria-labelledby="who-heading">
+        <section ref={whoRef} aria-labelledby="who-heading">
           <h2
             id="who-heading"
             style={{ fontSize: 22, marginBottom: 10, marginTop: 0 }}
@@ -543,7 +645,7 @@ function App() {
           </p>
         </section>
 
-        <section aria-labelledby="what-heading">
+        <section ref={whatRef} aria-labelledby="what-heading">
           <h2
             id="what-heading"
             style={{ fontSize: 22, marginBottom: 12, marginTop: 0 }}
@@ -616,19 +718,15 @@ function App() {
                 }}
               >
                 <li>Deeper integrations with pharmacy and primary care.</li>
-                <li>
-                  Personalised education journeys for long-term conditions.
-                </li>
-                <li>
-                  Tools that help clinicians communicate risk in plain language.
-                </li>
+                <li>Personalised education for long‑term conditions.</li>
+                <li>Risk communication tools in plain language.</li>
               </ul>
             </div>
           </div>
         </section>
 
         {/* Journey / video section */}
-        <section aria-labelledby="journey-heading">
+        <section ref={journeyRef} aria-labelledby="journey-heading">
           <h2
             id="journey-heading"
             style={{ fontSize: 22, marginBottom: 10, marginTop: 0 }}
@@ -943,42 +1041,70 @@ function App() {
             }}
           >
             <div>© 2025 Almost Human Labs.</div>
+
+            {/* Footer links */}
             <div
               style={{
                 display: "flex",
                 gap: 12,
                 flexWrap: "wrap",
+                alignItems: "center",
               }}
             >
               <a
-                href="#"
-                style={{
-                  textDecoration: "none",
-                  color: "#4b5563",
-                }}
+                href="/privacy.html"
+                style={{ textDecoration: "none", color: "#4b5563" }}
               >
                 Privacy
               </a>
               <a
-                href="#"
-                style={{
-                  textDecoration: "none",
-                  color: "#4b5563",
-                }}
+                href="/terms.html"
+                style={{ textDecoration: "none", color: "#4b5563" }}
               >
                 Terms
               </a>
               <a
-                href="mailto:hello@almosthumanlabs.ai"
-                style={{
-                  textDecoration: "none",
-                  color: "#4b5563",
-                }}
+                href="/disclaimer.html"
+                style={{ textDecoration: "none", color: "#4b5563" }}
+              >
+                Disclaimer
+              </a>
+              <a
+                href="mailto:garvanjames@gmail.com"
+                style={{ textDecoration: "none", color: "#4b5563" }}
               >
                 Contact
               </a>
+
+              {/* Visible social media links */}
+              <span style={{ color: "rgba(107,114,128,0.8)" }}>•</span>
+              <a
+                href="https://x.com/AlmostHumanLabs"
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: "none", color: "#4b5563" }}
+              >
+                X
+              </a>
+              <a
+                href="https://www.instagram.com/almost.human.lab"
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: "none", color: "#4b5563" }}
+              >
+                Instagram
+              </a>
+              <a
+                href="https://www.tiktok.com/@almost_human_labs"
+                target="_blank"
+                rel="noreferrer"
+                style={{ textDecoration: "none", color: "#4b5563" }}
+              >
+                TikTok
+              </a>
             </div>
           </div>
+
           <div>
             This is an educational prototype only — not a substitute for
             professional medical advice.

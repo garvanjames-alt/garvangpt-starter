@@ -1,26 +1,51 @@
 import { defineConfig } from "vite";
 import react from "@vitejs/plugin-react";
 
-// Vite blocks unknown hosts in preview mode for security.
-// Render serves your app from almosthuman-frontend.onrender.com,
-// so we explicitly allow it here.
-export default defineConfig({
-  plugins: [react()],
+// Vite config for Almost Human / GarvanGPT frontend
+// Key fix: allow Render host in `preview.allowedHosts`
 
-  // Local dev server settings
-  server: {
-    port: 5173,
-  },
+export default defineConfig(({ mode }) => {
+  const isLocal = mode === "development";
 
-  // `vite preview` settings (what Render is currently running)
-  preview: {
-    port: 4173,
-    // Allow your Render domain + any subdomains you might add later
-    allowedHosts: [
-      "almosthuman-frontend.onrender.com",
-      ".onrender.com",
-      "localhost",
-      "127.0.0.1",
-    ],
-  },
+  return {
+    plugins: [react()],
+
+    // If you ever deploy under a subpath, set base here. Root deploy = "/".
+    base: "/",
+
+    server: {
+      port: 5173,
+      strictPort: true,
+      host: true, // allow LAN / Docker / Render-style hosts during dev if needed
+      proxy: {
+        // Local dev proxy to backend
+        "/api": {
+          target: "http://localhost:3001",
+          changeOrigin: true,
+          secure: false,
+        },
+        "/respond": {
+          target: "http://localhost:3001",
+          changeOrigin: true,
+          secure: false,
+        },
+      },
+    },
+
+    preview: {
+      port: 4173,
+      host: true,
+
+      // ✅ FIX for “Blocked request. This host is not allowed.”
+      // Add your Render/production hostnames here.
+      allowedHosts: [
+        "almosthuman-frontend.onrender.com",
+        "almosthuman-frontend.onrender.com",
+        "almosthumanlabs.ai",
+        "www.almosthumanlabs.ai",
+        "localhost",
+        "127.0.0.1",
+      ],
+    },
+  };
 });

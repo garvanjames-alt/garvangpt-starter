@@ -1,107 +1,184 @@
 // backend/server.mjs
+// Replacement server file that removes the missing memoryRouter import.
+// ESM Node/Express backend for GarvanGPT / Almost Human.
+
+import "dotenv/config";
 import express from "express";
 import cors from "cors";
+import cookieParser from "cookie-parser";
+import bcrypt from "bcryptjs";
+import fs from "fs";
 import path from "path";
 import { fileURLToPath } from "url";
-import "dotenv/config";
-import { createRequire } from "module";
 
-// Status router (optional)
-import * as statusModule from "./routes/status.mjs";
-
-// ✅ Auth + Memory routers that exist in repo
-import authRouter from "./authRouter.mjs";
-import memoryRouter from "./memoryRouter.mjs";
-
-// Vector search from retriever
-import { search as vectorSearch } from "./retriever/retriever.mjs";
-
-// Resolve __dirname for ESM
+// --- basic paths ---
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
+const MEMORY_FILE = path.join(__dirname, "memory.jsonl");
 
-// Status router (if provided)
-const statusRouter = statusModule.default || statusModule.router;
+// --- env ---
+const PORT = process.env.PORT || 3001;
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "https://almosthuman-frontend.onrender.com";
+const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "garvan";
+const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
+const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret";
+const RESPOND_FORCE_DIRECT = process.env.RESPOND_FORCE_DIRECT === "1";
 
-// Use createRequire to load CJS handlers
-const require = createRequire(import.meta.url);
-
-// Respond handler (CJS)
-const respondMod = require("./respondHandler.cjs");
-const respondHandler =
-  respondMod?.default?.handler || respondMod?.handler || respondMod;
-
-// TTS handler (CJS)
-const ttsHandler = require("./ttsHandler.cjs");
-
-// App
+// --- app ---
 const app = express();
-const PORT = Number(process.env.PORT || 3001);
+app.disable("x-powered-by");
 
-// CORS + JSON
 app.use(
   cors({
-    origin: true,
+    origin: [FRONTEND_ORIGIN, "http://localhost:5173"],
     credentials: true,
   })
 );
-app.use(express.json({ limit: "1mb" }));
+app.use(express.json({ limit: "2mb" }));
+app.use(cookieParser(SESSION_SECRET));
 
-// ✅ Mount auth + memory routers
-// These define routes like /api/login and /api/memory
-app.use(authRouter);
-app.use(memoryRouter);
-
-// Health
-app.get("/health", (_req, res) => {
-  res.json({ ok: true, env: process.env.NODE_ENV || "local" });
-});
-
-// Optional status router under /api
-if (statusRouter) {
-  app.use("/api", statusRouter);
+// --- helpers ---
+function readMemories() {
+  try {
+    if (!fs.existsSync(MEMORY_FILE)) return [];
+    const lines = fs.readFileSync(MEMORY_FILE, "utf8").split(/\r?\n/).filter(Boolean);
+    return lines.map((l) => {
+      try { return JSON.parse(l); } catch { return null; }
+    }).filter(Boolean);
+  } catch (e) {
+    console.error("readMemories error", e);
+    return [];
+  }
 }
 
-// --- DIRECT /api/search ENDPOINT ---
-// This bypasses routes/search.mjs and talks straight to the retriever.
-app.get("/api/search", async (req, res) => {
-  try {
-    const q = String(req.query.q || "").trim();
-    const limitRaw = req.query.limit ?? "5";
-    const limit = Number(limitRaw) || 5;
+function appendMemory(text) {
+  const item = { id: Date.now().toString(), text, ts: new Date().toISOString() };
+  fs.appendFileSync(MEMORY_FILE, JSON.stringify(item) + "\n");
+  return item;
+}
 
-    if (!q) {
-      return res.status(400).json({ error: "missing_query" });
+function clearMemories() {
+  fs.writeFileSync(MEMORY_FILE, "");
+}
+
+function isAuthed(req) {
+  return Boolean(req.signedCookies?.gh_session === "ok");
+}
+
+function requireAuth(req, res, next) {
+  if (!isAuthed(req)) return res.status(401).json({ error: "unauthorized" });
+  next();
+}
+
+// --- routes ---
+app.get("/health", (_req, res) => res.json({ ok: true }));
+
+app.post("/api/login", async (req, res) => {
+  const { username, password } = req.body || {};
+  if (!username || !password) return res.status(400).json({ error: "missing credentials" });
+
+  if (username !== ADMIN_USERNAME) return res.status(401).json({ error: "invalid credentials" });
+  if (!ADMIN_PASSWORD_HASH) return res.status(500).json({ error: "server not configured" });
+
+  const ok = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
+  if (!ok) return res.status(401).json({ error: "invalid credentials" });
+
+  res.cookie("gh_session", "ok", {
+    httpOnly: true,
+    secure: true,
+    sameSite: "lax",
+    path: "/",
+    maxAge: 7 * 24 * 60 * 60 * 1000,
+    signed: true,
+  });
+  res.json({ ok: true });
+});
+
+app.post("/api/logout", (req, res) => {
+  res.clearCookie("gh_session", { path: "/" });
+  res.json({ ok: true });
+});
+
+app.get("/api/admin/ping", requireAuth, (_req, res) => {
+  res.json({ ok: true, ts: new Date().toISOString() });
+});
+
+// Memory CRUD (auth required)
+app.get("/api/memory", requireAuth, (_req, res) => {
+  res.json({ items: readMemories() });
+});
+
+app.post("/api/memory", requireAuth, (req, res) => {
+  const { text } = req.body || {};
+  if (!text?.trim()) return res.status(400).json({ error: "text required" });
+  const item = appendMemory(text.trim());
+  res.json({ ok: true, item });
+});
+
+app.delete("/api/memory", requireAuth, (_req, res) => {
+  clearMemories();
+  res.json({ ok: true });
+});
+
+// Respond endpoint
+app.post("/api/respond", async (req, res) => {
+  try {
+    const { prompt } = req.body || {};
+    if (!prompt?.trim()) return res.status(400).json({ error: "prompt required" });
+
+    // Lazy import so deploy doesn't break if file missing for some reason.
+    let respondHandler;
+    try {
+      const mod = await import("./respondHandler.cjs");
+      respondHandler = mod?.default || mod?.respond || mod;
+    } catch (e) {
+      console.error("respondHandler import error", e);
     }
 
-    const hits = await vectorSearch(q, { limit });
+    if (typeof respondHandler !== "function") {
+      return res.status(500).json({ error: "respond handler not available" });
+    }
 
-    res.json({
-      query: q,
-      hits,
+    const out = await respondHandler(prompt.trim(), {
+      forceDirect: RESPOND_FORCE_DIRECT,
+      memories: readMemories(),
     });
-  } catch (err) {
-    console.error("Search error on /api/search:", err);
-    res.status(500).json({
-      error: "search_failed",
-      message:
-        process.env.NODE_ENV === "production"
-          ? "Search failed"
-          : String(err?.message || err),
-    });
+
+    res.json(out);
+  } catch (e) {
+    console.error("/api/respond error", e);
+    res.status(500).json({ error: "respond failed" });
   }
 });
 
-// Core endpoints
-app.post("/api/respond", respondHandler);
-app.post("/api/tts", ttsHandler);
+// TTS endpoint (if ElevenLabs wired)
+app.post("/api/tts", async (req, res) => {
+  try {
+    const { text } = req.body || {};
+    if (!text?.trim()) return res.status(400).json({ error: "text required" });
 
-// Static admin page(s) from backend/public
-app.use(express.static(path.join(__dirname, "public")));
+    let ttsHandler;
+    try {
+      const mod = await import("./ttsHandler.cjs");
+      ttsHandler = mod?.default || mod?.tts || mod;
+    } catch (e) {
+      console.error("ttsHandler import error", e);
+    }
 
-// Optionally serve built frontend (if present)
-app.use(express.static(path.join(__dirname, "..", "frontend")));
+    if (typeof ttsHandler !== "function") {
+      return res.status(501).json({ error: "tts not configured" });
+    }
 
+    const audioBuffer = await ttsHandler(text.trim());
+    res.setHeader("Content-Type", "audio/mpeg");
+    res.send(audioBuffer);
+  } catch (e) {
+    console.error("/api/tts error", e);
+    res.status(500).json({ error: "tts failed" });
+  }
+});
+
+// --- start ---
 app.listen(PORT, () => {
-  console.log(`[server] listening on http://localhost:${PORT}`);
+  console.log(`Almost Human backend listening on ${PORT}`);
 });

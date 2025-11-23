@@ -347,7 +347,7 @@ function App() {
             style={{ display: "flex", flexWrap: "wrap", gap: 10, marginTop: 6 }}
           >
             <a
-              href="https://buy.stripe.com/cNi6oHdjjaX5bii5kA67S00"
+              href="https://buy.stripe.com/8x2aEY4Vu6EU96m4lc97G00"
               target="_blank"
               rel="noreferrer"
               style={{

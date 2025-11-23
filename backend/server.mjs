@@ -9,6 +9,11 @@ import { createRequire } from "module";
 // Status router (optional)
 import * as statusModule from "./routes/status.mjs";
 
+// ✅ NEW: Auth + Admin + Memory routers
+import authRouter from "./authRouter.mjs";
+import adminRouter from "./adminRouter.mjs";
+import memoryRouter from "./memoryRouter.mjs";
+
 // Vector search from retriever
 import { search as vectorSearch } from "./retriever/retriever.mjs";
 
@@ -42,6 +47,12 @@ app.use(
   })
 );
 app.use(express.json({ limit: "1mb" }));
+
+// ✅ NEW: Mount auth/admin/memory routers
+// These routers define routes like /api/login, /api/admin/ping, /api/memory
+app.use(authRouter);
+app.use(adminRouter);
+app.use(memoryRouter);
 
 // Health
 app.get("/health", (_req, res) => {

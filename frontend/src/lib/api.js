@@ -24,6 +24,8 @@ async function json(method, path, body) {
       "Content-Type": "application/json",
     },
     body: body ? JSON.stringify(body) : undefined,
+    // include cookies for authed endpoints (memory/admin)
+    credentials: "include",
   });
 
   const text = await res.text();
@@ -44,8 +46,9 @@ async function json(method, path, body) {
 
 export const api = {
   // Main chat answer
+  // Send both {prompt} and {question} to be compatible with any backend shape.
   respond: async (question) => {
-    return json("POST", "/api/respond", { question });
+    return json("POST", "/api/respond", { prompt: question, question });
   },
 
   // Text-to-speech: returns an object URL for an audio blob
@@ -56,10 +59,19 @@ export const api = {
         "Content-Type": "application/json",
       },
       body: JSON.stringify({ text }),
+      credentials: "include",
     });
 
     if (!res.ok) {
-      const msg = await res.text();
+      // Try to surface a clean error message
+      const raw = await res.text();
+      let msg = raw;
+      try {
+        const data = raw ? JSON.parse(raw) : {};
+        msg = data.error || data.message || raw;
+      } catch {
+        // keep raw
+      }
       throw new Error(msg || `TTS HTTP ${res.status}`);
     }
 

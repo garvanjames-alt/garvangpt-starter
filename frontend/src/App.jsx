@@ -3,9 +3,7 @@ import React, { useState, useRef } from "react";
 import { api, API_BASE } from "./lib/api";
 
 // NOTE:
-// - Backend /api/respond expects { prompt: "..." }
-// - api.respond() currently sends { question: "..." }
-//   so we call /api/respond directly here to avoid mismatch.
+// - We call /api/respond with the payload shape the backend expects.
 // - TTS uses API_BASE so it works both locally (Vite proxy) and on Render.
 
 function App() {
@@ -70,8 +68,19 @@ function App() {
 
       if (readAloud && text && text !== "(no answer returned)") {
         try {
-          // Use the shared TTS helper (already robust)
-          const url = await api.tts(text);
+          const ttsRes = await fetch(API_BASE + "/api/tts", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ text }),
+          });
+
+          if (!ttsRes.ok) {
+            console.error("TTS request failed", ttsRes.status, ttsRes.statusText);
+            return;
+          }
+
+          const blob = await ttsRes.blob();
+          const url = URL.createObjectURL(blob);
           setAudioUrl(url);
 
           setTimeout(() => {
@@ -477,8 +486,8 @@ function App() {
                 GarvanGPT, your virtual pharmacist
               </div>
               <div style={{ fontSize: 13, color: "#4b5563" }}>
-                Trained on years of pharmacy experience to explain complex topics
-                in plain language.
+                Trained on years of pharmacy experience to explain complex
+                topics in plain language.
               </div>
             </div>
           </div>
@@ -492,9 +501,9 @@ function App() {
               maxWidth: 620,
             }}
           >
-            Ask me anything about your health or medicines. This prototype is for
-            education only and doesn't replace your own doctor, pharmacist or
-            emergency care.
+            Ask me anything about your health or medicines. This prototype is
+            for education only and doesn't replace your own doctor, pharmacist
+            or emergency care.
           </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -638,11 +647,11 @@ function App() {
               maxWidth: 720,
             }}
           >
-            Almost Human is an AI healthcare project founded by a pharmacist with
-            20+ years of experience running a community pharmacy. We're building
-            tools that make trustworthy medicine information easier to access —
-            starting with a virtual pharmacist that speaks like a real person,
-            not a leaflet.
+            Almost Human is an AI healthcare project founded by a pharmacist
+            with 20+ years of experience running a community pharmacy. We're
+            building tools that make trustworthy medicine information easier to
+            access — starting with a virtual pharmacist that speaks like a real
+            person, not a leaflet.
           </p>
         </section>
 
@@ -864,7 +873,7 @@ function App() {
                 fontWeight: 600,
               }}
             >
-              GarvanGPT — "Almost Human" (Local MVP)
+              GarvanGPT — "Almost Human" (Beta demo)
             </h3>
             <p
               style={{
@@ -874,8 +883,8 @@ function App() {
                 color: "#6b7280",
               }}
             >
-              Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>.
-              API base via Vite proxy or Render static site.
+              Ask a question about your health or medicines. You can type or use
+              the mic.
             </p>
 
             {/* Chat UI */}

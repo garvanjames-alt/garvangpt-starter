@@ -4,17 +4,20 @@
 // Detect if we're in the browser (Vite build runs in Node)
 const isBrowser = typeof window !== "undefined";
 
-// When running on Render (static site) OR on our custom domain,
-// talk to the Render backend.
-// When running locally (`npm run dev`), keep relative `/api/...` so Vite proxy works.
-export const API_BASE =
-  isBrowser &&
-  (
-    window.location.hostname.includes("onrender.com") ||
-    window.location.hostname.endsWith("almosthumanlabs.ai")
-  )
-    ? "https://almosthuman-starter-staging.onrender.com"
-    : "";
+// Decide API base:
+// - Local dev (localhost / 127.0.0.1): call backend directly on 3001.
+//   This avoids relying on Vite proxy (which may not be set).
+// - Render/static/custom domain: call Render backend.
+// - Otherwise: relative paths.
+export const API_BASE = isBrowser
+  ? (window.location.hostname === "localhost" ||
+     window.location.hostname === "127.0.0.1")
+      ? "http://localhost:3001"
+      : (window.location.hostname.includes("onrender.com") ||
+         window.location.hostname.endsWith("almosthumanlabs.ai"))
+          ? "https://almosthuman-starter-staging.onrender.com"
+          : ""
+  : "";
 
 // Generic JSON helper
 async function json(method, path, body) {
@@ -63,7 +66,6 @@ export const api = {
     });
 
     if (!res.ok) {
-      // Try to surface a clean error message
       const raw = await res.text();
       let msg = raw;
       try {
@@ -82,7 +84,6 @@ export const api = {
   // Memories API
   listMemories: async () => {
     const data = await json("GET", "/api/memory");
-    // backend returns { items: [...] }
     if (Array.isArray(data.items)) return data.items;
     if (Array.isArray(data)) return data;
     return [];

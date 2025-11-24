@@ -1,11 +1,12 @@
+// frontend/src/App.jsx
 import React, { useState, useRef } from "react";
-import { api } from "./lib/api";
+import { api, API_BASE } from "./lib/api";
 
-// Decide which backend to talk to for TTS (local vs Render)
-const API_BASE_URL =
-  window.location.hostname === "localhost"
-    ? "http://localhost:3001"
-    : "https://almosthuman-starter-staging.onrender.com";
+// NOTE:
+// - Backend /api/respond expects { prompt: "..." }
+// - api.respond() currently sends { question: "..." }
+//   so we call /api/respond directly here to avoid mismatch.
+// - TTS uses API_BASE so it works both locally (Vite proxy) and on Render.
 
 function App() {
   // Chat state
@@ -31,14 +32,34 @@ function App() {
 
   const handleSubmit = async (e) => {
     e.preventDefault();
-    if (!prompt.trim() || isLoading) return;
+    const q = prompt.trim();
+    if (!q || isLoading) return;
 
     setIsLoading(true);
     setAnswer("");
 
     try {
-      const res = await api.respond(prompt.trim());
-      const text = res?.answer || res?.message || "(no answer returned)";
+      // Call respond with the payload shape the backend expects.
+      const res = await fetch(API_BASE + "/api/respond", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ prompt: q }),
+      });
+
+      const textBody = await res.text();
+      if (!res.ok) {
+        let msg = textBody;
+        try {
+          const j = textBody ? JSON.parse(textBody) : {};
+          msg = j.error || j.message || msg;
+        } catch {
+          // ignore
+        }
+        throw new Error(msg || `HTTP ${res.status}`);
+      }
+
+      const data = textBody ? JSON.parse(textBody) : {};
+      const text = data?.answer || data?.message || "(no answer returned)";
       setAnswer(text);
 
       // Clear any previous audio URL
@@ -49,26 +70,8 @@ function App() {
 
       if (readAloud && text && text !== "(no answer returned)") {
         try {
-          // Call TTS directly against the correct backend base URL
-          const ttsRes = await fetch(`${API_BASE_URL}/api/tts`, {
-            method: "POST",
-            headers: {
-              "Content-Type": "application/json",
-            },
-            body: JSON.stringify({ text }),
-          });
-
-          if (!ttsRes.ok) {
-            console.error(
-              "TTS request failed",
-              ttsRes.status,
-              ttsRes.statusText
-            );
-            return;
-          }
-
-          const blob = await ttsRes.blob();
-          const url = URL.createObjectURL(blob);
+          // Use the shared TTS helper (already robust)
+          const url = await api.tts(text);
           setAudioUrl(url);
 
           setTimeout(() => {
@@ -474,8 +477,8 @@ function App() {
                 GarvanGPT, your virtual pharmacist
               </div>
               <div style={{ fontSize: 13, color: "#4b5563" }}>
-                Trained on years of pharmacy experience to explain complex
-                topics in plain language.
+                Trained on years of pharmacy experience to explain complex topics
+                in plain language.
               </div>
             </div>
           </div>
@@ -489,9 +492,9 @@ function App() {
               maxWidth: 620,
             }}
           >
-            Ask me anything about your health or medicines. This prototype is
-            for education only and doesn't replace your own doctor, pharmacist
-            or emergency care.
+            Ask me anything about your health or medicines. This prototype is for
+            education only and doesn't replace your own doctor, pharmacist or
+            emergency care.
           </p>
 
           <div style={{ display: "flex", flexWrap: "wrap", gap: 8 }}>
@@ -551,9 +554,7 @@ function App() {
             >
               <li>Ask medicine questions in plain English.</li>
               <li>Hear answers read aloud with clear disclaimers.</li>
-              <li>
-                See how pharmacist-written content feels when powered by AI.
-              </li>
+              <li>See how pharmacist-written content feels when powered by AI.</li>
             </ul>
             <button
               type="button"
@@ -637,11 +638,11 @@ function App() {
               maxWidth: 720,
             }}
           >
-            Almost Human is an AI healthcare project founded by a pharmacist
-            with 20+ years of experience running a community pharmacy. We're
-            building tools that make trustworthy medicine information easier to
-            access — starting with a virtual pharmacist that speaks like a real
-            person, not a leaflet.
+            Almost Human is an AI healthcare project founded by a pharmacist with
+            20+ years of experience running a community pharmacy. We're building
+            tools that make trustworthy medicine information easier to access —
+            starting with a virtual pharmacist that speaks like a real person,
+            not a leaflet.
           </p>
         </section>
 

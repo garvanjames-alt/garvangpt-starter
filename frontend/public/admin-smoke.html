@@ -1,0 +1,162 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Almost Human — Admin Smoke Test</title>
+    <style>
+      :root { color-scheme: light; }
+      body {
+        font-family: system-ui, -apple-system, Segoe UI, Roboto, sans-serif;
+        background:#f6f7fb; margin:0; padding:32px;
+        display:flex; justify-content:center;
+      }
+      .card {
+        width: min(720px, 100%);
+        background:white; border:1px solid #e5e7eb; border-radius:16px;
+        padding:24px; box-shadow:0 10px 30px rgba(0,0,0,0.06);
+      }
+      h1 { margin:0 0 8px; font-size:24px; }
+      p { margin:0 0 16px; color:#374151; }
+      label { display:block; font-weight:600; margin-top:12px; }
+      input {
+        width:100%; padding:12px 14px; border-radius:10px; border:1px solid #cbd5e1;
+        font-size:16px; margin-top:6px;
+      }
+      button {
+        margin-top:16px; padding:12px 16px; border-radius:999px; border:0;
+        background:#4f46e5; color:white; font-size:16px; font-weight:700; cursor:pointer;
+      }
+      .row { display:flex; gap:8px; flex-wrap:wrap; }
+      .pill {
+        display:inline-block; padding:6px 10px; border-radius:999px; font-size:13px; font-weight:700;
+        background:#eef2ff; color:#3730a3;
+      }
+      pre {
+        background:#0b1020; color:#d1d5db; padding:12px; border-radius:10px; overflow:auto;
+      }
+      .ok { color:#059669; font-weight:700; }
+      .bad { color:#dc2626; font-weight:700; }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <div class="row" style="justify-content:space-between;align-items:center;">
+        <h1>Admin Smoke Test</h1>
+        <span id="serverTag" class="pill">server not configured</span>
+      </div>
+      <p>
+        This page is a private admin-only check. It verifies that the frontend can reach the backend,
+        set the <code>gh_session</code> cookie, and access protected endpoints.
+      </p>
+
+      <label>Backend URL</label>
+      <input id="backendUrl" placeholder="https://almosthuman-starter-staging.onrender.com" />
+      <p style="font-size:13px;color:#6b7280;margin-top:6px;">
+        Defaults to <code>VITE_BACKEND_URL</code> if present.
+      </p>
+
+      <label>Username</label>
+      <input id="username" autocomplete="username" />
+
+      <label>Password</label>
+      <input id="password" type="password" autocomplete="current-password" />
+
+      <button id="loginBtn">Login</button>
+      <button id="pingBtn" style="background:#0ea5e9;">Ping Admin</button>
+      <button id="memBtn" style="background:#10b981;">List Memories</button>
+
+      <p id="status" style="margin-top:12px;"></p>
+      <pre id="output">—</pre>
+    </div>
+
+    <script>
+      const byId = (id) => document.getElementById(id);
+      const backendFromEnv = (window.__VITE_BACKEND_URL__ || window.VITE_BACKEND_URL || "").trim();
+      const inputBackend = byId("backendUrl");
+      inputBackend.value = backendFromEnv || "https://almosthuman-starter-staging.onrender.com";
+
+      const serverTag = byId("serverTag");
+      const statusEl = byId("status");
+      const outputEl = byId("output");
+
+      function setStatus(msg, ok=true) {
+        statusEl.textContent = msg;
+        statusEl.className = ok ? "ok" : "bad";
+      }
+      function setOutput(obj) {
+        outputEl.textContent = typeof obj === "string" ? obj : JSON.stringify(obj, null, 2);
+      }
+
+      function base() {
+        return inputBackend.value.replace(/\/$/, "");
+      }
+
+      async function healthCheck() {
+        try {
+          const r = await fetch(base() + "/health", { credentials: "include" });
+          if (!r.ok) throw new Error("health not ok: " + r.status);
+          const j = await r.json();
+          serverTag.textContent = "server: OK";
+          serverTag.style.background = "#ecfdf3";
+          serverTag.style.color = "#065f46";
+          setOutput(j);
+        } catch (e) {
+          serverTag.textContent = "server not configured";
+          serverTag.style.background = "#fee2e2";
+          serverTag.style.color = "#991b1b";
+          setStatus("Backend unreachable. Check URL/env var.", false);
+        }
+      }
+
+      async function login() {
+        setStatus("Logging in...");
+        const body = {
+          username: byId("username").value.trim(),
+          password: byId("password").value,
+        };
+        const r = await fetch(base() + "/api/login", {
+          method: "POST",
+          headers: { "Content-Type": "application/json" },
+          credentials: "include",
+          body: JSON.stringify(body),
+        });
+        const txt = await r.text();
+        let data; try { data = JSON.parse(txt); } catch { data = txt; }
+        if (r.ok) {
+          setStatus("Login OK ✅");
+        } else {
+          setStatus("Login failed (" + r.status + ")", false);
+        }
+        setOutput(data);
+      }
+
+      async function pingAdmin() {
+        setStatus("Pinging /api/admin/ping...");
+        const r = await fetch(base() + "/api/admin/ping", { credentials: "include" });
+        const txt = await r.text();
+        let data; try { data = JSON.parse(txt); } catch { data = txt; }
+        if (r.ok) setStatus("Ping OK ✅");
+        else setStatus("Ping failed (" + r.status + ")", false);
+        setOutput(data);
+      }
+
+      async function listMemories() {
+        setStatus("Fetching /api/memory...");
+        const r = await fetch(base() + "/api/memory", { credentials: "include" });
+        const txt = await r.text();
+        let data; try { data = JSON.parse(txt); } catch { data = txt; }
+        if (r.ok) setStatus("Memories OK ✅");
+        else setStatus("Memories failed (" + r.status + ")", false);
+        setOutput(data);
+      }
+
+      byId("loginBtn").addEventListener("click", login);
+      byId("pingBtn").addEventListener("click", pingAdmin);
+      byId("memBtn").addEventListener("click", listMemories);
+
+      // kick off
+      healthCheck();
+    </script>
+  </body>
+</html>

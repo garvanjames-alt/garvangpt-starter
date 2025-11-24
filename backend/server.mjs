@@ -18,7 +18,10 @@ const MEMORY_FILE = path.join(__dirname, "memory.jsonl");
 
 // --- env ---
 const PORT = process.env.PORT || 3001;
-const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN || "https://almosthuman-frontend.onrender.com";
+
+// Old single-origin env to remain backwards compatible.
+const FRONTEND_ORIGIN = process.env.FRONTEND_ORIGIN;
+
 const ADMIN_USERNAME = process.env.ADMIN_USERNAME || "garvan";
 const ADMIN_PASSWORD_HASH = process.env.ADMIN_PASSWORD_HASH || "";
 const SESSION_SECRET = process.env.SESSION_SECRET || "dev-secret";
@@ -28,12 +31,35 @@ const RESPOND_FORCE_DIRECT = process.env.RESPOND_FORCE_DIRECT === "1";
 const app = express();
 app.disable("x-powered-by");
 
+// -------------------------------
+// CORS (PROD + LOCAL)
+// -------------------------------
+// Allow your Render static site + custom domain + local dev.
+// If FRONTEND_ORIGIN is set, include it too.
+const allowedOrigins = [
+  "https://almosthuman-frontend-static.onrender.com",
+  "https://www.almosthumanlabs.ai",
+  "https://almosthumanlabs.ai",
+  "http://localhost:5173",
+];
+if (FRONTEND_ORIGIN && !allowedOrigins.includes(FRONTEND_ORIGIN)) {
+  allowedOrigins.push(FRONTEND_ORIGIN);
+}
+
 app.use(
   cors({
-    origin: [FRONTEND_ORIGIN, "http://localhost:5173"],
+    origin: (origin, cb) => {
+      // Allow server-to-server / curl (no origin header)
+      if (!origin) return cb(null, true);
+      if (allowedOrigins.includes(origin)) return cb(null, true);
+      return cb(new Error(`Blocked by CORS: ${origin}`));
+    },
     credentials: true,
+    methods: ["GET", "POST", "DELETE", "OPTIONS"],
+    allowedHeaders: ["Content-Type", "Authorization"],
   })
 );
+
 app.use(express.json({ limit: "2mb" }));
 app.use(cookieParser(SESSION_SECRET));
 
@@ -41,10 +67,19 @@ app.use(cookieParser(SESSION_SECRET));
 function readMemories() {
   try {
     if (!fs.existsSync(MEMORY_FILE)) return [];
-    const lines = fs.readFileSync(MEMORY_FILE, "utf8").split(/\r?\n/).filter(Boolean);
-    return lines.map((l) => {
-      try { return JSON.parse(l); } catch { return null; }
-    }).filter(Boolean);
+    const lines = fs
+      .readFileSync(MEMORY_FILE, "utf8")
+      .split(/\r?\n/)
+      .filter(Boolean);
+    return lines
+      .map((l) => {
+        try {
+          return JSON.parse(l);
+        } catch {
+          return null;
+        }
+      })
+      .filter(Boolean);
   } catch (e) {
     console.error("readMemories error", e);
     return [];
@@ -75,10 +110,13 @@ app.get("/health", (_req, res) => res.json({ ok: true }));
 
 app.post("/api/login", async (req, res) => {
   const { username, password } = req.body || {};
-  if (!username || !password) return res.status(400).json({ error: "missing credentials" });
+  if (!username || !password)
+    return res.status(400).json({ error: "missing credentials" });
 
-  if (username !== ADMIN_USERNAME) return res.status(401).json({ error: "invalid credentials" });
-  if (!ADMIN_PASSWORD_HASH) return res.status(500).json({ error: "server not configured" });
+  if (username !== ADMIN_USERNAME)
+    return res.status(401).json({ error: "invalid credentials" });
+  if (!ADMIN_PASSWORD_HASH)
+    return res.status(500).json({ error: "server not configured" });
 
   const ok = await bcrypt.compare(password, ADMIN_PASSWORD_HASH);
   if (!ok) return res.status(401).json({ error: "invalid credentials" });
@@ -124,7 +162,8 @@ app.delete("/api/memory", requireAuth, (_req, res) => {
 app.post("/api/respond", async (req, res) => {
   try {
     const { prompt } = req.body || {};
-    if (!prompt?.trim()) return res.status(400).json({ error: "prompt required" });
+    if (!prompt?.trim())
+      return res.status(400).json({ error: "prompt required" });
 
     // Lazy import so deploy doesn't break if file missing for some reason.
     let respondHandler;

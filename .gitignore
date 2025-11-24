@@ -14,3 +14,12 @@ backend/.env
 snapshots/*.local
 .env*
 backend/data/embeddings.json
+
+# Ignore all local snapshot folders/files
+snapshots/**
+snapshots/**/*
+snapshots/backend_mvp_*
+
+# Cursor / editor scratch files
+*.code-search
+frontend/*.code-search

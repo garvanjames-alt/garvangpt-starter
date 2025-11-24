@@ -161,9 +161,12 @@ app.delete("/api/memory", requireAuth, (_req, res) => {
 // Respond endpoint
 app.post("/api/respond", async (req, res) => {
   try {
-    const { prompt } = req.body || {};
-    if (!prompt?.trim())
+    // Support multiple client payload shapes.
+    const body = req.body || {};
+    const prompt = (body.prompt ?? body.text ?? body.message ?? body.question ?? "");
+    if (!String(prompt).trim()) {
       return res.status(400).json({ error: "prompt required" });
+    }
 
     // Lazy import so deploy doesn't break if file missing for some reason.
     let respondHandler;
@@ -178,15 +181,27 @@ app.post("/api/respond", async (req, res) => {
       return res.status(500).json({ error: "respond handler not available" });
     }
 
-    const out = await respondHandler(prompt.trim(), {
+    const options = {
       forceDirect: RESPOND_FORCE_DIRECT,
       memories: readMemories(),
-    });
+    };
 
-    res.json(out);
+    // --- Compatibility layer ---
+    // If the handler looks like an Express (req, res) handler, call it that way.
+    // Otherwise assume it is a pure function (prompt, options) that returns data.
+    if (respondHandler.length >= 2) {
+      // Attach options for handlers that want extra context.
+      req.ghOptions = options;
+      // Ensure body.prompt is present (some handlers only read prompt).
+      req.body = { ...body, prompt: String(prompt).trim() };
+      return respondHandler(req, res);
+    }
+
+    const out = await respondHandler(String(prompt).trim(), options);
+    return res.json(out);
   } catch (e) {
     console.error("/api/respond error", e);
-    res.status(500).json({ error: "respond failed" });
+    return res.status(500).json({ error: "respond failed" });
   }
 });
 

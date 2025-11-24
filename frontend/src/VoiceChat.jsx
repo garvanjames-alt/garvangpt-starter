@@ -16,6 +16,7 @@ export default function VoiceChat() {
   const [readAloud, setReadAloud] = useState(true);
   const [isListening, setIsListening] = useState(false);
   const [error, setError] = useState("");
+  const [ttsStatus, setTtsStatus] = useState(""); // small, non-scary TTS feedback
 
   const audioRef = useRef(null);
   const recognitionRef = useRef(null);
@@ -25,6 +26,7 @@ export default function VoiceChat() {
     if (!q) return;
 
     setError("");
+    setTtsStatus("");
     setAssistant("Thinking…");
 
     try {
@@ -33,14 +35,18 @@ export default function VoiceChat() {
       setAssistant(answer);
 
       if (readAloud && answer) {
+        setTtsStatus("Reading aloud…");
         try {
           const url = await api.tts(answer);
           if (audioRef.current) {
             audioRef.current.src = url;
             await audioRef.current.play();
           }
+          setTtsStatus("");
         } catch (ttsErr) {
           console.error("TTS error:", ttsErr);
+          setTtsStatus("Read‑aloud unavailable right now.");
+          // Keep a short technical hint in the error panel for us.
           setError("TTS error: " + (ttsErr.message || String(ttsErr)));
         }
       }
@@ -101,11 +107,11 @@ export default function VoiceChat() {
     <main className="min-h-screen bg-black text-white p-4 md:p-8 space-y-6">
       <header>
         <h1 className="text-2xl md:text-3xl font-bold">
-          GarvanGPT — “Almost Human” (Local MVP)
+          GarvanGPT — “Almost Human” (Beta Demo)
         </h1>
         <p className="text-sm text-gray-300 mt-1">
-          Backend at <strong>3001</strong>; Frontend at <strong>5173</strong>.
-          API base via Vite proxy or Render static site.
+          Educational pharmacist AI prototype. Running on a private Render backend.
+          Not for diagnosis or emergencies.
         </p>
       </header>
 
@@ -134,7 +140,7 @@ export default function VoiceChat() {
             onClick={handleAsk}
             className="px-4 py-1 rounded font-semibold bg-blue-600"
           >
-            Send to prototype
+            Send
           </button>
 
           <label className="flex items-center gap-2 text-sm">
@@ -145,6 +151,10 @@ export default function VoiceChat() {
             />
             Read aloud
           </label>
+
+          {ttsStatus && (
+            <span className="text-xs text-gray-300 italic">{ttsStatus}</span>
+          )}
         </div>
       </section>
 
@@ -159,9 +169,7 @@ export default function VoiceChat() {
       </section>
 
       {error && (
-        <p className="text-xs text-red-400 mt-1">
-          Error: {error}
-        </p>
+        <p className="text-xs text-red-400 mt-1">Error: {error}</p>
       )}
 
       <audio ref={audioRef} hidden />

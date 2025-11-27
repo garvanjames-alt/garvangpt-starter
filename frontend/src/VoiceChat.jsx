@@ -1,178 +1,84 @@
 // frontend/src/VoiceChat.jsx
-import React, { useState, useRef } from "react";
-import { api } from "./lib/api";
+import React, { useEffect, useRef } from "react";
 
-// Helper so we don't touch `window` on the server
-function createRecognition() {
-  if (typeof window === "undefined") return null;
-  const SR =
-    window.SpeechRecognition || window.webkitSpeechRecognition || null;
-  return SR ? new SR() : null;
-}
-
-export default function VoiceChat() {
-  const [question, setQuestion] = useState("");
-  const [assistant, setAssistant] = useState("");
-  const [readAloud, setReadAloud] = useState(true);
-  const [isListening, setIsListening] = useState(false);
-  const [error, setError] = useState("");
-  const [ttsStatus, setTtsStatus] = useState(""); // small, non-scary TTS feedback
-
+export default function VoiceChat({ text }) {
   const audioRef = useRef(null);
-  const recognitionRef = useRef(null);
+  const lastSpokenRef = useRef("");
 
-  async function handleAsk() {
-    const q = question.trim();
-    if (!q) return;
+  useEffect(() => {
+    const t = (text || "").trim();
+    if (!t) return;
+    if (t === lastSpokenRef.current) return; // avoid repeats on re-render
+    lastSpokenRef.current = t;
 
-    setError("");
-    setTtsStatus("");
-    setAssistant("Thinking…");
+    let cancelled = false;
+    const controller = new AbortController();
 
-    try {
-      const data = await api.respond(q);
-      const answer = data.answer || "(no answer returned)";
-      setAssistant(answer);
+    async function playElevenLabs() {
+      const key = import.meta.env.VITE_ELEVENLABS_KEY;
+      const voiceId = import.meta.env.VITE_ELEVENLABS_VOICE_ID;
+      if (!key || !voiceId) return false;
 
-      if (readAloud && answer) {
-        setTtsStatus("Reading aloud…");
-        try {
-          const url = await api.tts(answer);
-          if (audioRef.current) {
-            audioRef.current.src = url;
-            await audioRef.current.play();
-          }
-          setTtsStatus("");
-        } catch (ttsErr) {
-          console.error("TTS error:", ttsErr);
-          setTtsStatus("Read‑aloud unavailable right now.");
-          // Keep a short technical hint in the error panel for us.
-          setError("TTS error: " + (ttsErr.message || String(ttsErr)));
+      const res = await fetch(
+        `https://api.elevenlabs.io/v1/text-to-speech/${voiceId}`,
+        {
+          method: "POST",
+          signal: controller.signal,
+          headers: {
+            "xi-api-key": key,
+            "Content-Type": "application/json",
+            Accept: "audio/mpeg",
+          },
+          body: JSON.stringify({
+            text: t,
+            model_id: "eleven_multilingual_v2",
+            voice_settings: { stability: 0.45, similarity_boost: 0.8 },
+          }),
         }
-      }
-    } catch (err) {
-      console.error("respond error:", err);
-      setAssistant("");
-      setError(err.message || "Request failed");
-    }
-  }
+      );
 
-  function handleStartMic() {
-    // If already listening, stop.
-    if (isListening && recognitionRef.current) {
-      recognitionRef.current.stop();
-      return;
-    }
+      if (!res.ok) throw new Error(`ElevenLabs error ${res.status}`);
+      const blob = await res.blob();
+      if (cancelled) return true;
 
-    const recognition = createRecognition();
-    if (!recognition) {
-      setError("Your browser does not support speech recognition.");
-      return;
+      const url = URL.createObjectURL(blob);
+      const audio = audioRef.current;
+      if (!audio) return true;
+
+      audio.src = url;
+      await audio.play();
+      return true;
     }
 
-    recognitionRef.current = recognition;
-    recognition.lang = "en-US";
-    recognition.continuous = false;
-    recognition.interimResults = false;
+    function playFallbackSpeech() {
+      if (!window.speechSynthesis) return;
+      const u = new SpeechSynthesisUtterance(t);
+      u.lang = "en-AU";
 
-    recognition.onresult = (event) => {
+      // pick an AU voice if available
+      const voices = window.speechSynthesis.getVoices();
+      const au = voices.find(v => /en-au/i.test(v.lang)) || voices.find(v => /english/i.test(v.lang));
+      if (au) u.voice = au;
+
+      window.speechSynthesis.cancel();
+      window.speechSynthesis.speak(u);
+    }
+
+    (async () => {
       try {
-        const text = event.results[0][0].transcript;
-        setQuestion(text);
+        const ok = await playElevenLabs();
+        if (!ok) playFallbackSpeech();
       } catch (e) {
-        console.error("onresult error:", e);
-      } finally {
-        setIsListening(false);
-        recognitionRef.current = null;
+        // if ElevenLabs fails, fallback to browser speech
+        playFallbackSpeech();
       }
+    })();
+
+    return () => {
+      cancelled = true;
+      controller.abort();
     };
+  }, [text]);
 
-    recognition.onerror = (event) => {
-      console.error("Speech error:", event.error);
-      setError("Mic error: " + event.error);
-      setIsListening(false);
-      recognitionRef.current = null;
-    };
-
-    recognition.onend = () => {
-      setIsListening(false);
-      recognitionRef.current = null;
-    };
-
-    recognition.start();
-    setIsListening(true);
-  }
-
-  return (
-    <main className="min-h-screen bg-black text-white p-4 md:p-8 space-y-6">
-      <header>
-        <h1 className="text-2xl md:text-3xl font-bold">
-          GarvanGPT — “Almost Human” (Beta Demo)
-        </h1>
-        <p className="text-sm text-gray-300 mt-1">
-          Educational pharmacist AI prototype. Running on a private Render backend.
-          Not for diagnosis or emergencies.
-        </p>
-      </header>
-
-      <section className="space-y-3">
-        <h2 className="text-xl font-semibold">Talk to the prototype</h2>
-        <textarea
-          className="w-full min-h-[80px] p-2 bg-[#111] text-sm text-white border border-[#444] rounded"
-          placeholder="Speak with the mic or type your question here…"
-          value={question}
-          onChange={(e) => setQuestion(e.target.value)}
-        />
-
-        <div className="flex flex-wrap items-center gap-3">
-          <button
-            type="button"
-            onClick={handleStartMic}
-            className={`px-4 py-1 rounded font-semibold ${
-              isListening ? "bg-red-600" : "bg-gray-700"
-            }`}
-          >
-            {isListening ? "Stop mic" : "Start mic"}
-          </button>
-
-          <button
-            type="button"
-            onClick={handleAsk}
-            className="px-4 py-1 rounded font-semibold bg-blue-600"
-          >
-            Send
-          </button>
-
-          <label className="flex items-center gap-2 text-sm">
-            <input
-              type="checkbox"
-              checked={readAloud}
-              onChange={(e) => setReadAloud(e.target.checked)}
-            />
-            Read aloud
-          </label>
-
-          {ttsStatus && (
-            <span className="text-xs text-gray-300 italic">{ttsStatus}</span>
-          )}
-        </div>
-      </section>
-
-      <section className="space-y-2">
-        <h2 className="text-xl font-semibold">Assistant</h2>
-        <textarea
-          className="w-full min-h-[140px] p-2 bg-[#111] text-sm text-white border border-[#444] rounded"
-          value={assistant}
-          readOnly
-          placeholder="The answer will appear here…"
-        />
-      </section>
-
-      {error && (
-        <p className="text-xs text-red-400 mt-1">Error: {error}</p>
-      )}
-
-      <audio ref={audioRef} hidden />
-    </main>
-  );
+  return <audio ref={audioRef} style={{ display: "none" }} />;
 }

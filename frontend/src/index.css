@@ -1,5 +1,10 @@
-@tailwind base;
-@tailwind components;
-@tailwind utilities;
+/* frontend/src/index.css */
+@import "tailwindcss";
 
-/* Optional: your global styles below this line */
+/* Optional tiny base tweaks only */
+html, body, #root {
+  height: 100%;
+}
+body {
+  margin: 0;
+}

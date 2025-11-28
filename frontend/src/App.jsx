@@ -1,6 +1,6 @@
 // frontend/src/App.jsx
 import { useEffect, useMemo, useRef, useState } from "react";
-import { askBackend } from "./lib/api"; // keep existing backend wiring if present
+import { askGarvan } from "./lib/api";
 
 const AVATAR_SRC = "/avatar.jpg";
 
@@ -29,7 +29,7 @@ export default function App() {
 
     try {
       // uses your existing backend adapter (from 7091a8e)
-      const res = await askBackend(q);
+      const res = await askGarvan(q);
       const answer = res?.answer || res?.text || "Sorry — I couldn’t answer that yet.";
       setMessages((m) => [...m, { role: "assistant", text: answer }]);
     } catch (e) {

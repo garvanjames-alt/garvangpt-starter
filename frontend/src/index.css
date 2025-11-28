@@ -2,10 +2,10 @@
 @tailwind components;
 @tailwind utilities;
 
-/* Optional tiny defaults */
-:root {
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
+/* optional tiny defaults */
+html, body, #root {
+  height: 100%;
+}
+body {
+  margin: 0;
 }

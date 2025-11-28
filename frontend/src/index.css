@@ -2,15 +2,4 @@
 @tailwind components;
 @tailwind utilities;
 
-/* small sensible defaults */
-:root {
-  font-synthesis: none;
-  text-rendering: optimizeLegibility;
-  -webkit-font-smoothing: antialiased;
-  -moz-osx-font-smoothing: grayscale;
-}
-
-body {
-  margin: 0;
-  min-height: 100vh;
-}
+/* Optional: your global styles below this line */

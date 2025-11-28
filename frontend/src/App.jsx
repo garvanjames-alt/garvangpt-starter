@@ -1,279 +1,262 @@
 // frontend/src/App.jsx
-import React, { useEffect, useState } from "react";
-import { speak } from "./lib/tts";
-
-const BACKEND =
-  import.meta.env.VITE_BACKEND_URL?.replace(/\/$/, "") ||
-  "http://localhost:3001";
+import { useMemo, useRef, useState } from "react";
+import SupportBar from "./components/SupportBar.jsx";
+import AvatarBubble from "./components/AvatarBubble.jsx";
+import { askGarvan } from "./lib/api.js";
 
 export default function App() {
-  // --- health
-  const [health, setHealth] = useState(null);
-  const [healthErr, setHealthErr] = useState(null);
+  const heroRef = useRef(null);
+  const whoRef = useRef(null);
+  const whatRef = useRef(null);
+  const healthRef = useRef(null);
+  const medicineRef = useRef(null);
+  const chatRef = useRef(null);
 
-  // --- auth
-  const [username, setUsername] = useState("garvan");
-  const [password, setPassword] = useState("");
-  const [authed, setAuthed] = useState(false);
-  const [loginErr, setLoginErr] = useState("");
+  const scrollTo = (ref) => ref?.current?.scrollIntoView({ behavior: "smooth", block: "start" });
 
-  // --- memories
-  const [memories, setMemories] = useState([]);
-  const [memInput, setMemInput] = useState("");
-  const memCount = memories.length;
-
-  // --- chat
-  const [chatInput, setChatInput] = useState("");
-  const [chatLog, setChatLog] = useState([
-    { role: "assistant", text: "Hi Garvan — I’m Almost Human. Ask me anything." },
+  // --- simple chat state
+  const [messages, setMessages] = useState([
+    { role: "assistant", text: "Hi, I’m GarvanGPT. Ask me anything about medicines or your health." },
   ]);
-  const [asking, setAsking] = useState(false);
-  const [ttsBusy, setTtsBusy] = useState(false);
+  const [input, setInput] = useState("");
+  const [loading, setLoading] = useState(false);
 
-  async function fetchHealth() {
+  async function onSend() {
+    const text = input.trim();
+    if (!text || loading) return;
+
+    setInput("");
+    setMessages((m) => [...m, { role: "user", text }]);
+    setLoading(true);
+
     try {
-      setHealthErr(null);
-      const r = await fetch(`${BACKEND}/health`);
-      const j = await r.json();
-      setHealth(JSON.stringify(j, null, 2));
+      const data = await askGarvan(text);
+      const answer = data?.answer ?? "Sorry — no answer returned.";
+      setMessages((m) => [...m, { role: "assistant", text: answer }]);
+      setTimeout(() => scrollTo(chatRef), 50);
     } catch (e) {
-      setHealthErr(String(e));
-    }
-  }
-
-  async function doLogin(e) {
-    e?.preventDefault();
-    setLoginErr("");
-    try {
-      const r = await fetch(`${BACKEND}/api/login`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ username, password }),
-      });
-      const j = await r.json();
-      if (!r.ok) {
-        setAuthed(false);
-        setLoginErr(j?.error || "invalid credentials");
-        return;
-      }
-      setAuthed(true);
-      setLoginErr("");
-      await refreshMemories();
-    } catch (err) {
-      setAuthed(false);
-      setLoginErr(String(err));
-    }
-  }
-
-  async function refreshMemories() {
-    try {
-      const r = await fetch(`${BACKEND}/api/memory`, {
-        credentials: "include",
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || "Failed to load memories");
-      setMemories(j.items || []);
-    } catch (err) {
-      console.error("refreshMemories error:", err);
-    }
-  }
-
-  async function addMemory() {
-    const text = memInput.trim();
-    if (!text) return;
-    try {
-      const r = await fetch(`${BACKEND}/api/memory`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        credentials: "include",
-        body: JSON.stringify({ text }),
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || "Add failed");
-      setMemInput("");
-      await refreshMemories();
-    } catch (err) {
-      console.error("addMemory error:", err);
-    }
-  }
-
-  async function clearMemories() {
-    try {
-      const r = await fetch(`${BACKEND}/api/memory`, {
-        method: "DELETE",
-        credentials: "include",
-      });
-      const j = await r.json();
-      if (!r.ok) throw new Error(j?.error || "Clear failed");
-      await refreshMemories();
-    } catch (err) {
-      console.error("clearMemories error:", err);
-    }
-  }
-
-  async function sendChat(e) {
-    e?.preventDefault();
-    const q = chatInput.trim();
-    if (!q || asking) return;
-
-    setChatLog((l) => [...l, { role: "user", text: q }]);
-    setChatInput("");
-    setAsking(true);
-
-    try {
-      const r = await fetch(`${BACKEND}/api/respond`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ question: q, text: q, q }),
-      });
-
-      const j = await r.json();
-      const answer =
-        j.answer || j.response || j.text || j.message || "(no answer)";
-
-      setChatLog((l) => [...l, { role: "assistant", text: answer }]);
-
-      // 🔊 Speak the answer
-      setTtsBusy(true);
-      await speak(answer, {
-        onEnd: () => setTtsBusy(false),
-        onError: () => setTtsBusy(false),
-      });
-    } catch (err) {
-      console.error("sendChat error:", err);
-      setChatLog((l) => [
-        ...l,
-        { role: "assistant", text: "Sorry — something went wrong." },
+      setMessages((m) => [
+        ...m,
+        { role: "assistant", text: `Something went wrong: ${e.message}` },
       ]);
-      setTtsBusy(false);
     } finally {
-      setAsking(false);
+      setLoading(false);
     }
   }
 
-  useEffect(() => {
-    fetchHealth();
-  }, []);
-
-  useEffect(() => {
-    if (authed) refreshMemories();
-  }, [authed]);
+  const navItems = useMemo(
+    () => [
+      { label: "Health A–Z", ref: healthRef },
+      { label: "Medicine A–Z", ref: medicineRef },
+      { label: "Who We Are", ref: whoRef },
+      { label: "What We Do", ref: whatRef },
+    ],
+    []
+  );
 
   return (
-    <div style={{ fontFamily: "system-ui, sans-serif", padding: 20, maxWidth: 900 }}>
-      <h1>Almost Human — GarvanGPT</h1>
-
-      <section style={{ margin: "16px 0" }}>
-        <h2 style={{ margin: "12px 0 6px" }}>Backend health</h2>
-        <button onClick={fetchHealth}>Re-check auth</button>
-        {healthErr && (
-          <div style={{ color: "crimson", marginTop: 8 }}>{healthErr}</div>
-        )}
-        {health && (
-          <pre style={{ background: "#f3f3f3", padding: 12, marginTop: 8 }}>
-            {health}
-          </pre>
-        )}
-      </section>
-
-      <section style={{ margin: "16px 0" }}>
-        <h2 style={{ margin: "12px 0 6px" }}>Admin login</h2>
-        <form onSubmit={doLogin} style={{ display: "flex", gap: 8, alignItems: "center" }}>
-          <input
-            value={username}
-            onChange={(e) => setUsername(e.target.value)}
-            placeholder="username"
-          />
-          <input
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            placeholder="password"
-            type="password"
-          />
-          <button type="submit">Login</button>
-          <span>{authed ? "Authed" : "Not authed"}</span>
-        </form>
-        {loginErr && (
-          <div style={{ color: "crimson", marginTop: 6 }}>
-            {JSON.stringify({ error: loginErr })}
-          </div>
-        )}
-      </section>
-
-      <section style={{ margin: "16px 0" }}>
-        <h2 style={{ margin: "12px 0 6px" }}>Memories ({memCount})</h2>
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <button onClick={refreshMemories} disabled={!authed}>
-            Refresh
-          </button>
-          <button onClick={clearMemories} disabled={!authed}>
-            Clear all
-          </button>
-        </div>
-
-        <div style={{ display: "flex", gap: 8, marginBottom: 8 }}>
-          <input
-            style={{ flex: 1 }}
-            value={memInput}
-            onChange={(e) => setMemInput(e.target.value)}
-            placeholder={authed ? "Add a memory..." : "Login to add memories"}
-            disabled={!authed}
-            onKeyDown={(e) => e.key === "Enter" && addMemory()}
-          />
-          <button onClick={addMemory} disabled={!authed}>
-            Add
-          </button>
-        </div>
-
-        {!authed && <div>Login to view or edit memories.</div>}
-
-        {authed && (
-          <ul style={{ background: "#f7f7f7", padding: 12 }}>
-            {memories.slice(0, 100).map((m) => (
-              <li key={m.id} style={{ marginBottom: 8 }}>
-                {m.text}
-              </li>
-            ))}
-          </ul>
-        )}
-
-        {authed && memCount > 100 && (
-          <div style={{ marginTop: 6, opacity: 0.7 }}>
-            Showing first 100 / {memCount}
-          </div>
-        )}
-      </section>
-
-      <section style={{ margin: "16px 0" }}>
-        <h2 style={{ margin: "12px 0 6px" }}>Chat</h2>
-
-        <div style={{ background: "#f7f7f7", padding: 12, minHeight: 200 }}>
-          {chatLog.map((m, i) => (
-            <div key={i} style={{ marginBottom: 10 }}>
-              <strong>{m.role === "user" ? "You" : "Almost Human"}:</strong>{" "}
-              <span>{m.text}</span>
+    <div className="min-h-screen bg-slate-50 text-slate-900">
+      {/* Top Nav */}
+      <header className="sticky top-0 z-30 bg-white/90 backdrop-blur border-b border-slate-200">
+        <div className="max-w-6xl mx-auto px-4 py-3 flex items-center justify-between">
+          <div
+            className="flex items-center gap-3 cursor-pointer"
+            onClick={() => scrollTo(heroRef)}
+          >
+            <AvatarBubble />
+            <div>
+              <div className="font-semibold leading-tight">Almost Human</div>
+              <div className="text-sm text-slate-500">
+                AI for safe healthcare education
+              </div>
             </div>
-          ))}
+          </div>
+
+          <nav className="hidden md:flex items-center gap-5 text-sm">
+            {navItems.map((n) => (
+              <button
+                key={n.label}
+                onClick={() => scrollTo(n.ref)}
+                className="text-slate-700 hover:text-slate-900"
+              >
+                {n.label}
+              </button>
+            ))}
+          </nav>
+
+          <button
+            onClick={() => scrollTo(chatRef)}
+            className="px-4 py-2 rounded-lg bg-slate-900 text-white text-sm font-medium hover:bg-black"
+          >
+            Talk to Garvan
+          </button>
         </div>
 
-        <form onSubmit={sendChat} style={{ display: "flex", gap: 8, marginTop: 8 }}>
-          <input
-            style={{ flex: 1 }}
-            value={chatInput}
-            onChange={(e) => setChatInput(e.target.value)}
-            placeholder="Type your question..."
-            disabled={asking}
-          />
-          <button type="submit" disabled={asking}>
-            {asking ? "..." : "Send"}
-          </button>
-        </form>
+        {/* Support bar under main nav */}
+        <SupportBar />
+      </header>
 
-        <div style={{ marginTop: 6, fontSize: 12, opacity: 0.7 }}>
-          {ttsBusy ? "Speaking…" : ""}
+      {/* Hero */}
+      <section ref={heroRef} className="max-w-6xl mx-auto px-4 py-10">
+        <div className="grid md:grid-cols-3 gap-6 items-start">
+          <div className="md:col-span-2 bg-white rounded-2xl shadow-sm border border-slate-200 p-8">
+            <div className="text-xs tracking-widest text-slate-500 font-semibold">
+              AI FOR SAFE HEALTHCARE EDUCATION
+            </div>
+
+            <h1 className="mt-3 text-4xl md:text-5xl font-extrabold leading-tight">
+              Talk to Garvan
+              <br />
+              <span className="text-slate-500">your virtual pharmacist</span>
+            </h1>
+
+            <p className="mt-4 text-slate-600 max-w-2xl">
+              Ask anything about your health or medicines. This prototype is for
+              education only and doesn’t replace your own doctor, pharmacist, or
+              emergency care.
+            </p>
+
+            <div className="mt-6 flex items-center gap-4">
+              <AvatarBubble />
+              <div>
+                <div className="font-semibold">GarvanGPT, your virtual pharmacist</div>
+                <div className="text-sm text-slate-500">
+                  Trained on years of pharmacy experience to explain complex topics clearly.
+                </div>
+              </div>
+            </div>
+
+            <div className="mt-6 flex flex-wrap gap-2">
+              {["Redefining patient experience", "Safety and trust first", "Pharmacist review"].map(
+                (t) => (
+                  <span
+                    key={t}
+                    className="px-3 py-1 rounded-full border border-slate-200 text-xs bg-slate-50"
+                  >
+                    {t}
+                  </span>
+                )
+              )}
+            </div>
+
+            {/* Chat block */}
+            <div
+              ref={chatRef}
+              className="mt-8 bg-white rounded-2xl border border-slate-200 p-4"
+            >
+              <div className="flex items-center justify-between mb-3">
+                <div className="font-semibold">Ask Garvan anything</div>
+                <div className="flex gap-2 text-xs">
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100">Text</span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100">Voice</span>
+                  <span className="px-2 py-0.5 rounded-full bg-slate-100">
+                    Education only
+                  </span>
+                </div>
+              </div>
+
+              <div className="h-64 overflow-y-auto rounded-xl bg-slate-50 border border-slate-200 p-3 space-y-3">
+                {messages.map((m, i) => (
+                  <div
+                    key={i}
+                    className={`max-w-[85%] p-3 rounded-xl text-sm whitespace-pre-wrap ${
+                      m.role === "user"
+                        ? "ml-auto bg-indigo-600 text-white"
+                        : "mr-auto bg-white border border-slate-200"
+                    }`}
+                  >
+                    {m.text}
+                  </div>
+                ))}
+                {loading && (
+                  <div className="mr-auto bg-white border border-slate-200 p-3 rounded-xl text-sm">
+                    Thinking…
+                  </div>
+                )}
+              </div>
+
+              <div className="mt-3 flex gap-2">
+                <input
+                  className="flex-1 rounded-lg border border-slate-300 px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                  placeholder="Type your question…"
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyDown={(e) => e.key === "Enter" && onSend()}
+                />
+                <button
+                  onClick={onSend}
+                  disabled={loading}
+                  className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700 disabled:opacity-60"
+                >
+                  Send
+                </button>
+              </div>
+            </div>
+
+            <div className="mt-6 flex gap-3">
+              <button
+                onClick={() => scrollTo(whoRef)}
+                className="px-4 py-2 rounded-lg bg-indigo-600 text-white text-sm font-medium hover:bg-indigo-700"
+              >
+                Learn about Almost Human
+              </button>
+              <button
+                onClick={() => scrollTo(healthRef)}
+                className="px-4 py-2 rounded-lg border border-slate-300 text-sm font-medium hover:bg-slate-50"
+              >
+                Browse Health A–Z
+              </button>
+            </div>
+          </div>
+
+          {/* Right column left intentionally open now */}
+          <div className="md:col-span-1" />
         </div>
       </section>
+
+      {/* Who We Are */}
+      <section ref={whoRef} className="max-w-6xl mx-auto px-4 py-10">
+        <h2 className="text-2xl font-bold mb-3">Who We Are</h2>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 text-slate-700">
+          Almost Human is an AI healthcare project founded by a pharmacist with 20+ years
+          of experience in community pharmacy. We’re building tools that make trustworthy
+          medicine information easier to access — starting with a virtual pharmacist that
+          speaks like a real person, not a leaflet.
+        </div>
+      </section>
+
+      {/* What We Do */}
+      <section ref={whatRef} className="max-w-6xl mx-auto px-4 py-10">
+        <h2 className="text-2xl font-bold mb-3">What We Do</h2>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6">
+          <ul className="list-disc pl-5 space-y-2 text-slate-700">
+            <li>Answer real-world medicine and health questions clearly and safely.</li>
+            <li>Read answers aloud using a warm voice with disclaimers.</li>
+            <li>Grow a pharmacist-written knowledge base over time.</li>
+            <li>Keep safety, trust, and pharmacist oversight first.</li>
+          </ul>
+        </div>
+      </section>
+
+      {/* Health A-Z */}
+      <section ref={healthRef} className="max-w-6xl mx-auto px-4 py-10">
+        <h2 className="text-2xl font-bold mb-3">Health A–Z</h2>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 text-slate-600">
+          Coming soon. This section will contain pharmacist-written health explainers and safety notes.
+        </div>
+      </section>
+
+      {/* Medicine A-Z */}
+      <section ref={medicineRef} className="max-w-6xl mx-auto px-4 py-10">
+        <h2 className="text-2xl font-bold mb-3">Medicine A–Z</h2>
+        <div className="bg-white rounded-2xl border border-slate-200 p-6 text-slate-600">
+          Coming soon. This section will contain pharmacist-written medicine explainers and safety notes.
+        </div>
+      </section>
+
+      <footer className="py-10 text-center text-xs text-slate-500">
+        © {new Date().getFullYear()} Almost Human
+      </footer>
     </div>
   );
 }

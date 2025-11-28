@@ -1,14 +1,29 @@
+// Replace these THREE files exactly as below.
+// Files:
+// 1) frontend/index.html
+// 2) frontend/src/main.jsx
+// 3) frontend/src/index.css
+//
+// Why: right now your frontend/src/index.css appears to contain HTML,
+// so Tailwind never gets built. This restores a normal Vite entrypoint
+// and Tailwind directives, so Render will output real CSS again.
+
+
+/* ===============================
+1) frontend/index.html
+=============================== */
+
+
 <!doctype html>
 <html lang="en">
-  <head>
-    <meta charset="UTF-8" />
-    <link rel="icon" type="image/svg+xml" href="/favicon.svg" />
-    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
-    <title>Almost Human — GarvanGPT</title>
-  </head>
-  <body>
-    <div id="root"></div>
-    <!-- Vite entrypoint -->
-    <script type="module" src="/src/main.jsx"></script>
-  </body>
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Almost Human — GarvanGPT</title>
+</head>
+<body>
+<div id="root"></div>
+<!-- Vite will bundle JS/CSS for production automatically -->
+<script type="module" src="/src/main.jsx"></script>
+</body>
 </html>

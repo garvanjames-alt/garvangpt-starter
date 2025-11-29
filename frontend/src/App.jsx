@@ -9,6 +9,8 @@ export default function App() {
   const talkRef = useRef(null);
   const whoRef = useRef(null);
   const whatRef = useRef(null);
+  const healthRef = useRef(null);
+  const medRef = useRef(null);
 
   const [mode, setMode] = useState("text"); // "text" | "voice"
   const [input, setInput] = useState("");
@@ -52,7 +54,6 @@ export default function App() {
     []
   );
 
-  // Always keep the latest assistant text handy for TTS.
   const lastAssistantText = useMemo(() => {
     for (let i = messages.length - 1; i >= 0; i--) {
       if (messages[i].role === "assistant") return messages[i].text;
@@ -80,13 +81,16 @@ export default function App() {
           </div>
 
           <nav className="hidden md:flex items-center gap-5 text-sm">
+            <button onClick={() => scrollTo(healthRef)} className="hover:underline">
+              Health A–Z
+            </button>
+            <button onClick={() => scrollTo(medRef)} className="hover:underline">
+              Medicine A–Z
+            </button>
             <button onClick={() => scrollTo(whoRef)} className="hover:underline">
               Who We Are
             </button>
-            <button
-              onClick={() => scrollTo(whatRef)}
-              className="hover:underline"
-            >
+            <button onClick={() => scrollTo(whatRef)} className="hover:underline">
               What We Do
             </button>
           </nav>
@@ -188,6 +192,75 @@ export default function App() {
           </p>
         </section>
 
+        {/* ===== Health + Medicine A–Z Cards ===== */}
+        <section className="grid grid-cols-1 md:grid-cols-2 gap-6 items-stretch">
+          {/* Health A–Z */}
+          <div
+            ref={healthRef}
+            className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8"
+          >
+            <div className="text-xs font-semibold tracking-widest text-slate-500">
+              HEALTH A–Z
+            </div>
+            <h3 className="mt-3 text-xl md:text-2xl font-black leading-tight">
+              Browse health topics
+            </h3>
+            <p className="mt-3 text-slate-700 text-base md:text-lg leading-relaxed">
+              Clear, pharmacist‑checked explanations of common conditions, symptoms,
+              and what to do next.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => scrollTo(talkRef)}
+                className="rounded-full px-4 py-2 text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800"
+              >
+                Ask a health question
+              </button>
+              <a
+                href="/health_index.json"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full px-4 py-2 text-sm font-semibold bg-white border border-slate-300 hover:bg-slate-50"
+              >
+                View index (dev)
+              </a>
+            </div>
+          </div>
+
+          {/* Medicine A–Z */}
+          <div
+            ref={medRef}
+            className="bg-white rounded-3xl shadow-sm border border-slate-200 p-6 md:p-8"
+          >
+            <div className="text-xs font-semibold tracking-widest text-slate-500">
+              MEDICINE A–Z
+            </div>
+            <h3 className="mt-3 text-xl md:text-2xl font-black leading-tight">
+              Browse medicine guides
+            </h3>
+            <p className="mt-3 text-slate-700 text-base md:text-lg leading-relaxed">
+              Patient‑friendly medicine information — what it’s for, how to take it,
+              key cautions, and side effects.
+            </p>
+            <div className="mt-4 flex flex-wrap gap-2">
+              <button
+                onClick={() => scrollTo(talkRef)}
+                className="rounded-full px-4 py-2 text-sm font-semibold bg-slate-900 text-white hover:bg-slate-800"
+              >
+                Ask about a medicine
+              </button>
+              <a
+                href="/medicine_index.json"
+                target="_blank"
+                rel="noreferrer"
+                className="rounded-full px-4 py-2 text-sm font-semibold bg-white border border-slate-300 hover:bg-slate-50"
+              >
+                View index (dev)
+              </a>
+            </div>
+          </div>
+        </section>
+
         {/* ===== AVATAR + CHAT ===== */}
         <section
           ref={talkRef}
@@ -251,7 +324,7 @@ export default function App() {
               </div>
             </div>
 
-            {/* Voice input + TTS (mounted only in voice mode) */}
+            {/* Voice input + TTS output */}
             {mode === "voice" && (
               <div className="mt-2">
                 <VoiceChat

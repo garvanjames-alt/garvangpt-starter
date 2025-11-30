@@ -1,61 +1,76 @@
 // frontend/src/components/AvatarStage.jsx
-import React from "react";
+// AvatarStage = isolated, voice-safe hero.
+// Shows D-ID holding video and lets user click to toggle sound.
 
-/**
- * AvatarStage
- * Isolated hero/avatar section.
- * Keeps voice/chat wiring in App/VoiceChat untouched.
- *
- * Props (A2-ready):
- *  - src: image URL for the avatar/hero
- *  - label: string shown in the pill
- *  - onClickTalk: optional click handler for the stage
- *  - isSpeaking: optional boolean (A3/A4 hook point)
- */
+import React, { useEffect, useRef, useState } from "react";
+
 export default function AvatarStage({
-  src = "/garvan-static.jpg", // replace with your real asset path if different
+  src = "/did-avatar.mp4",
   label = 'Click "Talk to Garvan" or type below to start',
-  onClickTalk,
   isSpeaking = false,
 }) {
+  const videoRef = useRef(null);
+  const [muted, setMuted] = useState(true);
+
+  // Ensure autoplay works (starts muted by default)
+  useEffect(() => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.muted = muted;
+    // try play on mount; browser may block if not muted
+    v.play().catch(() => {});
+  }, [muted]);
+
+  const toggleSoundAndPlay = () => {
+    const v = videoRef.current;
+    if (!v) return;
+
+    // First click: unmute + play
+    const nextMuted = !muted;
+    v.muted = nextMuted;
+    setMuted(nextMuted);
+
+    if (v.paused) v.play().catch(() => {});
+    else v.pause(); // lets you pause/resume too
+  };
+
   return (
     <section className="w-full border-b bg-white">
       <div className="mx-auto max-w-5xl px-4 py-6">
         <div
           className="relative flex items-center justify-center overflow-hidden rounded-2xl bg-neutral-50"
-          onClick={onClickTalk}
-          role={onClickTalk ? "button" : undefined}
-          aria-label={onClickTalk ? "Talk to Garvan" : undefined}
-          tabIndex={onClickTalk ? 0 : undefined}
-          onKeyDown={(e) => {
-            if (!onClickTalk) return;
-            if (e.key === "Enter" || e.key === " ") onClickTalk(e);
-          }}
+          onClick={toggleSoundAndPlay}
+          role="button"
+          aria-label="Toggle avatar sound"
         >
-          {/* Avatar / hero image */}
-          <img
+          <video
+            ref={videoRef}
             src={src}
-            alt="Garvan avatar"
             className="h-[420px] w-full object-contain"
-            draggable={false}
+            autoPlay
+            loop
+            playsInline
+            muted={muted}
+            preload="auto"
           />
 
-          {/* Optional speaking glow (hook point) */}
           {isSpeaking && (
             <div className="pointer-events-none absolute inset-0 rounded-2xl ring-4 ring-indigo-400/40" />
           )}
 
-          {/* Play overlay */}
-          <div className="absolute inset-0 flex items-center justify-center">
-            <div className="flex h-20 w-20 items-center justify-center rounded-full bg-white/80 shadow-md backdrop-blur">
-              <div className="ml-1 h-0 w-0 border-y-[10px] border-y-transparent border-l-[16px] border-l-indigo-600" />
+          {/* soft play overlay when muted */}
+          {muted && (
+            <div className="pointer-events-none absolute inset-0 grid place-items-center">
+              <div className="grid h-20 w-20 place-items-center rounded-full bg-white/90 shadow-md">
+                <div className="ml-1 h-0 w-0 border-y-[10px] border-y-transparent border-l-[16px] border-l-indigo-600" />
+              </div>
             </div>
-          </div>
+          )}
 
-          {/* Instruction pill */}
           <div className="absolute bottom-6 left-1/2 -translate-x-1/2">
             <div className="rounded-full bg-white/90 px-4 py-2 text-sm font-medium text-neutral-800 shadow-sm backdrop-blur">
               {label}
+              {muted && <span className="ml-2 opacity-70">• Tap avatar for sound</span>}
             </div>
           </div>
         </div>

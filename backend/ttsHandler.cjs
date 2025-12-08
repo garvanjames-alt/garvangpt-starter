@@ -62,7 +62,8 @@ module.exports = async function ttsHandler(req, res) {
     fs.writeFileSync(outPath, mp3Buffer);
 
     // ---- Return a URL that browser + D-ID can fetch ----
-    const audio_url = `${req.protocol}://${req.get("host")}/tmp/${id}`;
+    const host = req.get("host");
+    const audio_url = `https://${host}/tmp/${id}`;
 
     return res.json({ ok: true, audio_url });
   } catch (err) {

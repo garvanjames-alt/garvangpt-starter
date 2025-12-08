@@ -25,3 +25,15 @@ ingest/batches/
 **/*.zip
 **/*.bak
 **/*.tmp
+
+# backend ingest & indexes
+backend/data/ingest/
+backend/data/embeddings.json
+backend/memory.jsonl
+backend/memory.jsonl.*
+backend/public/tmp/
+
+# node junk
+node_modules/
+frontend/node_modules/
+backend/node_modules/

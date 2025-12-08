@@ -1,8 +1,12 @@
 // backend/ttsHandler.cjs
-// Simple ElevenLabs TTS proxy that returns an audio stream to the browser.
+// ElevenLabs TTS proxy that saves mp3 to public/tmp and returns an audio_url.
 
-const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;  // <-- read these two names
-const ELEVEN_VOICE  = process.env.ELEVEN_VOICE;     // e.g. "paRTfYnetOrTukxfEm1J"
+const fs = require("fs");
+const path = require("path");
+const crypto = require("crypto");
+
+const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
+const ELEVEN_VOICE  = process.env.ELEVEN_VOICE;
 const ELEVEN_MODEL  = process.env.ELEVEN_MODEL || "eleven_turbo_v2_5";
 
 module.exports = async function ttsHandler(req, res) {
@@ -10,7 +14,7 @@ module.exports = async function ttsHandler(req, res) {
     // ---- Guardrails ----
     if (!ELEVEN_API_KEY || !ELEVEN_VOICE) {
       console.warn("[TTS] Missing ELEVEN_API_KEY or ELEVEN_VOICE. Returning 204.");
-      return res.status(204).send(); // no content -> frontend should just skip audio
+      return res.status(204).send();
     }
 
     const text = req.body && req.body.text ? String(req.body.text).trim() : "";
@@ -35,7 +39,7 @@ module.exports = async function ttsHandler(req, res) {
         text,
         voice_settings: { stability: 0.4, similarity_boost: 0.8 },
         optimize_streaming_latency: 4,
-        output_format: "mp3_44100_128", // small, fast
+        output_format: "mp3_44100_128",
       }),
     });
 
@@ -45,16 +49,22 @@ module.exports = async function ttsHandler(req, res) {
       return res.status(502).send(msg);
     }
 
-    // Stream audio back to the browser
-    res.setHeader("Content-Type", "audio/mpeg");
-    res.setHeader("Cache-Control", "no-store");
-    const reader = r.body.getReader();
-    while (true) {
-      const { value, done } = await reader.read();
-      if (done) break;
-      res.write(value);
-    }
-    res.end();
+    // ---- Buffer the mp3 ----
+    const arrayBuf = await r.arrayBuffer();
+    const mp3Buffer = Buffer.from(arrayBuf);
+
+    // ---- Save to backend/public/tmp ----
+    const TMP_DIR = path.join(process.cwd(), "public", "tmp");
+    fs.mkdirSync(TMP_DIR, { recursive: true });
+
+    const id = `${crypto.randomUUID()}.mp3`;
+    const outPath = path.join(TMP_DIR, id);
+    fs.writeFileSync(outPath, mp3Buffer);
+
+    // ---- Return a URL that browser + D-ID can fetch ----
+    const audio_url = `${req.protocol}://${req.get("host")}/tmp/${id}`;
+
+    return res.json({ ok: true, audio_url });
   } catch (err) {
     console.error("[TTS] Unexpected error:", err);
     res.status(500).send("TTS failed");

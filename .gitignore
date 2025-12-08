@@ -13,3 +13,15 @@ backend/.env
 # Local env snapshots (never commit)
 snapshots/*.local
 .env*
+
+# ingest corpora / dumps
+ingest/corpus_mirror/
+ingest/corpus_zips/
+ingest/screenshots/
+ingest/raw/
+ingest/batches/
+
+# backups & large artifacts
+**/*.zip
+**/*.bak
+**/*.tmp

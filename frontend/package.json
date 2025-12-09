@@ -9,8 +9,10 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "@d-id/client-sdk": "^1.1.15",
     "axios": "^1.12.2",
     "marked": "^16.4.1",
+    "mixpanel-browser": "^2.72.0",
     "react": "^19.1.1",
     "react-dom": "^19.1.1",
     "react-markdown": "^10.1.0"

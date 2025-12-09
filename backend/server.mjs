@@ -47,6 +47,11 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
+// ✅ NEW: serve backend/public and specifically backend/public/tmp
+const PUBLIC_DIR = path.join(__dirname, "public");
+app.use(express.static(PUBLIC_DIR)); // serves /public/*
+app.use("/tmp", express.static(path.join(PUBLIC_DIR, "tmp"))); // serves /tmp/*.mp3
+
 // Health
 app.get("/health", (_req, res) => {
   res.json({ ok: true, env: process.env.NODE_ENV || "local" });
@@ -107,9 +112,6 @@ app.use("/api", didClientKeyRouter);
 app.post("/api/respond", respondHandler);
 app.post("/respond", respondHandler); // alias (keeps old behavior)
 app.post("/api/tts", ttsHandler);
-
-// Static admin page(s) from backend/public
-app.use(express.static(path.join(__dirname, "public")));
 
 // Optionally serve built frontend (if present)
 // Prefer dist if exists, but leaving as-is is fine for local proxying.

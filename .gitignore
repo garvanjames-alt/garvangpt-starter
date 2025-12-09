@@ -41,3 +41,10 @@ backend/node_modules/
 # google cloud keys
 backend/keys/
 backend/keys/*.json
+
+# local corpus (do not commit)
+backend/data/corpus/
+backend/data/embeddings.json
+
+# old ingest junk (do not commit)
+backend/data/_ingest_old/

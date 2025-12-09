@@ -54,29 +54,57 @@ async function main() {
       if (items.length >= MAX) break;
       let obj; try { obj = JSON.parse(line); } catch { continue; }
       if (!obj?.text) continue;
-      for (const c of chunkText(obj.text)) { items.push({ text: c, source: "memory.jsonl" }); if (items.length >= MAX) break; }
+      for (const c of chunkText(obj.text)) {
+        items.push({ text: c, source: "memory.jsonl" });
+        if (items.length >= MAX) break;
+      }
     }
   }
 
-  // 2) ingest folder, stop as soon as we hit MAX
+  // 2) ingest folder, prioritize corpus_mirror first
   if (items.length < MAX && fs.existsSync(INGEST_DIR)) {
-    for (const fp of walk(INGEST_DIR)) {
+    const files = Array.from(walk(INGEST_DIR));
+
+    files.sort((a, b) => {
+      const ra = path.relative(INGEST_DIR, a);
+      const rb = path.relative(INGEST_DIR, b);
+      const aIsMirror = ra.startsWith("corpus_mirror/");
+      const bIsMirror = rb.startsWith("corpus_mirror/");
+      if (aIsMirror && !bIsMirror) return -1;
+      if (!aIsMirror && bIsMirror) return 1;
+      return ra.localeCompare(rb);
+    });
+
+    for (const fp of files) {
       if (items.length >= MAX) break;
       const rel = path.relative(INGEST_DIR, fp);
-      const raw = fs.readFileSync(fp, "utf8");
-      for (const c of chunkText(raw)) { items.push({ text: c, source: `ingest/${rel}` }); if (items.length >= MAX) break; }
+      let raw;
+      try {
+        raw = fs.readFileSync(fp, "utf8");
+      } catch {
+        continue; // skip non-text/binary files
+      }
+      for (const c of chunkText(raw)) {
+        items.push({ text: c, source: `ingest/${rel}` });
+        if (items.length >= MAX) break;
+      }
     }
   }
 
   console.log(`Collected ${items.length} chunks (cap ${MAX}). Embedding with batch=${BATCH}…`);
-  const vectors = items.length ? await embedBatch(items.map(i=>i.text), BATCH) : [];
+  const vectors = items.length ? await embedBatch(items.map(i => i.text), BATCH) : [];
 
   const payload = {
     model: "text-embedding-3-small",
     dims: vectors[0]?.length || 1536,
     createdAt: new Date().toISOString(),
     count: items.length,
-    items: items.map((it, i) => ({ id:i, text:it.text, source:it.source, vector: vectors[i] })),
+    items: items.map((it, i) => ({
+      id: i,
+      text: it.text,
+      source: it.source,
+      vector: vectors[i]
+    })),
   };
   fs.writeFileSync(OUT_FILE, JSON.stringify(payload, null, 2));
   console.log(`Wrote ${OUT_FILE}`);

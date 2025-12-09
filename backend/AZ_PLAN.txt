@@ -1,0 +1,9 @@
+HEALTH A–Z (conditions / topics)
+- Source files:
+- Notes on grouping:web_* files that are condition / topic pages (e.g., asthma, acne, vaccines, minor ailments), usually broader than a single drug.
+- Any exclusions: navigation/footer spam, opening hours blocks, “Order Your Prescription”, “Contact us”, pure URL lists, duplicates.
+
+MEDICINE A–Z (individual medicines)
+- Source files:
+- Notes on grouping:web_* files that are individual drug pages (e.g., “Erythromycin Tablets”, “Ibuprofen”, “Humulin M3”), usually with sections like What is it? / How does it work? / Side effects / Precautions.
+- Any exclusions: same as above; plus “brand-only stubs” with no real content. navigation/footer spam, opening hours blocks, “Order Your Prescription”, “Contact us”, pure URL lists, duplicates.

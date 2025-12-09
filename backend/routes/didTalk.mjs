@@ -1,25 +1,18 @@
 // backend/routes/didTalk.mjs
-// Creates a D-ID "talk" video from a still image + text or audio.
+// Creates a D-ID "talk" video from a still image + text OR an external audio URL.
 // Uses Studio REST API Basic auth.
-//
-// Accepts bodies:
-//  { text:"..." }  -> text script (can be flaky on some accounts)
-//  { audio_url:"https://...mp3" }  -> audio script (stable, preferred)
-//  { audioUrl:"https://...mp3" }   -> alias
-//  { source_url:"https://...jpg" } -> optional override per request
-//  { provider:{type:"microsoft",voice_id:"en-US-JennyNeural"} } -> optional for text mode
-//
-// Env:
-//  DID_API_KEY=username:password
-//  DID_SOURCE_URL=https://i.imgur.com/....jpg
+// IMPORTANT: DID_API_KEY must be the literal string "API_USERNAME:API_PASSWORD"
+// from D-ID Studio → API Keys (NOT the client_key, NOT base64).
 
 import express from "express";
 
 const router = express.Router();
 const DID_API_BASE = "https://api.d-id.com";
 
+// Studio REST key (username:password)
 const DID_API_KEY = process.env.DID_API_KEY;
 
+// Default public HTTPS image URL (must return 200 image/* without redirects)
 const DEFAULT_SOURCE_URL = (
   process.env.DID_SOURCE_URL ||
   "https://d-id-public-bucket.s3.us-west-2.amazonaws.com/alice.jpg"
@@ -40,27 +33,38 @@ router.post("/did/talk", async (req, res) => {
       return res.status(500).json({ ok: false, error: "Missing DID_API_KEY" });
     }
 
+    // Allow overriding source_url for debugging (optional)
     const sourceUrl = (req.body?.source_url || DEFAULT_SOURCE_URL || "").trim();
     if (!sourceUrl) {
       return res.status(500).json({ ok: false, error: "Missing DID_SOURCE_URL" });
     }
 
     const text = (req.body?.text || "").trim();
-    const audioUrl = (req.body?.audio_url || req.body?.audioUrl || "").trim();
-    const provider = req.body?.provider;
+    const audioUrl = (req.body?.audio_url || "").trim();
 
     if (!text && !audioUrl) {
-      return res.status(400).json({ ok: false, error: "Missing text or audio_url" });
+      return res.status(400).json({ ok: false, error: "Provide text or audio_url" });
     }
 
-    // Prefer audio mode if provided (more reliable & lets you use Eleven voice)
+    // If audio_url provided, it MUST be public https for D-ID
+    if (audioUrl && !/^https:\/\//i.test(audioUrl)) {
+      return res.status(400).json({
+        ok: false,
+        error:
+          "audio_url must be a PUBLIC HTTPS url (D-ID cannot fetch localhost or http).",
+        got: audioUrl,
+      });
+    }
+
+    // Optional provider override from body (text mode only)
+    // Example (ElevenLabs): { type:"elevenlabs", voice_id:"..." }
+    const provider = req.body?.provider;
+
+    // ✅ IMPORTANT FIX:
+    // If caller sends audio_url, trust it and DO NOT override.
     const script = audioUrl
       ? { type: "audio", audio_url: audioUrl }
-      : {
-          type: "text",
-          input: text,
-          ...(provider ? { provider } : {}),
-        };
+      : { type: "text", input: text, ...(provider ? { provider } : {}) };
 
     const payload = {
       source_url: sourceUrl,
@@ -92,14 +96,19 @@ router.post("/did/talk", async (req, res) => {
     try {
       created = JSON.parse(createText);
     } catch {
-      return res.status(502).json({ ok: false, error: "Bad JSON from D-ID", raw: createText });
+      return res
+        .status(502)
+        .json({ ok: false, error: "Bad JSON from D-ID", raw: createText });
     }
 
     const talkId = created.id;
     if (!talkId) {
-      return res.status(502).json({ ok: false, error: "No talk id returned", created });
+      return res
+        .status(502)
+        .json({ ok: false, error: "No talk id returned", created });
     }
 
+    // Poll until done (up to ~30s)
     let resultUrl = null;
     let lastStatus = null;
 
@@ -119,7 +128,9 @@ router.post("/did/talk", async (req, res) => {
       }
 
       if (talk.status === "error") {
-        return res.status(502).json({ ok: false, error: "D-ID talk errored", talk });
+        return res
+          .status(502)
+          .json({ ok: false, error: "D-ID talk errored", talk });
       }
     }
 

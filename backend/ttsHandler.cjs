@@ -6,14 +6,40 @@ const path = require("path");
 const crypto = require("crypto");
 
 const ELEVEN_API_KEY = process.env.ELEVEN_API_KEY;
-const ELEVEN_VOICE  = process.env.ELEVEN_VOICE;
-const ELEVEN_MODEL  = process.env.ELEVEN_MODEL || "eleven_turbo_v2_5";
+
+// ✅ accept any of these env var names (prefer ELEVEN_VOICE_ID)
+const RAW_VOICE_ID =
+  process.env.ELEVEN_VOICE_ID ||
+  process.env.ELEVEN_VOICE ||
+  process.env.ELEVENLABS_VOICE_ID;
+
+// normalize (trim quotes/spaces just in case)
+const ELEVEN_VOICE = RAW_VOICE_ID ? String(RAW_VOICE_ID).trim().replace(/^"+|"+$/g, "") : undefined;
+
+const ELEVEN_MODEL = process.env.ELEVEN_MODEL || "eleven_turbo_v2_5";
+
+// 🔍 log what we found
+console.log("[TTS] ELEVENLABS_VOICE_ID =", process.env.ELEVENLABS_VOICE_ID);
+console.log("[TTS] ELEVEN_VOICE_ID     =", process.env.ELEVEN_VOICE_ID);
+console.log("[TTS] ELEVEN_VOICE       =", process.env.ELEVEN_VOICE);
+console.log("[TTS] USING VOICE        =", ELEVEN_VOICE);
+
+// warn if multiple are set (helps avoid confusion)
+if (
+  process.env.ELEVEN_VOICE_ID &&
+  process.env.ELEVEN_VOICE &&
+  process.env.ELEVEN_VOICE_ID !== process.env.ELEVEN_VOICE
+) {
+  console.warn(
+    "[TTS] WARNING: Both ELEVEN_VOICE_ID and ELEVEN_VOICE are set and differ. Using ELEVEN_VOICE_ID."
+  );
+}
 
 module.exports = async function ttsHandler(req, res) {
   try {
     // ---- Guardrails ----
     if (!ELEVEN_API_KEY || !ELEVEN_VOICE) {
-      console.warn("[TTS] Missing ELEVEN_API_KEY or ELEVEN_VOICE. Returning 204.");
+      console.warn("[TTS] Missing ELEVEN_API_KEY or voice id. Returning 204.");
       return res.status(204).send();
     }
 
@@ -63,7 +89,8 @@ module.exports = async function ttsHandler(req, res) {
 
     // ---- Return a URL that browser + D-ID can fetch ----
     const host = req.get("host");
-    const audio_url = `https://${host}/tmp/${id}`;
+    const proto = req.headers["x-forwarded-proto"] || req.protocol || "http";
+    const audio_url = `${proto}://${host}/tmp/${id}`;
 
     return res.json({ ok: true, audio_url });
   } catch (err) {

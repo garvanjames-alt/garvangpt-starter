@@ -9,6 +9,9 @@ import { fileURLToPath } from "url";
 import "dotenv/config";
 import { createRequire } from "module";
 
+// ✅ NEW async D-ID router (replaces old didTalkRouter)
+import didRouter from "./routes/didRouter.mjs";
+
 // Resolve __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -16,7 +19,6 @@ const __dirname = path.dirname(__filename);
 // --- Import routers/handlers ---
 import * as searchModule from "./routes/search.mjs";
 import * as statusModule from "./routes/status.mjs";
-import didTalkRouter from "./routes/didTalk.mjs";
 // IMPORTANT: filename is didClientKey.mjs (capital K). This must match exactly on Mac/Linux.
 import didClientKeyRouter from "./routes/didClientKey.mjs";
 
@@ -47,7 +49,7 @@ app.use(
 );
 app.use(express.json({ limit: "1mb" }));
 
-// ✅ NEW: serve backend/public and specifically backend/public/tmp
+// ✅ Serve backend/public and specifically backend/public/tmp
 const PUBLIC_DIR = path.join(__dirname, "public");
 app.use(express.static(PUBLIC_DIR)); // serves /public/*
 app.use("/tmp", express.static(path.join(PUBLIC_DIR, "tmp"))); // serves /tmp/*.mp3
@@ -102,10 +104,14 @@ app.delete("/api/memory", (_req, res) => {
 });
 // -----------------------------
 
-// D-ID routes
-// didTalkRouter handles /api/did/* talk endpoints
+// ✅ D-ID routes (async)
+// didRouter handles:
+//   POST   /api/did/talk
+//   GET    /api/did/status/:talk_id
+app.use("/api/did", didRouter);
+
 // didClientKeyRouter handles GET /api/did/client-key
-app.use("/api", didTalkRouter);
+// (This router likely defines routes under /did/*, so keep mount at /api)
 app.use("/api", didClientKeyRouter);
 
 // Core endpoints

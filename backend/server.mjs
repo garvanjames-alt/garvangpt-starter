@@ -12,6 +12,9 @@ import { createRequire } from "module";
 // ✅ NEW async D-ID router (replaces old didTalkRouter)
 import didRouter from "./routes/didRouter.mjs";
 
+// ✅ NEW auth router (adds /api/login, /api/logout, /api/admin/ping)
+import authRouter from "./routes/authRouter.mjs";
+
 // Resolve __dirname for ESM
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -70,6 +73,9 @@ if (!statusRouter) {
     "statusRouter is undefined. Ensure backend/routes/status.mjs exports either `export default router` or `export const router = ...`."
   );
 }
+
+// ✅ Auth routes (NO prefix; router defines full /api/* paths)
+app.use(authRouter);
 
 app.use("/api", searchRouter);
 app.use("/api", statusRouter);

@@ -1,78 +1,55 @@
 // backend/routes/authRouter.mjs
 // Cookie-based admin auth for GarvanGPT / Almost Human
-// Routes:
-//   POST /api/login  -> sets gh_session cookie
-//   GET  /api/admin/ping -> protected health check
-//
-// This file is ESM.
+// Mounted in server.mjs at app.use("/api", authRouter)
+// So routes here must NOT include the /api prefix.
 
 import express from "express";
 import bcrypt from "bcryptjs";
-import crypto from "crypto";
+import cookieParser from "cookie-parser";
+import jwt from "jsonwebtoken";
 
 const router = express.Router();
+router.use(cookieParser());
 
-// --- helpers ---
-function base64url(input) {
-  return Buffer.from(input)
-    .toString("base64")
-    .replace(/=/g, "")
-    .replace(/\+/g, "-")
-    .replace(/\//g, "_");
+const COOKIE_NAME = "gh_session";
+const ONE_WEEK_S = 60 * 60 * 24 * 7;
+
+function cookieOptions() {
+  const isProd = (process.env.NODE_ENV || "").toLowerCase() === "production";
+  return {
+    httpOnly: true,
+    secure: isProd,       // must be true for SameSite=None
+    sameSite: isProd ? "none" : "lax",
+    maxAge: ONE_WEEK_S * 1000,
+    path: "/",
+  };
 }
 
-function unbase64url(input) {
-  input = input.replace(/-/g, "+").replace(/_/g, "/");
-  while (input.length % 4) input += "=";
-  return Buffer.from(input, "base64").toString();
-}
-
-function signSession(payloadObj, secret) {
-  const payload = base64url(JSON.stringify(payloadObj));
-  const sig = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  return `${payload}.${sig}`;
-}
-
-function verifySession(token, secret) {
-  if (!token || typeof token !== "string") return null;
-  const [payload, sig] = token.split(".");
-  if (!payload || !sig) return null;
-  const expected = crypto.createHmac("sha256", secret).update(payload).digest("hex");
-  if (!crypto.timingSafeEqual(Buffer.from(sig), Buffer.from(expected))) return null;
-  try {
-    const obj = JSON.parse(unbase64url(payload));
-    return obj;
-  } catch {
-    return null;
-  }
-}
-
-function parseCookies(req) {
-  const header = req.headers?.cookie;
-  if (!header) return {};
-  return header.split(";").reduce((acc, part) => {
-    const [k, ...v] = part.trim().split("=");
-    acc[k] = decodeURIComponent(v.join("="));
-    return acc;
-  }, {});
-}
-
-function requireAuth(req, res, next) {
-  const cookies = parseCookies(req);
-  const token = cookies.gh_session;
+function signSession(payload) {
   const secret = process.env.SESSION_SECRET;
-  if (!secret) {
-    return res.status(500).json({ ok: false, error: "SESSION_SECRET not set" });
-  }
-  const session = verifySession(token, secret);
-  if (!session?.u) {
+  if (!secret) throw new Error("SESSION_SECRET missing");
+  return jwt.sign(payload, secret, { expiresIn: ONE_WEEK_S });
+}
+
+function verifySession(token) {
+  const secret = process.env.SESSION_SECRET;
+  if (!secret) throw new Error("SESSION_SECRET missing");
+  return jwt.verify(token, secret);
+}
+
+export function requireAuth(req, res, next) {
+  try {
+    const token = req.cookies?.[COOKIE_NAME];
+    if (!token) return res.status(401).json({ ok: false, error: "unauthorized" });
+    const decoded = verifySession(token);
+    req.user = decoded?.u;
+    next();
+  } catch (err) {
     return res.status(401).json({ ok: false, error: "unauthorized" });
   }
-  req.user = session.u;
-  next();
 }
 
-// --- routes ---
+// POST /api/login
 router.post("/login", async (req, res) => {
   const { username, password } = req.body || {};
   if (!username || !password) {
@@ -81,10 +58,8 @@ router.post("/login", async (req, res) => {
 
   const adminUser = process.env.ADMIN_USERNAME;
   const adminHash = process.env.ADMIN_PASSWORD_HASH;
-  const secret = process.env.SESSION_SECRET;
-
-  if (!adminUser || !adminHash || !secret) {
-    return res.status(500).json({ ok: false, error: "Admin env vars not set" });
+  if (!adminUser || !adminHash) {
+    return res.status(500).json({ ok: false, error: "admin env not set" });
   }
 
   if (username !== adminUser) {
@@ -96,28 +71,20 @@ router.post("/login", async (req, res) => {
     return res.status(401).json({ ok: false, error: "invalid credentials" });
   }
 
-  const payload = { u: username, t: Date.now() };
-  const token = signSession(payload, secret);
-
-  const isProd = (process.env.NODE_ENV || "").toLowerCase() === "production";
-
-  // IMPORTANT:
-  // - SameSite=None is REQUIRED for cross-site fetches (frontend on one Render domain,
-  //   backend on another Render domain). Lax will NOT send cookies on XHR/fetch.
-  // - Secure must be true when SameSite=None.
-  res.cookie("gh_session", token, {
-    httpOnly: true,
-    secure: isProd, // Render is always https in prod
-    sameSite: isProd ? "none" : "lax",
-    path: "/",
-    maxAge: 7 * 24 * 60 * 60 * 1000, // 7 days
-  });
-
-  res.json({ ok: true, user: username });
+  const token = signSession({ u: username, t: Date.now() });
+  res.cookie(COOKIE_NAME, token, cookieOptions());
+  return res.json({ ok: true, user: username });
 });
 
+// POST /api/logout
+router.post("/logout", (_req, res) => {
+  res.clearCookie(COOKIE_NAME, { path: "/" });
+  res.json({ ok: true });
+});
+
+// GET /api/admin/ping  (auth required)
 router.get("/admin/ping", requireAuth, (req, res) => {
-  res.json({ ok: true, user: req.user, env: process.env.NODE_ENV || "local" });
+  res.json({ ok: true, user: req.user || null, env: process.env.NODE_ENV || "local" });
 });
 
 export default router;

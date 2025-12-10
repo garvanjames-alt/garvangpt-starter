@@ -12,7 +12,7 @@ import { createRequire } from "module";
 // ✅ NEW async D-ID router (replaces old didTalkRouter)
 import didRouter from "./routes/didRouter.mjs";
 
-// ✅ NEW auth router (adds /api/login, /api/logout, /api/admin/ping)
+// ✅ AUTH router (login + admin ping)
 import authRouter from "./routes/authRouter.mjs";
 
 // Resolve __dirname for ESM
@@ -74,11 +74,12 @@ if (!statusRouter) {
   );
 }
 
-// ✅ Auth routes (NO prefix; router defines full /api/* paths)
-app.use(authRouter);
-
+// Search + status routes
 app.use("/api", searchRouter);
 app.use("/api", statusRouter);
+
+// ✅ Auth routes (/api/login, /api/admin/ping, etc.)
+app.use("/api", authRouter);
 
 // -----------------------------
 // Memory store + routes (dev/simple)

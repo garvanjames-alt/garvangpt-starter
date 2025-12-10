@@ -78,8 +78,8 @@ if (!statusRouter) {
 app.use("/api", searchRouter);
 app.use("/api", statusRouter);
 
-// ✅ Auth routes (/api/login, /api/admin/ping, etc.)
-app.use("/api", authRouter);
+// ✅ Auth routes (router already defines /api/* paths)
+app.use(authRouter);
 
 // -----------------------------
 // Memory store + routes (dev/simple)

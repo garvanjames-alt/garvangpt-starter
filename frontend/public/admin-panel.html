@@ -147,11 +147,12 @@
     const p = $("password").value; // DO NOT trim password
 
     if(!u || !p){
-      log('LOGIN', { ok:false, status:400, error:'username and password required (client-side)', sent:{username:u, password: p? '***' : ''}, url:`${base}/api/login` });
+      log('LOGIN', { ok:false, status:400, error:'username and password required (client-side)', sent:{username:u, password: p? '***' : ''}, url:`${base}/login` });
       return;
     }
 
-    const url = `${base}/api/login`;
+    // ✅ Auth endpoints are root-level now
+    const url = `${base}/login`;
     const r = await callJson(url, { method:'POST', body: JSON.stringify({ username:u, password:p }) });
     // Add what we actually sent (masking password)
     r.sent = { username: u, password: '***', url };
@@ -159,7 +160,8 @@
   };
 
   $("btnPing").onclick = async ()=>{
-    const url = `${normBase()}/api/admin/ping`;
+    // ✅ Match backend auth route
+    const url = `${normBase()}/admin/ping`;
     const r = await callJson(url, { method:'GET', headers:{} });
     log('ADMIN_PING', r);
   };

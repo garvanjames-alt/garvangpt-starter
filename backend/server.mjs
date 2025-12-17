@@ -9,8 +9,9 @@ import { fileURLToPath } from "url";
 import "dotenv/config";
 import { createRequire } from "module";
 
-// ✅ NEW async D-ID router (replaces old didTalkRouter)
-import didRouter from "./routes/didRouter.mjs";
+// ✅ D-ID routers
+import didRouter from "./routes/didRouter.mjs";       // /api/did/*
+import didStatus from "./routes/didStatus.mjs";       // /api/did/status (query-param style)
 
 // ✅ AUTH router (login + admin ping)
 import authRouter from "./routes/authRouter.mjs";
@@ -83,7 +84,6 @@ app.use(authRouter);
 
 // -----------------------------
 // Memory store + routes (dev/simple)
-// Same behavior as index.cjs.bak
 // -----------------------------
 const MEM = []; // resets on server restart
 
@@ -111,14 +111,17 @@ app.delete("/api/memory", (_req, res) => {
 });
 // -----------------------------
 
-// ✅ D-ID routes (async)
+// ✅ D-ID routes
 // didRouter handles:
-//   POST   /api/did/talk
-//   GET    /api/did/status/:talk_id
+//   POST /api/did/talk
+//   GET  /api/did/status/:talk_id
 app.use("/api/did", didRouter);
 
+// ✅ Adds query-param status endpoint so this URL works:
+//   /api/did/status?talk_id=tlk_...
+app.use("/api", didStatus);
+
 // didClientKeyRouter handles GET /api/did/client-key
-// (This router likely defines routes under /did/*, so keep mount at /api)
 app.use("/api", didClientKeyRouter);
 
 // Core endpoints
@@ -127,7 +130,6 @@ app.post("/respond", respondHandler); // alias (keeps old behavior)
 app.post("/api/tts", ttsHandler);
 
 // Optionally serve built frontend (if present)
-// Prefer dist if exists, but leaving as-is is fine for local proxying.
 app.use(express.static(path.join(__dirname, "..", "frontend")));
 
 app.listen(PORT, () => {

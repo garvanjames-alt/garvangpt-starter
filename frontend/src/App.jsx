@@ -1,9 +1,11 @@
 // frontend/src/App.jsx
-import React, { useState } from "react";
+import React, { useState, useRef } from "react";
 import "./index.css";
 
 import AvatarStage from "./components/AvatarStage.jsx";
 import SupportBar from "./components/SupportBar.jsx";
+
+const sleep = (ms) => new Promise((r) => setTimeout(r, ms));
 
 export default function App() {
   const [question, setQuestion] = useState("");
@@ -11,12 +13,47 @@ export default function App() {
   const [talkUrl, setTalkUrl] = useState("");
   const [asking, setAsking] = useState(false);
   const [err, setErr] = useState("");
+  const [videoStatus, setVideoStatus] = useState(""); // "creating" | "polling" | "done"
+
+  const videoRef = useRef(null);
 
   // apiBase already includes /api
   const apiBase =
     (import.meta.env.VITE_BACKEND_URL ||
       "https://almosthuman-starter-staging.onrender.com"
     ).replace(/\/$/, "") + "/api";
+
+  async function pollDidResult(talk_id) {
+    // Poll up to ~60s (60 x 1s)
+    for (let i = 0; i < 60; i++) {
+      await sleep(1000);
+
+      const r = await fetch(`${apiBase}/did/talk/${encodeURIComponent(talk_id)}`, {
+        method: "GET",
+        credentials: "include",
+      });
+
+      const j = await r.json().catch(() => ({}));
+      if (!r.ok || !j?.ok) {
+        // Keep polling a bit even if transient errors occur
+        // But if the backend returns a hard error repeatedly, we’ll time out below.
+        continue;
+      }
+
+      const status = j.status;
+      const result_url = j.result_url;
+
+      if (status === "done" && result_url) {
+        return result_url;
+      }
+
+      if (status === "error") {
+        throw new Error("D-ID returned status=error");
+      }
+    }
+
+    throw new Error("Timed out waiting for D-ID video (polling exceeded 60s)");
+  }
 
   async function onAsk() {
     const q = question.trim();
@@ -26,6 +63,7 @@ export default function App() {
     setErr("");
     setAnswer("");
     setTalkUrl("");
+    setVideoStatus("");
 
     try {
       // 1) get text answer (RAG)
@@ -50,7 +88,6 @@ export default function App() {
         body: JSON.stringify({ text: a }),
       });
 
-      // If TTS is disabled, backend returns 204 → fall back to text-only
       if (rTTS.status === 204) {
         throw new Error("TTS disabled (no ELEVEN_API_KEY/VOICE set).");
       }
@@ -60,7 +97,8 @@ export default function App() {
       const audio_url = jTTS?.audio_url;
       if (!audio_url) throw new Error("tts returned no audio_url");
 
-      // 3) make D-ID talk from AUDIO (no D-ID TTS)
+      // 3) create D-ID talk job (returns 202 + talk_id)
+      setVideoStatus("creating");
       const r2 = await fetch(`${apiBase}/did/talk`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
@@ -69,11 +107,26 @@ export default function App() {
       });
 
       const j2 = await r2.json().catch(() => ({}));
-      if (!r2.ok || !j2?.result_url) {
-        throw new Error(j2?.error || "did/talk failed");
+      if (!r2.ok || !j2?.ok || !j2?.talk_id) {
+        throw new Error(j2?.error || `did/talk failed (${r2.status})`);
       }
 
-      setTalkUrl(j2.result_url);
+      const talk_id = j2.talk_id;
+
+      // 4) poll until done → get signed mp4 result_url
+      setVideoStatus("polling");
+      const result_url = await pollDidResult(talk_id);
+
+      setTalkUrl(result_url);
+      setVideoStatus("done");
+
+      // Try to kick playback (browser may still block autoplay sometimes)
+      setTimeout(() => {
+        const el = videoRef.current;
+        if (el) {
+          el.play().catch(() => {});
+        }
+      }, 50);
     } catch (e) {
       setErr(String(e?.message || e));
     } finally {
@@ -90,6 +143,7 @@ export default function App() {
         <section className="w-full max-w-3xl">
           {talkUrl ? (
             <video
+              ref={videoRef}
               src={talkUrl}
               autoPlay
               playsInline
@@ -98,6 +152,15 @@ export default function App() {
             />
           ) : (
             <AvatarStage />
+          )}
+
+          {/* small status line */}
+          {(asking || videoStatus) && (
+            <div className="mt-2 text-xs opacity-80">
+              {videoStatus === "creating" && "Creating D-ID talk…"}
+              {videoStatus === "polling" && "Generating video… (polling D-ID)"}
+              {videoStatus === "done" && "Video ready."}
+            </div>
           )}
         </section>
 
